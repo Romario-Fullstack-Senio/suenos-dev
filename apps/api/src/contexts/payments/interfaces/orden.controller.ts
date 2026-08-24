@@ -12,6 +12,8 @@ import {
 import { EventBus } from '../../../common/event-bus';
 import { Orden } from '../domain/orden.entity';
 import { randomUUID } from 'crypto';
+import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
+import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
 
 @Controller('ordenes')
 export class OrdenController {
@@ -19,6 +21,8 @@ export class OrdenController {
     private readonly crearOrden: CrearOrdenUseCase,
     @Inject(STRIPE_PAYMENT_INTENT) private readonly paymentIntent: StripePaymentIntent,
     @Inject(ORDEN_REPOSITORY) private readonly ordenRepository: OrdenRepository,
+    @Inject(CURSO_REPOSITORY) private readonly cursoRepository: CursoRepository,
+    @Inject(USUARIO_REPOSITORY) private readonly usuarioRepository: UsuarioRepository,
     private readonly eventBus: EventBus,
   ) {}
 
@@ -62,7 +66,32 @@ export class OrdenController {
       return { message: 'Orden ya completada', ordenId: orden.id };
     }
 
-    orden.completar();
+    // Look up user and course data for the email event
+    let alumnoEmail = '';
+    let alumnoNombre = '';
+    let cursoNombre = '';
+
+    try {
+      const usuario = await this.usuarioRepository.findById(orden.estudianteId);
+      if (usuario) {
+        alumnoEmail = usuario.email.value || String(usuario.email);
+        alumnoNombre = usuario.nombre;
+      }
+    } catch {}
+
+    try {
+      const curso = await this.cursoRepository.findById(orden.cursoId);
+      if (curso) {
+        cursoNombre = curso.titulo;
+      }
+    } catch {}
+
+    orden.completar({
+      alumnoEmail,
+      alumnoNombre,
+      cursoNombre,
+      precio: orden.monto,
+    });
     await this.ordenRepository.save(orden);
 
     for (const event of orden.pullDomainEvents()) {

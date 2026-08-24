@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiGet, apiPost } from '@/lib/api';
+import { apiGet } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 
@@ -11,6 +11,7 @@ interface Certificado {
   cursoNombre: string;
   fechaEmision: string;
   codigoVerificacion: string;
+  linkedinAddToProfile: string;
 }
 
 export default function CertificadosPage() {
@@ -51,7 +52,7 @@ export default function CertificadosPage() {
         {certificados.length === 0 ? (
           <div className="bg-white rounded-xl shadow-sm p-8 text-center">
             <p className="text-gray-500">
-              Aún no tienes certificados. Completa un curso para obtener uno.
+              Aun no tienes certificados. Completa un curso para obtener uno.
             </p>
           </div>
         ) : (
@@ -68,16 +69,23 @@ export default function CertificadosPage() {
                       Emitido: {new Date(cert.fechaEmision).toLocaleDateString()}
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Código: {cert.codigoVerificacion}
+                      Codigo: {cert.codigoVerificacion}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(`/certificados/${cert.id}`, '_blank')}
+                      onClick={() => window.open(`/api/certificados/${cert.id}/pdf`, '_blank')}
                     >
-                      Verificar
+                      Descargar PDF
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(cert.linkedinAddToProfile, '_blank')}
+                    >
+                      Agregar a LinkedIn
                     </Button>
                   </div>
                 </div>

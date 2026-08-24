@@ -44,7 +44,12 @@ export class Orden extends AggregateRoot<string> {
     return this.props.estado;
   }
 
-  completar(): void {
+  completar(metadata?: {
+    alumnoEmail?: string;
+    alumnoNombre?: string;
+    cursoNombre?: string;
+    precio?: number;
+  }): void {
     this.props.estado = 'completada';
     this.touch();
     this.addDomainEvent({
@@ -53,6 +58,10 @@ export class Orden extends AggregateRoot<string> {
       aggregateId: this.id,
       estudianteId: this.props.estudianteId,
       cursoId: this.props.cursoId,
+      alumnoEmail: metadata?.alumnoEmail || '',
+      alumnoNombre: metadata?.alumnoNombre || '',
+      cursoNombre: metadata?.cursoNombre || '',
+      precio: metadata?.precio || this.props.monto,
     } as CursoCompradoEvent);
   }
 

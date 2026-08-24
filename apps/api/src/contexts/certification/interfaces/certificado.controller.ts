@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Param, Body, UseGuards, NotFoundException, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, Res, Inject } from '@nestjs/common';
+import { Response } from 'express';
 import { VerificarCertificadoUseCase } from '../application/verificar-certificado.use-case';
 import { Certificado } from '../domain/certificado.entity';
 import { CERTIFICADO_REPOSITORY, CertificadoRepository } from '../domain/certificado.repository.port';
+import { LINKEDIN_LINK, LinkedInLink } from '../domain/linkedin-link.port';
+import { PDF_GENERATOR, PdfGenerator } from '../domain/pdf-generator.port';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { randomUUID } from 'crypto';
 
@@ -11,12 +14,15 @@ export class CertificadoController {
     private readonly verificarCertificadoUseCase: VerificarCertificadoUseCase,
     @Inject(CERTIFICADO_REPOSITORY)
     private readonly certificadoRepository: CertificadoRepository,
+    @Inject(LINKEDIN_LINK)
+    private readonly linkedinLink: LinkedInLink,
+    @Inject(PDF_GENERATOR)
+    private readonly pdfGenerator: PdfGenerator,
   ) {}
 
   @Get(':id/verificar')
   async verificar(@Param('id') id: string) {
-    const certificado: Certificado =
-      await this.verificarCertificadoUseCase.execute(id);
+    const certificado = await this.verificarCertificadoUseCase.execute(id);
 
     return {
       valido: true,
@@ -26,8 +32,21 @@ export class CertificadoController {
         fechaEmision: certificado.fechaEmision,
         codigoVerificacion: certificado.codigoVerificacion,
         urlVerificacion: certificado.getVerifyUrl(),
+        linkedinAddToProfile: this.linkedinLink.generate(certificado),
       },
     };
+  }
+
+  @Get(':id/pdf')
+  async descargarPdf(@Param('id') id: string, @Res() res: Response) {
+    const certificado = await this.verificarCertificadoUseCase.execute(id);
+    const pdfBuffer = await this.pdfGenerator.generate(certificado);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="certificado-${certificado.codigoVerificacion}.pdf"`,
+    });
+    res.send(pdfBuffer);
   }
 
   @Get('estudiante/:estudianteId')
@@ -40,6 +59,7 @@ export class CertificadoController {
       cursoNombre: c.cursoNombre,
       fechaEmision: c.fechaEmision,
       codigoVerificacion: c.codigoVerificacion,
+      linkedinAddToProfile: this.linkedinLink.generate(c),
     }));
   }
 
@@ -54,7 +74,10 @@ export class CertificadoController {
     if (existing) {
       return {
         id: existing.id,
+        estudianteNombre: existing.estudianteNombre,
+        cursoNombre: existing.cursoNombre,
         message: 'Certificado ya emitido',
+        linkedinAddToProfile: this.linkedinLink.generate(existing),
       };
     }
 
@@ -70,8 +93,10 @@ export class CertificadoController {
 
     return {
       id: certificado.id,
+      estudianteNombre: certificado.estudianteNombre,
       cursoNombre: certificado.cursoNombre,
       fechaEmision: certificado.fechaEmision,
+      linkedinAddToProfile: this.linkedinLink.generate(certificado),
     };
   }
 }

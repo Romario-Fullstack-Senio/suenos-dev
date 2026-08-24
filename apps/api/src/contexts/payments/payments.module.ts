@@ -12,11 +12,15 @@ import { STRIPE_CHECKOUT } from './domain/stripe-checkout.port';
 import { StripeCheckoutAdapter } from './infrastructure/stripe/stripe-checkout.adapter';
 import { STRIPE_PAYMENT_INTENT } from './domain/stripe-payment-intent.port';
 import { StripePaymentIntentAdapter } from './infrastructure/stripe/stripe-payment-intent.adapter';
+import { IdentityModule } from '../identity/identity.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([OrdenOrmEntity]),
     EventEmitterModule.forRoot(),
+    IdentityModule,
+    CatalogModule,
   ],
   controllers: [OrdenController, StripeWebhookController],
   providers: [
