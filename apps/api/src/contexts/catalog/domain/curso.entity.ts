@@ -61,11 +61,12 @@ export class Curso extends AggregateRoot<string> {
     }
     this.props.estado = EstadoCurso.publicado();
     this.touch();
-    this.addDomainEvent({
-      eventName: 'CursoPublicado',
-      occurredOn: new Date(),
-      aggregateId: this.id,
-    });
+    this.addDomainEvent(new CursoPublicado({
+      cursoId: this.id,
+      titulo: this.props.titulo,
+      slug: this.props.slug.value,
+      descripcion: this.props.descripcion,
+    }));
   }
 
   agregarModulo(modulo: Modulo): void {

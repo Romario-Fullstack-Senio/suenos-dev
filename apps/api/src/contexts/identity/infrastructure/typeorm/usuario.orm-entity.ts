@@ -11,11 +11,17 @@ export class UsuarioOrmEntity {
   @Column({ unique: true })
   email!: string;
 
-  @Column()
-  password_hash!: string;
+  @Column({ type: 'varchar', nullable: true })
+  password_hash!: string | null;
 
   @Column({ default: 'estudiante' })
   rol!: string;
+
+  @Column({ type: 'varchar', default: 'local' })
+  auth_provider!: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  provider_id!: string | null;
 
   @CreateDateColumn()
   created_at!: Date;

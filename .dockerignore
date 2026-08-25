@@ -1,0 +1,15 @@
+node_modules
+.next
+dist
+.git
+.github
+*.md
+!README.md
+.env
+.env.local
+.env.*.local
+tests
+infra
+*.log
+.DS_Store
+Thumbs.db

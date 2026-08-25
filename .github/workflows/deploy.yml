@@ -1,0 +1,131 @@
+# ============================================================
+# CD: Deploy to VPS via SSH
+# Triggers automatically after build-and-push succeeds on main
+# Or manually via workflow_dispatch
+# ============================================================
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Build & Push"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to deploy (leave empty for latest)'
+        required: false
+        type: string
+
+env:
+  DEPLOY_DIR: ~/deploy/suenos-dev
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    # Only run if the triggering workflow succeeded (or manual dispatch)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Set deploy variables
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DEPLOY_SHA="${{ github.event.inputs.sha || github.sha }}"
+          else
+            DEPLOY_SHA="${{ github.event.workflow_run.head_sha }}"
+          fi
+          SHORT_SHA=$(echo "$DEPLOY_SHA" | cut -c1-7)
+          echo "DEPLOY_SHA=$DEPLOY_SHA" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "Deploying commit: $SHORT_SHA"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "=== Deploying suenos-dev: $SHORT_SHA ==="
+
+            # Navigate to deploy directory
+            cd ${{ env.DEPLOY_DIR }}
+
+            # Update image tags in .env
+            sed -i "s|^API_TAG=.*|API_TAG=$SHORT_SHA|" .env
+            sed -i "s|^WEB_TAG=.*|WEB_TAG=$SHORT_SHA|" .env
+
+            # Log in to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+
+            # Pull latest images
+            echo "Pulling images..."
+            docker compose pull api web
+
+            # Restart services
+            echo "Restarting services..."
+            docker compose up -d --remove-orphans --force-recreate api web
+
+            # Wait for health checks
+            echo "Waiting for health checks..."
+            sleep 15
+
+            # Verify API health
+            echo "Verifying API health..."
+            for i in 1 2 3 4 5; do
+              if docker compose exec -T api wget -qO- http://localhost:3001/health 2>/dev/null; then
+                echo ""
+                echo "API is healthy!"
+                break
+              fi
+              echo "Attempt $i: API not ready, waiting..."
+              sleep 5
+            done
+
+            # Verify Web health
+            echo "Verifying Web health..."
+            for i in 1 2 3 4 5; do
+              if docker compose exec -T web wget -qO- http://localhost:3000 2>/dev/null; then
+                echo ""
+                echo "Web is healthy!"
+                break
+              fi
+              echo "Attempt $i: Web not ready, waiting..."
+              sleep 5
+            done
+
+            # Show running containers
+            echo ""
+            echo "=== Running containers ==="
+            docker compose ps
+
+            echo ""
+            echo "=== Deployment complete ==="
+            echo "API:  https://api.suenos-dev.dev/health"
+            echo "Web:  https://suenos-dev.dev"
+            echo "SHA:  $SHORT_SHA"
+
+      - name: Verify deployment
+        if: success()
+        run: |
+          echo "Deploy successful for commit $SHORT_SHA"
+          echo "API: https://api.suenos-dev.dev/health"
+          echo "Web: https://suenos-dev.dev"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "Deploy FAILED for commit $SHORT_SHA"
+          echo "Check server logs: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} 'cd ${{ env.DEPLOY_DIR }} && docker compose logs --tail=50 api web'"

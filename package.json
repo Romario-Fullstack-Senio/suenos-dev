@@ -23,6 +23,12 @@
     "node": ">=20"
   },
   "dependencies": {
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
     "playwright": "^1.62.1"
+  },
+  "devDependencies": {
+    "@types/passport-github2": "^1.2.9",
+    "@types/passport-google-oauth20": "^2.0.17"
   }
 }

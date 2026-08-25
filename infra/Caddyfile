@@ -1,0 +1,70 @@
+# ============================================================
+# Caddyfile — Reverse proxy para suenos-dev
+# Ubicación en servidor: /etc/caddy/Caddyfile
+# Caddy maneja automáticamente certificados SSL (Let's Encrypt)
+# ============================================================
+
+# Email para notificaciones de Let's Encrypt
+{$CADDY_EMAIL}
+
+# ──────────────────────────────────────────────
+# Frontend: suenos-dev.dev → Next.js (puerto 3000)
+# ──────────────────────────────────────────────
+suenos-dev.dev {
+    reverse_proxy web:3000
+
+    # Headers de seguridad
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+
+    # Compresión gzip
+    encode gzip zstd
+
+    # Logging
+    log {
+        output file /var/log/caddy/suenos-dev.log
+        format json
+    }
+}
+
+# ──────────────────────────────────────────────
+# API: api.suenos-dev.dev → NestJS (puerto 3001)
+# ──────────────────────────────────────────────
+api.suenos-dev.dev {
+    reverse_proxy api:3001
+
+    # Headers de seguridad
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+
+    # Límite de tamaño de request (para uploads de video)
+    request_body {
+        max_size 500MB
+    }
+
+    # Compresión gzip
+    encode gzip zstd
+
+    # Logging
+    log {
+        output file /var/log/caddy/api-suenos-dev.log
+        format json
+    }
+}
+
+# ──────────────────────────────────────────────
+# Redirección www → root domain
+# ──────────────────────────────────────────────
+www.suenos-dev.dev {
+    redir https://suenos-dev.dev{uri} permanent
+}

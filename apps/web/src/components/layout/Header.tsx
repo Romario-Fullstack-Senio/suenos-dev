@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { NotificationBell } from './NotificationBell';
 
 export function Header() {
   const { user, isAuthenticated, logout, hasRole } = useAuth();
@@ -10,7 +11,7 @@ export function Header() {
     <header className="bg-white shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="text-2xl font-bold text-primary">
-          Suenos Dev
+          Sueños Dev
         </Link>
         <nav className="flex gap-6 items-center">
           <Link href="/cursos" className="hover:text-primary transition">
@@ -33,6 +34,7 @@ export function Header() {
                   Admin
                 </Link>
               )}
+              <NotificationBell />
               <Link href="/perfil" className="hover:text-primary transition">
                 {user?.nombre}
               </Link>

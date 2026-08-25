@@ -2,12 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { initSentry } from './sentry.config';
+import { SentryGlobalFilter } from '@sentry/nestjs/setup';
+import { SentryInterceptor } from './sentry.interceptor';
 
 async function bootstrap() {
+  initSentry();
+
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
 
+  app.useGlobalFilters(new SentryGlobalFilter());
+  app.useGlobalInterceptors(new SentryInterceptor());
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: [process.env.WEB_URL || 'http://localhost:3000', 'http://127.0.0.1:3000'],
