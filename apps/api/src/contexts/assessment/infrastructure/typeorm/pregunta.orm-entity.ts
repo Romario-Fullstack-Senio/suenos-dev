@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { QuizOrmEntity } from './quiz.orm-entity';
 
 @Entity('preguntas')
@@ -15,6 +15,7 @@ export class PreguntaOrmEntity {
   @Column()
   respuestaCorrecta!: number;
 
+  @Index()
   @Column({ name: 'quiz_id' })
   quiz_id!: string;
 

@@ -3,3 +3,9 @@ export { AggregateRoot } from './aggregate-root';
 export { DomainEvent } from './domain-event';
 export { ValueObject } from './value-object';
 export { UserId } from './identity/user-id';
+export {
+  DomainError,
+  NotFoundDomainError,
+  ConflictDomainError,
+  UnauthorizedDomainError,
+} from './domain-error';

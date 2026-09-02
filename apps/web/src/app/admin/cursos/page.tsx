@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { apiGet, apiPut } from '@/lib/api';
 
 interface Curso {
@@ -37,7 +38,7 @@ export default function AdminCursosPage() {
       await apiPut(`/cursos/${cursoId}/estado`, { estado: nuevoEstado });
       fetchCursos();
     } catch (error) {
-      alert('Error al cambiar estado');
+      toast.error('Error al cambiar estado');
     }
   };
 
@@ -48,30 +49,30 @@ export default function AdminCursosPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="bg-suenos-surface rounded-xl shadow-sm border border-suenos-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-suenos-deep">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Título</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Precio</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Estado</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Título</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Precio</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Estado</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-suenos-border border-suenos-border">
               {cursos.map((curso) => (
                 <tr key={curso.id}>
                   <td className="px-6 py-4 font-medium">{curso.titulo}</td>
                   <td className="px-6 py-4">${curso.precio}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                    <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-suenos-gold/15 text-suenos-gold'}`}>
                       {curso.estado}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => handleToggleEstado(curso.id, curso.estado)}
-                      className="text-primary text-sm hover:underline"
+                      className="text-suenos-violet-light text-sm hover:underline"
                     >
                       {curso.estado === 'publicado' ? 'Despublicar' : 'Publicar'}
                     </button>

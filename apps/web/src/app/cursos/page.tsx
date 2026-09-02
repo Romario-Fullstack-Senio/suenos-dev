@@ -31,23 +31,23 @@ export default function CursosPage() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Cursos Disponibles</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 min-h-screen">
+      <h1 className="font-display text-3xl font-bold mb-8 text-suenos-text">Cursos Disponibles</h1>
 
       {loading ? (
-        <p>Cargando cursos...</p>
+        <p className="text-suenos-muted">Cargando cursos...</p>
       ) : cursos.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border">
-          <p className="text-gray-600">No hay cursos disponibles</p>
+        <div className="text-center py-16 card-suenos">
+          <p className="text-suenos-muted">No hay cursos disponibles</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cursos.map((curso) => (
             <Link key={curso.id} href={`/cursos/${curso.slug}`}>
-              <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition cursor-pointer h-full">
-                <h3 className="font-semibold text-lg mb-2">{curso.titulo}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
-                <p className="text-primary font-bold">${curso.precio} USD</p>
+              <div className="card-suenos p-6 cursor-pointer h-full">
+                <h3 className="font-display font-semibold text-lg mb-2 text-suenos-text">{curso.titulo}</h3>
+                <p className="text-suenos-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
+                <p className="text-suenos-gold font-bold">${curso.precio} USD</p>
               </div>
             </Link>
           ))}

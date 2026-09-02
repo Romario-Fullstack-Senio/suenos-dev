@@ -1,4 +1,4 @@
-import { AggregateRoot } from '@suenos-dev/shared-kernel';
+import { AggregateRoot, DomainError, NotFoundDomainError } from '@suenos-dev/shared-kernel';
 import { Precio } from './precio.value-object';
 import { Slug } from './slug.value-object';
 import { EstadoCurso } from './estado-curso.value-object';
@@ -30,7 +30,7 @@ export class Curso extends AggregateRoot<string> {
     instructorId: string;
   }): Curso {
     if (!params.titulo || params.titulo.length < 3) {
-      throw new Error('El título debe tener al menos 3 caracteres');
+      throw new DomainError('El título debe tener al menos 3 caracteres');
     }
     return new Curso(id, {
       titulo: params.titulo,
@@ -57,7 +57,7 @@ export class Curso extends AggregateRoot<string> {
 
   publicar(): void {
     if (this.props.modulos.length === 0) {
-      throw new Error('Un curso debe tener al menos un módulo para ser publicado');
+      throw new DomainError('Un curso debe tener al menos un módulo para ser publicado');
     }
     this.props.estado = EstadoCurso.publicado();
     this.touch();
@@ -77,7 +77,7 @@ export class Curso extends AggregateRoot<string> {
   agregarLeccion(moduloId: string, leccion: import('./leccion.entity').Leccion): void {
     const modulo = this.props.modulos.find(m => m.id === moduloId);
     if (!modulo) {
-      throw new Error(`Módulo ${moduloId} no encontrado en el curso`);
+      throw new NotFoundDomainError(`Módulo ${moduloId} no encontrado en el curso`);
     }
     modulo.agregarLeccion(leccion);
     this.touch();

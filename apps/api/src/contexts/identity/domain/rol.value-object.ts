@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 
 type RolTipo = 'estudiante' | 'instructor' | 'admin';
 
@@ -30,7 +30,7 @@ export class Rol extends ValueObject<RolProps> {
   static from(value: string): Rol {
     const valid: RolTipo[] = ['estudiante', 'instructor', 'admin'];
     if (!valid.includes(value as RolTipo)) {
-      throw new Error(`Rol inválido: ${value}`);
+      throw new DomainError(`Rol inválido: ${value}`);
     }
     return new Rol({ value: value as RolTipo });
   }

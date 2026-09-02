@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
 import { Quiz } from '../domain/quiz.entity';
 import { Intento } from '../domain/intento.entity';
 import { QuizRepository, QUIZ_REPOSITORY } from '../domain/quiz.repository.port';
@@ -22,7 +23,7 @@ export class ResolverQuizUseCase {
   async execute(command: ResolverQuizCommand): Promise<{ intento: Intento; aprobado: boolean }> {
     const quiz = await this.quizRepository.findById(command.quizId);
     if (!quiz) {
-      throw new Error('Quiz no encontrado');
+      throw new NotFoundDomainError('Quiz no encontrado');
     }
 
     const intentoId = uuidv4();

@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 import * as bcrypt from 'bcryptjs';
 
 interface PasswordProps {
@@ -16,7 +16,7 @@ export class Password extends ValueObject<PasswordProps> {
 
   static async create(plain: string): Promise<Password> {
     if (plain.length < 8) {
-      throw new Error('La contraseña debe tener al menos 8 caracteres');
+      throw new DomainError('La contraseña debe tener al menos 8 caracteres');
     }
     const hash = await bcrypt.hash(plain, 10);
     return new Password({ hash });

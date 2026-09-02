@@ -1,4 +1,4 @@
-import { AggregateRoot } from '@suenos-dev/shared-kernel';
+import { AggregateRoot, DomainError, ConflictDomainError } from '@suenos-dev/shared-kernel';
 import { Email } from './email.value-object';
 import { Rol } from './rol.value-object';
 import { Password } from './password.value-object';
@@ -24,7 +24,7 @@ export class Usuario extends AggregateRoot<string> {
 
   static create(id: string, nombre: string, email: Email, password: Password, rol?: Rol): Usuario {
     if (!nombre || nombre.length < 2) {
-      throw new Error('El nombre debe tener al menos 2 caracteres');
+      throw new DomainError('El nombre debe tener al menos 2 caracteres');
     }
     const usuario = new Usuario(id, {
       nombre,
@@ -46,10 +46,10 @@ export class Usuario extends AggregateRoot<string> {
     providerId: string;
   }): Usuario {
     if (!params.nombre || params.nombre.length < 2) {
-      throw new Error('El nombre debe tener al menos 2 caracteres');
+      throw new DomainError('El nombre debe tener al menos 2 caracteres');
     }
     if (!params.providerId) {
-      throw new Error('El providerId es requerido para auth OAuth');
+      throw new DomainError('El providerId es requerido para auth OAuth');
     }
     const usuario = new Usuario(params.id, {
       nombre: params.nombre,
@@ -124,7 +124,7 @@ export class Usuario extends AggregateRoot<string> {
 
   vincularProveedor(provider: AuthProviderTipo, providerId: string): void {
     if (this.props.authProvider.esOAuth && this.props.authProvider.value !== provider) {
-      throw new Error('El usuario ya está vinculado a otro proveedor OAuth');
+      throw new ConflictDomainError('El usuario ya está vinculado a otro proveedor OAuth');
     }
     this.props.authProvider = AuthProvider.from(provider);
     this.props.providerId = providerId;

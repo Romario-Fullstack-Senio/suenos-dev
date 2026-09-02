@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('certificados')
@@ -10,9 +11,11 @@ export class CertificadoOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
   @Column({ name: 'estudiante_id' })
   estudianteId!: string;
 
+  @Index()
   @Column({ name: 'curso_id' })
   cursoId!: string;
 

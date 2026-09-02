@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { agregarModuloSchema, AgregarModuloFormData } from '@/lib/validations/curso.schema';
 import { apiPost } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
@@ -21,16 +22,16 @@ export function ModuloForm({ cursoId, onModuloCreated }: ModuloFormProps) {
   const onSubmit = async (data: AgregarModuloFormData) => {
     try {
       await apiPost(`/cursos/${cursoId}/modulos`, data);
-      alert('Módulo agregado correctamente');
+      toast.success('Módulo agregado correctamente');
       reset();
       onModuloCreated?.();
     } catch (error) {
-      alert('Error al agregar módulo');
+      toast.error('Error al agregar módulo');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl p-6 shadow-sm border mb-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border mb-4">
       <h3 className="font-semibold mb-4">Agregar Módulo</h3>
       <div className="flex gap-4">
         <div className="flex-1">

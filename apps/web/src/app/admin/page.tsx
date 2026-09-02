@@ -33,28 +33,28 @@ export default function AdminDashboardPage() {
       <h1 className="text-3xl font-bold mb-8">Panel de Administración</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl p-6 shadow-sm border">
-          <h3 className="text-gray-500 text-sm">Usuarios</h3>
+        <div className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+          <h3 className="text-suenos-muted text-sm">Usuarios</h3>
           <p className="text-3xl font-bold">{loading ? '...' : stats.totalUsuarios}</p>
         </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border">
-          <h3 className="text-gray-500 text-sm">Cursos</h3>
+        <div className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+          <h3 className="text-suenos-muted text-sm">Cursos</h3>
           <p className="text-3xl font-bold">{loading ? '...' : stats.totalCursos}</p>
         </div>
-        <div className="bg-white rounded-xl p-6 shadow-sm border">
-          <h3 className="text-gray-500 text-sm">Inscripciones</h3>
+        <div className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+          <h3 className="text-suenos-muted text-sm">Inscripciones</h3>
           <p className="text-3xl font-bold">{loading ? '...' : stats.totalInscripciones}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Link href="/admin/usuarios" className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition">
+        <Link href="/admin/usuarios" className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Gestionar Usuarios</h3>
-          <p className="text-gray-500 text-sm">Administrar roles y permisos</p>
+          <p className="text-suenos-muted text-sm">Administrar roles y permisos</p>
         </Link>
-        <Link href="/admin/cursos" className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition">
+        <Link href="/admin/cursos" className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Gestionar Cursos</h3>
-          <p className="text-gray-500 text-sm">Ver todos los cursos de la plataforma</p>
+          <p className="text-suenos-muted text-sm">Ver todos los cursos de la plataforma</p>
         </Link>
       </div>
     </div>

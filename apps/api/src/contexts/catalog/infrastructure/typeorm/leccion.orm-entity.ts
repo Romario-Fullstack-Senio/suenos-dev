@@ -1,4 +1,4 @@
-import { Entity as TypeOrmEntity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity as TypeOrmEntity, PrimaryColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ModuloOrmEntity } from './modulo.orm-entity';
 
 @TypeOrmEntity('lecciones')
@@ -18,6 +18,9 @@ export class LeccionOrmEntity {
   @Column('varchar', { nullable: true })
   video_url!: string | null;
 
+  // Postgres no crea índice automático en el lado que referencia una FK
+  // (solo en el lado referenciado) — sin esto, cada JOIN/lookup por módulo escanea toda la tabla.
+  @Index()
   @Column('uuid')
   modulo_id!: string;
 

@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { agregarLeccionSchema, AgregarLeccionFormData } from '@/lib/validations/curso.schema';
 import { apiPost } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
@@ -22,16 +23,16 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
   const onSubmit = async (data: AgregarLeccionFormData) => {
     try {
       await apiPost(`/cursos/${cursoId}/modulos/${moduloId}/lecciones`, data);
-      alert('Lección agregada correctamente');
+      toast.success('Lección agregada correctamente');
       reset();
       onLeccionCreated?.();
     } catch (error) {
-      alert('Error al agregar lección');
+      toast.error('Error al agregar lección');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl p-6 shadow-sm border mb-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border mb-4">
       <h3 className="font-semibold mb-4">Agregar Lección</h3>
       <div className="flex gap-4">
         <div className="flex-1">

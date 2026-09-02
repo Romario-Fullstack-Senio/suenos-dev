@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 
 interface PrecioProps {
   value: number;
@@ -19,7 +19,7 @@ export class Precio extends ValueObject<PrecioProps> {
   }
 
   static create(amount: number, currency: string = 'USD'): Precio {
-    if (amount < 0) throw new Error('El precio no puede ser negativo');
+    if (amount < 0) throw new DomainError('El precio no puede ser negativo');
     return new Precio({ value: amount, currency });
   }
 }

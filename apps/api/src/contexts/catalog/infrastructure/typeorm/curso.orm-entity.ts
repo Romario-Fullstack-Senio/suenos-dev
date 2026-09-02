@@ -1,4 +1,4 @@
-import { Entity as TypeOrmEntity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity as TypeOrmEntity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
 import { ModuloOrmEntity } from './modulo.orm-entity';
 
 @TypeOrmEntity('cursos')
@@ -24,6 +24,7 @@ export class CursoOrmEntity {
   @Column({ default: 'borrador' })
   estado!: string;
 
+  @Index()
   @Column('uuid')
   instructor_id!: string;
 

@@ -76,7 +76,7 @@ export default function DashboardPage() {
   if (confirming) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <p className="text-gray-600">Confirmando pago y activando acceso...</p>
+        <p className="text-suenos-muted">Confirmando pago y activando acceso...</p>
       </div>
     );
   }
@@ -87,9 +87,9 @@ export default function DashboardPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : inscripciones.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border">
-          <p className="text-gray-600 mb-4">No tienes cursos inscritos</p>
-          <Link href="/cursos" className="text-primary hover:underline">
+        <div className="text-center py-16 bg-suenos-surface rounded-xl border border-suenos-border">
+          <p className="text-suenos-muted mb-4">No tienes cursos inscritos</p>
+          <Link href="/cursos" className="text-suenos-violet-light hover:underline">
             Explorar cursos
           </Link>
         </div>
@@ -98,16 +98,16 @@ export default function DashboardPage() {
           {inscripciones.map((insc) => {
             const curso = insc.cursoId ? cursosMap[insc.cursoId] : undefined;
             return (
-              <div key={insc.id} className="bg-white rounded-xl p-6 shadow-sm border">
+              <div key={insc.id} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
                 <h3 className="font-semibold mb-2">
                   {curso?.titulo || `Curso ${insc.cursoId?.slice(0, 8)}...`}
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-sm text-suenos-muted mb-4">
                   Inscrito: {insc.fechaInscripcion ? new Date(insc.fechaInscripcion).toLocaleDateString() : 'N/A'}
                 </p>
                 <Link
                   href={`/aprender/${insc.cursoId}`}
-                  className="block text-center bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition"
+                  className="block text-center bg-suenos-violet text-white py-2 rounded-lg hover:bg-suenos-violet/90 transition"
                 >
                   Continuar
                 </Link>

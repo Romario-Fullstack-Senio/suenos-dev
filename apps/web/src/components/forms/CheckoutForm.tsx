@@ -99,7 +99,7 @@ export function CheckoutForm() {
   if (!isAuthenticated) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-600 mb-4">Debes iniciar sesión para comprar</p>
+        <p className="text-suenos-muted mb-4">Debes iniciar sesión para comprar</p>
         <Button onClick={() => window.location.href = '/auth/login'}>
           Iniciar Sesión
         </Button>
@@ -110,7 +110,7 @@ export function CheckoutForm() {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-600">Cargando checkout...</p>
+        <p className="text-suenos-muted">Cargando checkout...</p>
       </div>
     );
   }
@@ -126,11 +126,11 @@ export function CheckoutForm() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-      <div className="bg-white rounded-xl p-8 shadow-sm border">
-        <p className="text-gray-600 mb-4">Resumen de tu compra:</p>
+      <div className="bg-suenos-surface rounded-xl p-8 shadow-sm border border-suenos-border">
+        <p className="text-suenos-muted mb-4">Resumen de tu compra:</p>
         <div className="border-b pb-4 mb-6">
           <p className="font-medium">{curso?.titulo || 'Curso'}</p>
-          <p className="text-2xl font-bold text-primary">${curso?.precio || 49.99} USD</p>
+          <p className="text-2xl font-bold text-suenos-violet-light">${curso?.precio || 49.99} USD</p>
         </div>
 
         {clientSecret ? (
@@ -143,7 +143,7 @@ export function CheckoutForm() {
           </Button>
         )}
 
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
+        <div className="mt-4 p-3 bg-suenos-deep rounded-lg text-xs text-suenos-muted">
           <p className="font-medium mb-1">Tarjetas de prueba:</p>
           <p>4242 4242 4242 4242 — Pago exitoso</p>
           <p>4000 0025 0000 3155 — Requiere autenticación</p>

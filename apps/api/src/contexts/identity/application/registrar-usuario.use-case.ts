@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { ConflictDomainError } from '@suenos-dev/shared-kernel';
 import { Usuario } from '../domain/usuario.entity';
 import { Email } from '../domain/email.value-object';
 import { Password } from '../domain/password.value-object';
@@ -21,7 +22,7 @@ export class RegistrarUsuarioUseCase {
   async execute(command: RegistrarUsuarioCommand): Promise<{ id: string }> {
     const existing = await this.usuarioRepo.findByEmail(command.email);
     if (existing) {
-      throw new Error('Ya existe un usuario con ese email');
+      throw new ConflictDomainError('Ya existe un usuario con ese email');
     }
 
     const id = uuid();

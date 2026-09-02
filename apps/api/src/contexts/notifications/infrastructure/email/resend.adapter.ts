@@ -10,7 +10,7 @@ export class ResendAdapter implements EmailSender {
 
   constructor() {
     const apiKey = process.env.RESEND_API_KEY;
-    this.from = process.env.EMAIL_FROM || 'noreply@suenosdev.com';
+    this.from = process.env.EMAIL_FROM || 'noreply@suenos-dev.dev';
 
     if (apiKey) {
       this.resend = new Resend(apiKey);

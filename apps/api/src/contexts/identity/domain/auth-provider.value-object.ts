@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 
 export enum AuthProviderTipo {
   LOCAL = 'local',
@@ -42,7 +42,7 @@ export class AuthProvider extends ValueObject<AuthProviderProps> {
   static from(value: string): AuthProvider {
     const valid = Object.values(AuthProviderTipo);
     if (!valid.includes(value as AuthProviderTipo)) {
-      throw new Error(`AuthProvider inválido: ${value}`);
+      throw new DomainError(`AuthProvider inválido: ${value}`);
     }
     return new AuthProvider({ value: value as AuthProviderTipo });
   }

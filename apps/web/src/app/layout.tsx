@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Header } from '@/components/layout/Header';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'Suenos Dev - Plataforma de E-Learning',
-  description: 'Aprende desarrollo web con cursos practicos y certificados verificables.',
+  title: 'Sueños Dev - Donde los sueños se convierten en código',
+  description: 'Aprende ingeniería de sistemas con proyectos reales. De principiante a profesional en meses.',
 };
 
 export default function RootLayout({
@@ -14,12 +15,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
-      <body className="min-h-screen bg-gray-50 text-gray-900">
+    <html lang="es" className="dark">
+      <body className="min-h-screen bg-suenos-midnight text-suenos-text antialiased">
         <AuthProvider>
           <Header />
-          <main>{children}</main>
+          <main className="pt-16">{children}</main>
         </AuthProvider>
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#111631',
+              border: '1px solid #252B4A',
+              color: '#F1F5F9',
+            },
+          }}
+        />
       </body>
     </html>
   );

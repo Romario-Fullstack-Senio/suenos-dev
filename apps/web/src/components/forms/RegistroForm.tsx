@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { registroSchema, RegistroFormData } from '@/lib/validations/auth.schema';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/Input';
@@ -17,14 +18,14 @@ export function RegistroForm() {
   const onSubmit = async (data: RegistroFormData) => {
     try {
       await registerUser(data.nombre, data.email, data.password);
-      alert('Registro exitoso. Ahora puedes iniciar sesión.');
+      toast.success('Registro exitoso. Ahora puedes iniciar sesión.');
     } catch (error) {
-      alert('Error al registrar usuario');
+      toast.error('Error al registrar usuario');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-sm border">
+    <div className="max-w-md mx-auto mt-16 p-8 bg-suenos-surface rounded-xl shadow-sm border border-suenos-border">
       <h1 className="text-2xl font-bold mb-6 text-center">Crear Cuenta</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input
@@ -58,9 +59,9 @@ export function RegistroForm() {
           Registrarse
         </Button>
       </form>
-      <p className="mt-6 text-center text-gray-600">
+      <p className="mt-6 text-center text-suenos-muted">
         ¿Ya tienes cuenta?{' '}
-        <Link href="/auth/login" className="text-primary hover:underline">
+        <Link href="/auth/login" className="text-suenos-violet-light hover:underline">
           Iniciar Sesión
         </Link>
       </p>

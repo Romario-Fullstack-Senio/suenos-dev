@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { initSentry } from './sentry.config';
-import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { SentryInterceptor } from './sentry.interceptor';
 
 async function bootstrap() {
@@ -13,7 +13,13 @@ async function bootstrap() {
     rawBody: true,
   });
 
-  app.useGlobalFilters(new SentryGlobalFilter());
+  // El filtro global de Sentry se registra vía DI en AppModule (APP_FILTER),
+  // NO con `useGlobalFilters(new SentryGlobalFilter())`: SentryGlobalFilter
+  // extiende BaseExceptionFilter, que necesita que Nest le inyecte
+  // HttpAdapterHost para inicializar `applicationRef`. Instanciarlo con `new`
+  // deja `applicationRef` undefined y CUALQUIER excepción no controlada
+  // (un 404, un 401, un error de validación) tumba el proceso completo.
+  app.use(helmet());
   app.useGlobalInterceptors(new SentryInterceptor());
   app.setGlobalPrefix('api');
   app.enableCors({
@@ -37,14 +43,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
-
-  app.getHttpAdapter().get('/health', (_req, res) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    });
-  });
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

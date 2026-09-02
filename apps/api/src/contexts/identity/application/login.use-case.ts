@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsuarioRepository, USUARIO_REPOSITORY } from '../domain/usuario.repository.port';
 
@@ -18,12 +18,12 @@ export class LoginUseCase {
   async execute(command: LoginCommand): Promise<{ token: string; usuario: { id: string; nombre: string; email: string; rol: string } }> {
     const usuario = await this.usuarioRepo.findByEmail(command.email);
     if (!usuario) {
-      throw new Error('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const valid = await usuario.verificarPassword(command.password);
     if (!valid) {
-      throw new Error('Credenciales inválidas');
+      throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const payload = { sub: usuario.id, email: usuario.email.value, rol: usuario.rol.value };

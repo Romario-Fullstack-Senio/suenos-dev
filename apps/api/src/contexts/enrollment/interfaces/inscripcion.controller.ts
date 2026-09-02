@@ -19,6 +19,17 @@ export class InscripcionController {
   @Get('estudiante/:estudianteId')
   @Roles('estudiante', 'admin')
   async listarPorEstudiante(@Param('estudianteId') estudianteId: string) {
-    return this.inscripcionRepository.findAllByEstudiante(estudianteId);
+    const inscripciones = await this.inscripcionRepository.findAllByEstudiante(estudianteId);
+    // Mapeo explícito a DTO: devolver el agregado de dominio tal cual serializa
+    // sus campos internos (_id, _domainEvents, props) en vez de `id` plano —
+    // rompe cualquier consumidor que espere el contrato normal (p. ej. React
+    // usando `insc.id` como key, que quedaba `undefined`).
+    return inscripciones.map((i) => ({
+      id: i.id,
+      estudianteId: i.estudianteId,
+      cursoId: i.cursoId,
+      fechaInscripcion: i.fechaInscripcion,
+      activa: i.activa,
+    }));
   }
 }

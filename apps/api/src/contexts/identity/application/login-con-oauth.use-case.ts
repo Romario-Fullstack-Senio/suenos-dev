@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConflictDomainError } from '@suenos-dev/shared-kernel';
 import { Usuario } from '../domain/usuario.entity';
 import { Email } from '../domain/email.value-object';
 import { AuthProviderTipo } from '../domain/auth-provider.value-object';
@@ -30,7 +31,7 @@ export class LoginConOAuthUseCase {
     if (usuario) {
       // Si ya existe, vincular proveedor si no lo tiene
       if (usuario.esOAuth && usuario.authProvider.value !== command.provider) {
-        throw new Error('Este email está registrado con otro proveedor de autenticación');
+        throw new ConflictDomainError('Este email está registrado con otro proveedor de autenticación');
       }
       if (!usuario.esOAuth) {
         usuario.vincularProveedor(command.provider, command.providerId);

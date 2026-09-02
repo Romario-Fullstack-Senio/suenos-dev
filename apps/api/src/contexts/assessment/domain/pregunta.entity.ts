@@ -1,3 +1,5 @@
+import { DomainError } from '@suenos-dev/shared-kernel';
+
 export class Pregunta {
   private constructor(
     private readonly _id: string,
@@ -8,7 +10,7 @@ export class Pregunta {
 
   static crear(id: string, enunciado: string, opciones: string[], respuestaCorrecta: number): Pregunta {
     if (respuestaCorrecta < 0 || respuestaCorrecta >= opciones.length) {
-      throw new Error('La respuesta correcta debe ser un índice válido dentro de las opciones');
+      throw new DomainError('La respuesta correcta debe ser un índice válido dentro de las opciones');
     }
     return new Pregunta(id, enunciado, opciones, respuestaCorrecta);
   }

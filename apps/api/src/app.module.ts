@@ -3,8 +3,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { CacheModule } from '@nestjs/cache-manager';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
+import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { CommonModule } from './common/common.module';
+import { DomainExceptionFilter } from './common/domain-exception.filter';
 import { AdminController } from './common/admin.controller';
 import { InstructorController } from './common/instructor.controller';
 import { IdentityModule } from './contexts/identity/identity.module';
@@ -24,6 +27,13 @@ import { NotificationsModule } from './contexts/notifications/notifications.modu
       ttl: 60000,
       limit: 100,
     }]),
+    // Caché en memoria para lecturas frecuentes de solo-lectura (ver CacheInterceptor
+    // en CatalogModule). TTL corto por defecto; el store es intercambiable por Redis
+    // (cache-manager-redis-yet) sin tocar el código que lo consume.
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 30000,
+    }),
     CommonModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -53,6 +63,23 @@ import { NotificationsModule } from './contexts/notifications/notifications.modu
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Registrado vía DI (no `useGlobalFilters(new SentryGlobalFilter())` en main.ts):
+    // SentryGlobalFilter extiende BaseExceptionFilter y necesita que Nest le
+    // inyecte HttpAdapterHost para inicializar `applicationRef`. Instanciado
+    // manualmente con `new`, ese campo queda undefined y cualquier excepción
+    // no controlada (404, 401, error de validación) tumba el proceso entero.
+    // DomainExceptionFilter (@Catch(DomainError), específico) va DESPUÉS de
+    // SentryGlobalFilter (catch-all) en este array: Nest prueba los filtros
+    // globales en orden inverso de registro, así que el último en la lista
+    // es el primero en evaluarse. Verificado empíricamente (ver auditoría).
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: DomainExceptionFilter,
     },
   ],
 })

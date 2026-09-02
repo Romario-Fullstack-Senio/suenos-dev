@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { perfilSchema, PerfilFormData } from '@/lib/validations/perfil.schema';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPut } from '@/lib/api';
@@ -21,14 +22,14 @@ export function PerfilForm() {
   const onSubmit = async (data: PerfilFormData) => {
     try {
       await apiPut('/usuarios/me', data);
-      alert('Perfil actualizado');
+      toast.success('Perfil actualizado');
     } catch (error) {
-      alert('Error al actualizar perfil');
+      toast.error('Error al actualizar perfil');
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-sm border">
+    <div className="max-w-md mx-auto mt-16 p-8 bg-suenos-surface rounded-xl shadow-sm border border-suenos-border">
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input

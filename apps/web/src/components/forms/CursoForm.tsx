@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { crearCursoSchema, CrearCursoFormData } from '@/lib/validations/curso.schema';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiPost } from '@/lib/api';
@@ -24,17 +25,17 @@ export function CursoForm() {
         ...data,
         instructorId: user.id,
       });
-      alert('Curso creado correctamente');
+      toast.success('Curso creado correctamente');
       router.push(`/instructor/cursos/${result.id}`);
     } catch (error) {
-      alert('Error al crear curso');
+      toast.error('Error al crear curso');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Crear Nuevo Curso</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl p-8 shadow-sm border">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-8 shadow-sm border border-suenos-border">
         <Input
           label="Título del Curso"
           placeholder="Ej: Curso de React"

@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Param, Body, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, HttpCode, HttpStatus, UseGuards, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL, CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { CrearCursoUseCase } from '../application/crear-curso.use-case';
 import { PublicarCursoUseCase } from '../application/publicar-curso.use-case';
 import { AgregarModuloUseCase } from '../application/agregar-modulo.use-case';
@@ -21,9 +23,20 @@ export class CursoController {
     private readonly agregarLeccionUC: AgregarLeccionUseCase,
     @Inject(CURSO_REPOSITORY)
     private readonly cursoRepository: CursoRepository,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
+  /** Invalida la caché de lectura del catálogo tras una escritura. TTL corto (30s)
+   * como red de seguridad si algún camino de escritura no se cubre aquí. */
+  private async invalidarCache(id?: string) {
+    await this.cacheManager.del('/api/cursos');
+    if (id) await this.cacheManager.del(`/api/cursos/${id}`);
+  }
+
   @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
   async findAll(@Query('instructorId') instructorId?: string) {
     const cursos = await this.cursoRepository.findAll();
     if (instructorId) {
@@ -51,6 +64,8 @@ export class CursoController {
   }
 
   @Get(':id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
   async findOne(@Param('id') id: string) {
     const curso = await this.cursoRepository.findById(id);
     if (!curso) {
@@ -80,6 +95,8 @@ export class CursoController {
   }
 
   @Get('slug/:slug')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
   async findBySlug(@Param('slug') slug: string) {
     const curso = await this.cursoRepository.findBySlug(slug);
     if (!curso) {
@@ -112,7 +129,9 @@ export class CursoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
   async crear(@Body() dto: CrearCursoDto) {
-    return this.crearCursoUC.execute(dto);
+    const curso = await this.crearCursoUC.execute(dto);
+    await this.invalidarCache();
+    return curso;
   }
 
   @Post(':id/publicar')
@@ -121,6 +140,7 @@ export class CursoController {
   @HttpCode(HttpStatus.OK)
   async publicar(@Param('id') id: string) {
     await this.publicarCursoUC.execute(id);
+    await this.invalidarCache(id);
     return { message: 'Curso publicado correctamente' };
   }
 
@@ -128,7 +148,9 @@ export class CursoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
   async agregarModulo(@Param('id') cursoId: string, @Body() dto: AgregarModuloDto) {
-    return this.agregarModuloUC.execute({ ...dto, cursoId });
+    const result = await this.agregarModuloUC.execute({ ...dto, cursoId });
+    await this.invalidarCache(cursoId);
+    return result;
   }
 
   @Post(':id/modulos/:moduloId/lecciones')
@@ -139,6 +161,8 @@ export class CursoController {
     @Param('moduloId') moduloId: string,
     @Body() dto: AgregarLeccionDto,
   ) {
-    return this.agregarLeccionUC.execute({ ...dto, cursoId, moduloId });
+    const result = await this.agregarLeccionUC.execute({ ...dto, cursoId, moduloId });
+    await this.invalidarCache(cursoId);
+    return result;
   }
 }

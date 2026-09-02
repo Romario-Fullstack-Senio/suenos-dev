@@ -139,30 +139,30 @@ export default function AprenderPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {progreso && (
-        <div className="mb-6 bg-white rounded-xl p-4 shadow-sm border">
+        <div className="mb-6 bg-suenos-surface rounded-xl p-4 shadow-sm border border-suenos-border">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Progreso del curso</span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-medium text-suenos-text">Progreso del curso</span>
+            <span className="text-sm text-suenos-muted">
               {progreso.leccionesCompletadas}/{progreso.totalLecciones} lecciones
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+          <div className="w-full bg-suenos-surface rounded-full h-2.5">
             <div
               className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
               style={{ width: `${progreso.porcentajeTotal}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">{progreso.porcentajeTotal}% completado</p>
+          <p className="text-xs text-suenos-muted mt-1">{progreso.porcentajeTotal}% completado</p>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <aside className="lg:col-span-1 bg-white rounded-xl p-6 shadow-sm border max-h-[80vh] overflow-y-auto">
+        <aside className="lg:col-span-1 bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border max-h-[80vh] overflow-y-auto">
           <h2 className="text-lg font-semibold mb-4">Módulos</h2>
           <div className="space-y-4">
             {curso.modulos.map((mod) => (
               <div key={mod.id}>
-                <h3 className="font-medium text-sm text-gray-700 mb-2">
+                <h3 className="font-medium text-sm text-suenos-text mb-2">
                   {mod.orden}. {mod.titulo}
                 </h3>
                 <ul className="space-y-1 ml-3">
@@ -175,7 +175,7 @@ export default function AprenderPage() {
                           className={`text-left text-sm w-full px-2 py-1 rounded flex items-center gap-2 ${
                             leccionActual?.id === lec.id
                               ? 'bg-blue-50 text-blue-600 font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
+                              : 'text-suenos-muted hover:bg-suenos-deep'
                           }`}
                         >
                           {lecProgreso?.completada ? (
@@ -183,7 +183,7 @@ export default function AprenderPage() {
                           ) : lecProgreso ? (
                             <span className="text-yellow-500">◐</span>
                           ) : (
-                            <span className="text-gray-300">○</span>
+                            <span className="text-suenos-dim">○</span>
                           )}
                           {lec.orden}. {lec.titulo}
                         </button>
@@ -200,13 +200,13 @@ export default function AprenderPage() {
           {leccionActual?.videoUrl ? (
             <HLSPlayer src={leccionActual.videoUrl} />
           ) : (
-            <div className="bg-gray-900 aspect-video rounded-xl flex items-center justify-center text-white mb-6">
-              <p className="text-gray-400">Video no disponible</p>
+            <div className="bg-suenos-deep aspect-video rounded-xl flex items-center justify-center text-white mb-6">
+              <p className="text-suenos-dim">Video no disponible</p>
             </div>
           )}
 
           <h1 className="text-2xl font-bold mb-2">{leccionActual?.titulo || 'Selecciona una lección'}</h1>
-          <p className="text-gray-600">
+          <p className="text-suenos-muted">
             {moduloActual?.titulo && `Módulo: ${moduloActual.titulo}`}
           </p>
 

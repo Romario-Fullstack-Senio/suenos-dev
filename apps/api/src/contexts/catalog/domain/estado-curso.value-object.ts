@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 
 type Estado = 'borrador' | 'publicado' | 'archivado';
 
@@ -30,7 +30,7 @@ export class EstadoCurso extends ValueObject<EstadoCursoProps> {
   static from(value: string): EstadoCurso {
     const valid: Estado[] = ['borrador', 'publicado', 'archivado'];
     if (!valid.includes(value as Estado)) {
-      throw new Error(`Estado inválido: ${value}`);
+      throw new DomainError(`Estado inválido: ${value}`);
     }
     return new EstadoCurso({ value: value as Estado });
   }

@@ -10,10 +10,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', isLoading, children, className = '', disabled, ...props }, ref) => {
     const baseStyles = 'rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
     const variants = {
-      primary: 'bg-primary text-white hover:bg-primary/90',
-      secondary: 'bg-secondary text-white hover:bg-secondary/90',
-      danger: 'bg-red-500 text-white hover:bg-red-600',
-      ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
+      primary: 'bg-suenos-violet text-white hover:bg-suenos-violet-light shadow-lg shadow-suenos-violet/25',
+      secondary: 'bg-suenos-surface text-suenos-text border border-suenos-border hover:border-suenos-cyan/50 hover:text-suenos-cyan',
+      danger: 'bg-red-500/90 text-white hover:bg-red-500',
+      ghost: 'bg-transparent text-suenos-muted hover:bg-suenos-surface hover:text-suenos-text',
     };
     const sizes = {
       sm: 'px-3 py-1 text-sm',

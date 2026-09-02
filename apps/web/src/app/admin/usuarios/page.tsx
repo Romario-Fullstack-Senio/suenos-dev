@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { apiGet, apiPut } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 
@@ -35,7 +36,7 @@ export default function AdminUsuariosPage() {
       await apiPut(`/usuarios/${userId}/rol`, { rol: nuevoRol });
       fetchUsuarios();
     } catch (error) {
-      alert('Error al cambiar rol');
+      toast.error('Error al cambiar rol');
     }
   };
 
@@ -46,17 +47,17 @@ export default function AdminUsuariosPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+        <div className="bg-suenos-surface rounded-xl shadow-sm border border-suenos-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-suenos-deep">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Nombre</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Rol</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Acciones</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Nombre</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Email</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Rol</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-suenos-border border-suenos-border">
               {usuarios.map((usuario) => (
                 <tr key={usuario.id}>
                   <td className="px-6 py-4">{usuario.nombre}</td>
@@ -65,7 +66,7 @@ export default function AdminUsuariosPage() {
                     <select
                       value={usuario.rol}
                       onChange={(e) => handleCambiarRol(usuario.id, e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
+                      className="border border-suenos-border rounded px-2 py-1 text-sm"
                     >
                       <option value="estudiante">Estudiante</option>
                       <option value="instructor">Instructor</option>
