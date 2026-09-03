@@ -20,7 +20,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# @sentry/nextjs doesn't hoist to the root due to a peer-dependency
+# conflict and stays nested under apps/web/node_modules — copy that too
+# (see apps/api/Dockerfile for the same issue on the API side).
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 COPY package.json ./
 COPY apps/web/ ./apps/web/
