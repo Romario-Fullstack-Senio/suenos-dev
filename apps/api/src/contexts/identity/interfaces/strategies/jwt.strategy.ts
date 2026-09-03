@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +7,7 @@ interface JwtPayload {
   sub: string;
   email: string;
   rol: string;
+  purpose?: string;
 }
 
 @Injectable()
@@ -20,6 +21,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
+    // El sessionToken (purpose: 'session-hint', ver LoginUseCase) es de vida
+    // larga y solo existe para que el middleware de Next.js decida
+    // server-side si deja pasar una navegación — nunca debe poder usarse
+    // como bearer real contra la API, aunque tenga una firma válida.
+    if (payload.purpose === 'session-hint') {
+      throw new UnauthorizedException('Token no válido para autenticación de API');
+    }
     return { id: payload.sub, email: payload.email, rol: payload.rol };
   }
 }

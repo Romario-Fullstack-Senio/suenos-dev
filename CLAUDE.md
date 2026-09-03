@@ -36,6 +36,19 @@ npm run test:cov
 
 There is no test or typecheck script at the root or in `apps/web`. `apps/web`'s `npm run lint` is `next lint`.
 
+### Database migrations
+
+TypeORM migrations (`apps/api/src/migrations/`, `synchronize: false`, `migrationsRun: true` in `app.module.ts` — pending migrations apply automatically on API boot):
+
+```bash
+cd apps/api
+npm run migration:generate -- src/migrations/DescriptiveName   # diff current entities vs DB, writes a migration
+npm run migration:run                                          # apply pending migrations manually (boot already does this)
+npm run migration:revert                                       # undo the last applied migration
+```
+
+`migration:generate` diffs against whatever `DATABASE_NAME` currently points to — never generate against a DB with real data if you want the migration to contain the actual `CREATE TABLE`s (it diffs to zero if the DB already matches). Generate against an empty scratch DB instead, then let `migrationsRun: true` (or a manual `migration:run`) apply it to the real one.
+
 End-to-end QA scripts (Playwright-driven, hit a running local stack) live in `tests/`:
 ```bash
 node tests/qa-test.mjs        # general QA pass
@@ -65,7 +78,7 @@ Rules that matter when adding or changing code here:
 - Aggregate roots extend `AggregateRoot<string>` from shared-kernel with a private `props` field, and expose business methods named after the domain operation rather than generic setters.
 - Value objects are immutable.
 - Global API prefix `/api` and Swagger setup live in `apps/api/src/main.ts`; docs served at `/docs`, health check at `/health`.
-- TypeORM `synchronize: true` is enabled — it auto-creates the schema in dev. Never rely on this in production; there are no migrations.
+- TypeORM `synchronize` is disabled — schema changes go through migrations (`apps/api/src/migrations/`, see "Database migrations" above). `migrationsRun: true` applies pending migrations automatically on API boot.
 
 ### Notifications flow (event-driven, cross-cutting example)
 
@@ -75,7 +88,16 @@ Email adapter fallback order (first configured wins): **Resend → SendGrid → 
 
 ### Frontend (`apps/web/src/app/`, Next.js 14 App Router)
 
-Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries aren't enforced by a single middleware file — check the target page/layout for its own guard when adding protected routes. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`. Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/instructor` (instructor role), `/admin` (admin role).
+Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries are enforced server-side by `apps/web/src/middleware.ts` (redirects unauthenticated visits to protected prefixes, and role-gates `/admin`/`/instructor`) — new protected routes must be added to its `PROTECTED_PREFIXES`/`config.matcher`. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`. Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/instructor` (instructor role), `/admin` (admin role).
+
+### Auth: tokens, refresh, verification
+
+Login/OAuth/refresh return three JWTs, all signed with `JWT_SECRET` (must be identical in `apps/api/.env` and `apps/web/.env.local` — the latter isn't `NEXT_PUBLIC_`, only readable server-side/in middleware):
+- `token` — 15min access token, sent as `Authorization: Bearer` on every API call (stored in `localStorage`).
+- `refreshToken` — opaque random value, 30d, hashed (sha256) and tracked in the `refresh_tokens` table (`RefreshToken` aggregate in `identity/domain`) so it's revocable; rotated on every use (`POST /auth/refresh`) and revoked on `POST /auth/logout` or a password reset. `apps/web/src/lib/api.ts`'s `request()` auto-refreshes once on a 401 and retries the original call.
+- `sessionToken` — 30d JWT with `purpose: 'session-hint'`, stored in a non-httpOnly `session_token` cookie purely so `middleware.ts` can verify it (via `jose`) and gate routes server-side. `JwtStrategy` explicitly rejects any token carrying `purpose: 'session-hint'` as a bearer token — it must never authorize a real API call.
+
+Email verification (`Usuario.emailVerificado`, `POST /auth/verify-email`, `POST /auth/resend-verification`) and password reset (`POST /auth/forgot-password`, `POST /auth/reset-password`) don't block login — unverified users can use the app; `PerfilForm` shows a banner with a resend button. OAuth accounts start pre-verified (the provider already confirmed the email). Both flows fire through `EventBus`/`@OnEvent` handlers in `notifications/application/` (`enviar-email-verificacion.handler.ts`, `enviar-email-reset-password.handler.ts`), same pattern as `CursoPublicado`/`CursoComprado`. `EMAIL_SENDER` now lives in `common/email/email.module.ts` (not `notifications/`) specifically so `identity` can use it without a circular module import (`notifications.module.ts` already imports `IdentityModule`).
 
 Design system: dark theme, CSS custom properties `--suenos-midnight`, `--suenos-deep`, `--suenos-violet`, `--suenos-cyan`, `--suenos-gold`; fonts Space Grotesk (display) / Inter (body) / JetBrains Mono (code).
 

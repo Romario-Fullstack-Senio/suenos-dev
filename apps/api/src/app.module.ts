@@ -46,7 +46,9 @@ import { NotificationsModule } from './contexts/notifications/notifications.modu
         password: config.get('DATABASE_PASSWORD', 'admin'),
         database: config.get('DATABASE_NAME', 'suenos-dev'),
         autoLoadEntities: true,
-        synchronize: true, // TODO: disable in production
+        synchronize: false,
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        migrationsRun: true,
       }),
     }),
     IdentityModule,

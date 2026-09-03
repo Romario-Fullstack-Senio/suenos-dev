@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { loginSchema, LoginFormData } from '@/lib/validations/auth.schema';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,9 +15,16 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
 export function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    if (searchParams.get('registrado') === '1') {
+      toast.success('Cuenta creada — revisá tu email para verificarla, y ya podés iniciar sesión');
+    }
+  }, [searchParams]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -43,7 +52,12 @@ export function LoginForm() {
           error={errors.password?.message}
           {...register('password')}
         />
-        <Button type="submit" isLoading={isSubmitting} className="w-full mt-4">
+        <div className="text-right -mt-2 mb-2">
+          <Link href="/auth/forgot-password" className="text-sm text-secondary hover:underline">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+        <Button type="submit" isLoading={isSubmitting} className="w-full mt-2">
           Iniciar Sesión
         </Button>
       </form>

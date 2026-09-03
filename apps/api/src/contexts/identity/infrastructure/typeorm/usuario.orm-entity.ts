@@ -23,6 +23,21 @@ export class UsuarioOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   provider_id!: string | null;
 
+  @Column({ default: false })
+  email_verificado!: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  verificacion_token!: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  verificacion_token_expira!: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  reset_password_token!: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  reset_password_expira!: Date | null;
+
   @CreateDateColumn()
   created_at!: Date;
 }

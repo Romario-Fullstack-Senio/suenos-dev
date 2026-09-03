@@ -4,7 +4,9 @@ import { Usuario } from '../domain/usuario.entity';
 import { Email } from '../domain/email.value-object';
 import { Password } from '../domain/password.value-object';
 import { UsuarioRepository, USUARIO_REPOSITORY } from '../domain/usuario.repository.port';
+import { EventBus } from '../../../common/event-bus';
 import { v4 as uuid } from 'uuid';
+import { randomBytes } from 'crypto';
 
 interface RegistrarUsuarioCommand {
   nombre: string;
@@ -17,6 +19,7 @@ export class RegistrarUsuarioUseCase {
   constructor(
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepo: UsuarioRepository,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: RegistrarUsuarioCommand): Promise<{ id: string }> {
@@ -28,9 +31,14 @@ export class RegistrarUsuarioUseCase {
     const id = uuid();
     const email = Email.create(command.email);
     const password = await Password.create(command.password);
-    const usuario = Usuario.create(id, command.nombre, email, password);
+    const verificacionToken = randomBytes(32).toString('hex');
+    const usuario = Usuario.create(id, command.nombre, email, password, undefined, verificacionToken);
 
     await this.usuarioRepo.save(usuario);
+
+    for (const event of usuario.pullDomainEvents()) {
+      await this.eventBus.publish(event);
+    }
 
     return { id };
   }
