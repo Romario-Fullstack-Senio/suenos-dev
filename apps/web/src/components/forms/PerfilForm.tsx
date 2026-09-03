@@ -29,7 +29,7 @@ export function PerfilForm() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-suenos-surface rounded-xl shadow-sm border border-suenos-border">
+    <div className="max-w-md mx-auto mt-16 p-8 bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07]">
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input

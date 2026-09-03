@@ -25,7 +25,7 @@ export function RegistroForm() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-suenos-surface rounded-xl shadow-sm border border-suenos-border">
+    <div className="max-w-md mx-auto mt-16 p-8 bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07]">
       <h1 className="text-2xl font-bold mb-6 text-center">Crear Cuenta</h1>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input
@@ -59,9 +59,9 @@ export function RegistroForm() {
           Registrarse
         </Button>
       </form>
-      <p className="mt-6 text-center text-suenos-muted">
+      <p className="mt-6 text-center text-ink-muted">
         ¿Ya tienes cuenta?{' '}
-        <Link href="/auth/login" className="text-suenos-violet-light hover:underline">
+        <Link href="/auth/login" className="text-secondary hover:underline">
           Iniciar Sesión
         </Link>
       </p>

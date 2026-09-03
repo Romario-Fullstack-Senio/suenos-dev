@@ -59,6 +59,16 @@ services:
       DATABASE_NAME: suenos-dev
       REDIS_HOST: redis
       MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: suenos-dev
+      # El navegador necesita llegar a MinIO por un host distinto al que usa
+      # la API dentro de la red de Docker (MINIO_ENDPOINT=minio no resuelve
+      # fuera del compose). Este servicio solo mapea el puerto 9000 al host,
+      # sin ruteo por Traefik/dominio — reemplazar por la IP o dominio real
+      # del servidor donde corra este compose.
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}

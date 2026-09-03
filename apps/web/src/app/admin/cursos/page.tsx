@@ -49,30 +49,30 @@ export default function AdminCursosPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : (
-        <div className="bg-suenos-surface rounded-xl shadow-sm border border-suenos-border overflow-hidden">
+        <div className="bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07] overflow-hidden">
           <table className="w-full">
-            <thead className="bg-suenos-deep">
+            <thead className="bg-white">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Título</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Precio</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Estado</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Acciones</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Título</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Precio</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Estado</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-suenos-border border-suenos-border">
+            <tbody className="divide-y divide-ink/[0.07] border-ink/[0.07]">
               {cursos.map((curso) => (
                 <tr key={curso.id}>
                   <td className="px-6 py-4 font-medium">{curso.titulo}</td>
                   <td className="px-6 py-4">${curso.precio}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-suenos-gold/15 text-suenos-gold'}`}>
+                    <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'}`}>
                       {curso.estado}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <button
                       onClick={() => handleToggleEstado(curso.id, curso.estado)}
-                      className="text-suenos-violet-light text-sm hover:underline"
+                      className="text-secondary text-sm hover:underline"
                     >
                       {curso.estado === 'publicado' ? 'Despublicar' : 'Publicar'}
                     </button>

@@ -19,15 +19,18 @@ export class InstructorController {
   @Get('stats/:instructorId')
   async getStats(@Param('instructorId') instructorId: string) {
     const cursos = await this.cursoRepository.findByInstructorId(instructorId);
-    const cursoIds = cursos.map(c => c.id);
 
     let totalInscripciones = 0;
-    for (const cursoId of cursoIds) {
-      const inscripciones = await this.inscripcionRepository.findByCursoId(cursoId);
+    let ingresosEstimados = 0;
+    for (const curso of cursos) {
+      // Antes esto multiplicaba TODAS las inscripciones (de cualquier curso
+      // del instructor) por el precio de cursos[0] únicamente — los ingresos
+      // quedaban mal si el instructor tenía más de un curso con precios
+      // distintos. Ahora se suma por curso, cada uno con su propio precio.
+      const inscripciones = await this.inscripcionRepository.findByCursoId(curso.id);
       totalInscripciones += inscripciones.length;
+      ingresosEstimados += inscripciones.length * curso.precio.value;
     }
-
-    const ingresosEstimados = totalInscripciones * (cursos[0]?.precio.value || 0);
 
     return {
       totalCursos: cursos.length,

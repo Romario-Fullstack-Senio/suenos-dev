@@ -38,7 +38,7 @@ export function QuizInstructorForm({ cursoId }: QuizInstructorFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
       <h3 className="font-semibold mb-4">Crear Quiz</h3>
       <Input label="Título del Quiz" error={errors.titulo?.message} {...register('titulo')} />
       <Input label="Puntaje Mínimo (%)" type="number" error={errors.puntajeMinimo?.message} {...register('puntajeMinimo', { valueAsNumber: true })} />
@@ -46,7 +46,7 @@ export function QuizInstructorForm({ cursoId }: QuizInstructorFormProps) {
       <div className="mt-6">
         <h4 className="font-medium mb-3">Preguntas</h4>
         {fields.map((field, index) => (
-          <div key={field.id} className="border border-suenos-border rounded-lg p-4 mb-4">
+          <div key={field.id} className="border border-ink/[0.07] rounded-lg p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Pregunta {index + 1}</span>
               {fields.length > 1 && (

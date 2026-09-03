@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Curso } from '../domain/curso.entity';
+import { Curso, NivelCurso } from '../domain/curso.entity';
 import { CursoRepository, CURSO_REPOSITORY } from '../domain/curso.repository.port';
 import { v4 as uuid } from 'uuid';
 
@@ -8,6 +8,9 @@ interface CrearCursoCommand {
   descripcion: string;
   precio: number;
   instructorId: string;
+  imagenUrl?: string;
+  categoria?: string;
+  nivel?: NivelCurso;
 }
 
 @Injectable()

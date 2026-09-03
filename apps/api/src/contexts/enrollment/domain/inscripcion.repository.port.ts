@@ -7,4 +7,5 @@ export interface InscripcionRepository {
   findByCursoYEstudiante(cursoId: string, estudianteId: string): Promise<Inscripcion | null>;
   findAllByEstudiante(estudianteId: string): Promise<Inscripcion[]>;
   findByCursoId(cursoId: string): Promise<Inscripcion[]>;
+  findAll(): Promise<Inscripcion[]>;
 }

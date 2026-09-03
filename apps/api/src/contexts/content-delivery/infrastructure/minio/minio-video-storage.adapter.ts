@@ -13,6 +13,11 @@ export class MinioVideoStorageAdapter implements VideoStorage {
   private readonly logger = new Logger(MinioVideoStorageAdapter.name);
   private readonly tempDir = path.join(process.cwd(), 'temp-videos');
   private readonly outputDir = path.join(process.cwd(), 'temp-videos', 'hls');
+  // FFMPEG_PATH es un override para dev en Windows donde el binario instalado
+  // por winget no siempre queda en el PATH del proceso de Node hasta reiniciar
+  // la sesión. En producción/CI, con ffmpeg instalado en el PATH normal, esta
+  // variable no hace falta.
+  private readonly ffmpegBin = process.env.FFMPEG_PATH || 'ffmpeg';
 
   constructor() {
     if (!fs.existsSync(this.tempDir)) {
@@ -35,7 +40,7 @@ export class MinioVideoStorageAdapter implements VideoStorage {
 
     try {
       await execAsync(
-        `ffmpeg -i "${inputPath}" -codec:v libx264 -codec:a aac -hls_time 10 -hls_playlist_type vod -hls_segment_filename "${outputDir}/segment_%03d.ts" -hls_segment_type mpegts "${outputDir}/playlist.m3u8"`,
+        `"${this.ffmpegBin}" -i "${inputPath}" -codec:v libx264 -codec:a aac -hls_time 10 -hls_playlist_type vod -hls_segment_filename "${outputDir}/segment_%03d.ts" -hls_segment_type mpegts "${outputDir}/playlist.m3u8"`,
         { timeout: 300000 },
       );
 
@@ -56,11 +61,17 @@ export class MinioVideoStorageAdapter implements VideoStorage {
     if (fs.existsSync(playlistPath)) {
       return this.getHlsPlaylistUrl(key);
     }
-    return `http://localhost:9000/videos/${key}`;
+    throw new Error(`No se encontró un video transcodificado para la clave: ${key}`);
   }
 
   private getHlsPlaylistUrl(videoId: string): string {
-    return `http://localhost:9000/hls/${videoId}/playlist.m3u8`;
+    // La ruta que realmente sirve estos archivos es VideoController#serveHls,
+    // registrada en la API (puerto de la API), NO en MinIO — pese al nombre
+    // de esta clase, el video se transcodifica y sirve desde disco local,
+    // no desde MinIO. Antes esto apuntaba a `localhost:9000` (el puerto de
+    // MinIO), así que el reproductor nunca encontraba el archivo.
+    const apiUrl = (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+    return `${apiUrl}/api/videos/hls/${videoId}/playlist.m3u8`;
   }
 
   private cleanupTempFile(filePath: string): void {

@@ -12,7 +12,7 @@ interface ModuleSidebarProps {
 
 export default function ModuleSidebar({ modulos, leccionActualId, onSelectLeccion }: ModuleSidebarProps) {
   return (
-    <aside className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+    <aside className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
       <h2 className="text-lg font-semibold mb-4">Contenido del Curso</h2>
       <ul className="space-y-4">
         {modulos.map((modulo) => (
@@ -23,7 +23,7 @@ export default function ModuleSidebar({ modulos, leccionActualId, onSelectLeccio
                 <li key={leccion.id}>
                   <button
                     onClick={() => onSelectLeccion(leccion.id)}
-                    className={`text-sm ${leccion.id === leccionActualId ? 'text-suenos-violet-light font-medium' : 'text-suenos-muted hover:text-suenos-violet-light'}`}
+                    className={`text-sm ${leccion.id === leccionActualId ? 'text-secondary font-medium' : 'text-ink-muted hover:text-secondary'}`}
                   >
                     {leccion.titulo}
                   </button>

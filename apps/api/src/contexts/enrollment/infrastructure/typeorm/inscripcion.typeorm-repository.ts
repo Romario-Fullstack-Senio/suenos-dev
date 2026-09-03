@@ -39,6 +39,11 @@ export class InscripcionTypeOrmRepository implements InscripcionRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
+  async findAll(): Promise<Inscripcion[]> {
+    const entities = await this.ormRepo.find();
+    return entities.map((e) => this.toDomain(e));
+  }
+
   private toDomain(entity: InscripcionOrmEntity): Inscripcion {
     return Inscripcion.crear(
       entity.id,

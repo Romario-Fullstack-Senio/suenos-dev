@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -7,6 +8,7 @@ import { agregarLeccionSchema, AgregarLeccionFormData } from '@/lib/validations/
 import { apiPost } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { UploadCloud, FileVideo, X } from 'lucide-react';
 
 interface LeccionFormProps {
   cursoId: string;
@@ -14,25 +16,79 @@ interface LeccionFormProps {
   onLeccionCreated?: () => void;
 }
 
+// El video viaja como base64 dentro del JSON (así lo espera POST /videos/upload
+// hoy) — 500MB de margen por debajo del límite de 600mb que acepta el server,
+// para no reventar la memoria del navegador con archivos gigantes.
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // readAsDataURL produce "data:video/mp4;base64,AAAA..." — el backend
+      // solo quiere la parte después de la coma.
+      const result = reader.result as string;
+      resolve(result.split(',')[1] ?? '');
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionFormProps) {
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<AgregarLeccionFormData>({
     resolver: zodResolver(agregarLeccionSchema),
     defaultValues: { orden: 1 },
   });
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [subiendoVideo, setSubiendoVideo] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('video/')) {
+      toast.error('Selecciona un archivo de video');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      toast.error(`El video supera el límite de ${MAX_VIDEO_BYTES / (1024 * 1024)}MB`);
+      e.target.value = '';
+      return;
+    }
+    setVideoFile(file);
+  };
 
   const onSubmit = async (data: AgregarLeccionFormData) => {
     try {
-      await apiPost(`/cursos/${cursoId}/modulos/${moduloId}/lecciones`, data);
+      let videoUrl: string | undefined;
+
+      if (videoFile) {
+        setSubiendoVideo(true);
+        try {
+          const base64 = await fileToBase64(videoFile);
+          const result = await apiPost<{ url: string }>('/videos/upload', {
+            file: base64,
+            leccionId: crypto.randomUUID(),
+          });
+          videoUrl = result.url;
+        } finally {
+          setSubiendoVideo(false);
+        }
+      }
+
+      await apiPost(`/cursos/${cursoId}/modulos/${moduloId}/lecciones`, { ...data, videoUrl });
       toast.success('Lección agregada correctamente');
       reset();
+      setVideoFile(null);
       onLeccionCreated?.();
     } catch (error) {
-      toast.error('Error al agregar lección');
+      toast.error(error instanceof Error ? error.message : 'Error al agregar lección');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border mb-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] mb-4">
       <h3 className="font-semibold mb-4">Agregar Lección</h3>
       <div className="flex gap-4">
         <div className="flex-1">
@@ -60,9 +116,41 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
           />
         </div>
       </div>
-      <Button type="submit" isLoading={isSubmitting}>
-        Agregar Lección
+
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-ink-muted mb-1">Video (opcional)</label>
+        {videoFile ? (
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border border-ink/[0.12] rounded-xl bg-white">
+            <span className="flex items-center gap-2 text-sm text-ink truncate">
+              <FileVideo className="w-4 h-4 text-primary flex-shrink-0" />
+              {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(1)}MB)
+            </span>
+            <button
+              type="button"
+              onClick={() => setVideoFile(null)}
+              className="text-ink-soft hover:text-red-500 flex-shrink-0"
+              aria-label="Quitar video"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <label className="flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-ink/[0.2] rounded-xl bg-white text-sm text-ink-muted cursor-pointer hover:border-primary/50 hover:bg-cloud-100 transition-colors">
+            <UploadCloud className="w-4 h-4" />
+            Seleccionar video (se transcodifica a HLS automáticamente)
+            <input type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
+          </label>
+        )}
+      </div>
+
+      <Button type="submit" isLoading={isSubmitting || subiendoVideo} disabled={isSubmitting || subiendoVideo}>
+        {subiendoVideo ? 'Subiendo y transcodificando…' : 'Agregar Lección'}
       </Button>
+      {subiendoVideo && (
+        <p className="mt-2 text-xs text-ink-soft">
+          Puede tardar varios minutos según el tamaño y duración del video.
+        </p>
+      )}
     </form>
   );
 }

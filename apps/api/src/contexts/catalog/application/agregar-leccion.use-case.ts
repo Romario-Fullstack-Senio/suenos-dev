@@ -10,6 +10,7 @@ interface AgregarLeccionCommand {
   titulo: string;
   orden: number;
   duracionSegundos: number;
+  videoUrl?: string;
 }
 
 @Injectable()
@@ -26,6 +27,9 @@ export class AgregarLeccionUseCase {
     }
 
     const leccion = Leccion.create(uuid(), command.titulo, command.orden, command.duracionSegundos);
+    if (command.videoUrl) {
+      leccion.asignarVideo(command.videoUrl);
+    }
     curso.agregarLeccion(command.moduloId, leccion);
     await this.cursoRepo.save(curso);
 

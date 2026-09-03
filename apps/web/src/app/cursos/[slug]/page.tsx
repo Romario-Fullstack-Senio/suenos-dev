@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import Link from 'next/link';
+import { CourseCoverImage } from '@/components/CourseCoverImage';
 
 interface Leccion {
   id: string;
@@ -29,6 +30,7 @@ interface Curso {
   estado: string;
   instructorId: string;
   modulos: Modulo[];
+  imagenUrl?: string;
 }
 
 export default function CursoDetallePage() {
@@ -68,7 +70,7 @@ export default function CursoDetallePage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <p className="text-red-600">{error || 'Curso no encontrado'}</p>
-        <Link href="/cursos" className="text-suenos-violet-light hover:underline mt-4 block">
+        <Link href="/cursos" className="text-secondary hover:underline mt-4 block">
           Volver a cursos
         </Link>
       </div>
@@ -77,24 +79,30 @@ export default function CursoDetallePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href="/cursos" className="text-suenos-violet-light hover:underline mb-4 block">
+      <Link href="/cursos" className="text-secondary hover:underline mb-4 block">
         &larr; Volver a cursos
       </Link>
 
-      <div className="bg-suenos-surface rounded-xl p-8 shadow-sm border border-suenos-border mb-8">
+      <CourseCoverImage
+        imagenUrl={curso.imagenUrl}
+        titulo={curso.titulo}
+        className="w-full h-56 md:h-72 rounded-xl mb-6"
+      />
+
+      <div className="bg-cloud-100 rounded-xl p-8 shadow-sm border border-ink/[0.07] mb-8">
         <h1 className="text-3xl font-bold mb-4">{curso.titulo}</h1>
-        <p className="text-suenos-muted mb-6">{curso.descripcion}</p>
+        <p className="text-ink-muted mb-6">{curso.descripcion}</p>
         <div className="flex items-center gap-4 mb-6">
-          <span className="text-2xl font-bold text-suenos-violet-light">${curso.precio} USD</span>
+          <span className="text-2xl font-bold text-secondary">${curso.precio} USD</span>
           <span className={`px-3 py-1 rounded-full text-sm ${
-            curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-suenos-gold/15 text-suenos-gold'
+            curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'
           }`}>
             {curso.estado}
           </span>
         </div>
         <Link
           href={`/checkout?cursoId=${curso.id}`}
-          className="inline-block bg-suenos-violet text-white px-6 py-3 rounded-lg font-semibold hover:bg-suenos-violet/90 transition"
+          className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
         >
           Comprar Curso
         </Link>
@@ -103,18 +111,18 @@ export default function CursoDetallePage() {
       <h2 className="text-2xl font-bold mb-6">Contenido del Curso</h2>
       <div className="space-y-4">
         {curso.modulos.map((modulo) => (
-          <div key={modulo.id} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border">
+          <div key={modulo.id} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
             <h3 className="font-semibold text-lg mb-4">
               Módulo {modulo.orden}: {modulo.titulo}
             </h3>
             <ul className="space-y-2">
               {modulo.lecciones.map((leccion) => (
-                <li key={leccion.id} className="flex items-center gap-3 text-suenos-text">
-                  <span className="w-6 h-6 bg-suenos-surface rounded-full flex items-center justify-center text-sm">
+                <li key={leccion.id} className="flex items-center gap-3 text-ink">
+                  <span className="w-6 h-6 bg-cloud-100 rounded-full flex items-center justify-center text-sm">
                     {leccion.orden}
                   </span>
                   <span>{leccion.titulo}</span>
-                  <span className="text-suenos-dim text-sm ml-auto">
+                  <span className="text-ink-soft text-sm ml-auto">
                     {Math.floor(leccion.duracionSegundos / 60)}:{String(leccion.duracionSegundos % 60).padStart(2, '0')}
                   </span>
                 </li>

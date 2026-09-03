@@ -89,25 +89,25 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={abrirPanel}
-        className="relative p-2 text-suenos-muted hover:text-suenos-text transition-colors rounded-lg hover:bg-suenos-surface"
+        className="relative p-2 text-ink-muted hover:text-ink transition-colors rounded-lg hover:bg-cloud-100"
         aria-label="Notificaciones"
       >
         <Bell className="w-5 h-5" />
         {noLeidas > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-suenos-violet text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+          <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
             {noLeidas > 99 ? '99+' : noLeidas}
           </span>
         )}
       </button>
 
       {abierta && (
-        <div className="absolute right-0 mt-2 w-80 bg-suenos-deep border border-suenos-border rounded-xl shadow-2xl shadow-black/50 z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-suenos-border">
-            <h3 className="font-display font-semibold text-sm text-suenos-text">Notificaciones</h3>
+        <div className="absolute right-0 mt-2 w-80 card overflow-hidden p-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-ink/[0.07]">
+            <h3 className="font-semibold text-sm text-ink">Notificaciones</h3>
             {noLeidas > 0 && (
               <button
                 onClick={marcarTodasLeidas}
-                className="text-xs text-suenos-cyan hover:text-suenos-cyan-light transition-colors inline-flex items-center gap-1"
+                className="text-xs text-primary hover:text-indigo-600 transition-colors inline-flex items-center gap-1"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Marcar leídas
@@ -118,19 +118,19 @@ export function NotificationBell() {
           <div className="overflow-y-auto max-h-80">
             {cargando ? (
               <div className="p-6 text-center">
-                <div className="w-6 h-6 border-2 border-suenos-violet border-t-transparent rounded-full animate-spin mx-auto" />
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
               </div>
             ) : notificaciones.length === 0 ? (
               <div className="p-6 text-center">
-                <Bell className="w-8 h-8 text-suenos-dim mx-auto mb-2" />
-                <p className="text-sm text-suenos-muted">Sin notificaciones</p>
+                <Bell className="w-8 h-8 text-ink-soft mx-auto mb-2" />
+                <p className="text-sm text-ink-muted">Sin notificaciones</p>
               </div>
             ) : (
               notificaciones.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 border-b border-suenos-border/50 last:border-b-0 cursor-pointer hover:bg-suenos-surface/50 transition-colors ${
-                    !n.leida ? 'bg-suenos-violet/5' : ''
+                  className={`px-4 py-3 border-b border-ink/[0.07] last:border-b-0 cursor-pointer hover:bg-cloud-100 transition-colors ${
+                    !n.leida ? 'bg-primary/5' : ''
                   }`}
                   onClick={() => {
                     if (!n.leida) marcarLeida(n.id);
@@ -138,14 +138,14 @@ export function NotificationBell() {
                 >
                   <div className="flex items-start gap-3">
                     {!n.leida && (
-                      <span className="mt-1.5 h-2 w-2 rounded-full bg-suenos-violet flex-shrink-0" />
+                      <span className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!n.leida ? 'font-semibold text-suenos-text' : 'text-suenos-muted'}`}>
+                      <p className={`text-sm ${!n.leida ? 'font-semibold text-ink' : 'text-ink-muted'}`}>
                         {n.titulo}
                       </p>
-                      <p className="text-xs text-suenos-dim mt-0.5 line-clamp-2">{n.mensaje}</p>
-                      <p className="text-xs text-suenos-dim/60 mt-1">
+                      <p className="text-xs text-ink-soft mt-0.5 line-clamp-2">{n.mensaje}</p>
+                      <p className="text-xs text-ink-soft/70 mt-1">
                         {new Date(n.fecha).toLocaleDateString('es-ES', {
                           day: 'numeric',
                           month: 'short',
@@ -157,7 +157,7 @@ export function NotificationBell() {
                     {n.cursoId && (
                       <Link
                         href={`/cursos/${n.cursoId}`}
-                        className="text-suenos-cyan hover:text-suenos-cyan-light transition-colors flex-shrink-0 mt-0.5"
+                        className="text-primary hover:text-indigo-600 transition-colors flex-shrink-0 mt-0.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="w-4 h-4" />

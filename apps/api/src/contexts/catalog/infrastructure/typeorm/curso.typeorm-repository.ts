@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Curso } from '../../domain/curso.entity';
-import { CursoRepository } from '../../domain/curso.repository.port';
+import { Curso, NivelCurso } from '../../domain/curso.entity';
+import { BuscarCursosFiltros, CursoRepository } from '../../domain/curso.repository.port';
 import { Precio } from '../../domain/precio.value-object';
 import { Slug } from '../../domain/slug.value-object';
 import { EstadoCurso } from '../../domain/estado-curso.value-object';
@@ -48,6 +48,9 @@ export class CursoTypeOrmRepository implements CursoRepository {
       slug: curso.slug.value,
       estado: curso.estado.value,
       instructor_id: curso.instructorId,
+      imagen_url: curso.imagenUrl ?? null,
+      categoria: curso.categoria ?? null,
+      nivel: curso.nivel ?? null,
       modulos,
     });
 
@@ -71,11 +74,52 @@ export class CursoTypeOrmRepository implements CursoRepository {
     return orms.map(o => this.toDomain(o));
   }
 
+  async delete(id: string): Promise<void> {
+    // ON DELETE CASCADE en modulo_id/curso_id y leccion_id/modulo_id (ver
+    // modulo.orm-entity.ts / leccion.orm-entity.ts) se encarga de borrar
+    // módulos y lecciones — no hace falta borrarlos a mano acá.
+    await this.repo.delete(id);
+  }
+
   async findByInstructorId(instructorId: string): Promise<Curso[]> {
     const orms = await this.repo.find({
       where: { instructor_id: instructorId },
       relations: ['modulos', 'modulos.lecciones'],
     });
+    return orms.map(o => this.toDomain(o));
+  }
+
+  async search(filtros: BuscarCursosFiltros): Promise<Curso[]> {
+    const qb = this.repo.createQueryBuilder('curso');
+
+    if (filtros.soloPublicados) {
+      qb.andWhere('curso.estado = :estado', { estado: 'publicado' });
+    }
+    if (filtros.texto) {
+      // ILIKE (case-insensitive) sobre título Y descripción — búsqueda simple
+      // de texto libre, suficiente para el volumen de cursos actual. Si el
+      // catálogo creciera mucho, esto es lo primero que migraría a full-text
+      // search de Postgres (tsvector) o un motor dedicado.
+      qb.andWhere('(curso.titulo ILIKE :texto OR curso.descripcion ILIKE :texto)', {
+        texto: `%${filtros.texto}%`,
+      });
+    }
+    if (filtros.categoria) {
+      qb.andWhere('curso.categoria = :categoria', { categoria: filtros.categoria });
+    }
+    if (filtros.nivel) {
+      qb.andWhere('curso.nivel = :nivel', { nivel: filtros.nivel });
+    }
+
+    if (filtros.ordenarPor === 'precio_asc') {
+      qb.orderBy('curso.precio', 'ASC');
+    } else if (filtros.ordenarPor === 'precio_desc') {
+      qb.orderBy('curso.precio', 'DESC');
+    } else {
+      qb.orderBy('curso.created_at', 'DESC');
+    }
+
+    const orms = await qb.getMany();
     return orms.map(o => this.toDomain(o));
   }
 
@@ -103,6 +147,9 @@ export class CursoTypeOrmRepository implements CursoRepository {
       slug: Slug.from(orm.titulo),
       estado: EstadoCurso.from(orm.estado),
       instructorId: orm.instructor_id,
+      imagenUrl: orm.imagen_url ?? undefined,
+      categoria: orm.categoria ?? undefined,
+      nivel: (orm.nivel as NivelCurso) ?? undefined,
       modulos,
     });
   }

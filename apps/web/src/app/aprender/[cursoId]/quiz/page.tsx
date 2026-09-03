@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
+import { toast } from 'sonner';
 
 interface Pregunta {
   id: string;
@@ -63,10 +64,13 @@ export default function QuizPage() {
     setSubmitting(true);
 
     try {
-      const respuestasArray = Object.entries(respuestas).map(([preguntaId, respuesta]) => ({
-        preguntaId,
-        respuesta,
-      }));
+      // El backend espera un array de índices (number[]), en el MISMO orden
+      // que quiz.preguntas — no {preguntaId, respuesta}. Antes de este fix se
+      // mandaba la forma equivocada y class-validator rechazaba cada intento.
+      const respuestasArray = quiz.preguntas.map((pregunta) => {
+        const opcionElegida = respuestas[pregunta.id];
+        return pregunta.opciones.indexOf(opcionElegida);
+      });
 
       const data = await apiPost('/quizzes/resolver', {
         quizId: quiz.id,
@@ -76,7 +80,7 @@ export default function QuizPage() {
 
       setResult(data);
     } catch (error) {
-      console.error('Error submitting quiz:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al enviar el quiz');
     } finally {
       setSubmitting(false);
     }
@@ -84,30 +88,30 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-suenos-deep flex items-center justify-center">
-        <p className="text-suenos-muted">Cargando quiz...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-ink-muted">Cargando quiz...</p>
       </div>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-suenos-deep flex items-center justify-center">
-        <p className="text-suenos-muted">No hay quiz disponible para este curso</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-ink-muted">No hay quiz disponible para este curso</p>
       </div>
     );
   }
 
   if (result) {
     return (
-      <div className="min-h-screen bg-suenos-deep flex items-center justify-center p-4">
-        <div className="bg-suenos-surface rounded-xl shadow-sm p-8 max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-suenos-text mb-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="bg-cloud-100 rounded-xl shadow-sm p-8 max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-ink mb-4">
             {result.aprobado ? '🎉 ¡Felicidades!' : '😔 No aprobado'}
           </h1>
-          <p className="text-suenos-muted mb-2">Tu puntaje:</p>
-          <p className="text-4xl font-bold text-blue-600 mb-4">{result.puntaje}%</p>
-          <p className="text-suenos-muted mb-6">
+          <p className="text-ink-muted mb-2">Tu puntaje:</p>
+          <p className="text-4xl font-bold text-primary mb-4">{result.puntaje}%</p>
+          <p className="text-ink-muted mb-6">
             {result.aprobado
               ? 'Has aprobado el quiz. ¡Sigue adelante!'
               : `Necesitas al menos ${quiz.puntajeMinimo}% para aprobar. Intenta de nuevo.`}
@@ -121,27 +125,27 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-suenos-deep p-4 md:p-8">
+    <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-suenos-text mb-2">{quiz.titulo}</h1>
-        <p className="text-suenos-muted mb-8">
+        <h1 className="text-2xl font-bold text-ink mb-2">{quiz.titulo}</h1>
+        <p className="text-ink-muted mb-8">
           Puntaje mínimo: {quiz.puntajeMinimo}%
         </p>
 
         <div className="space-y-6">
           {quiz.preguntas.map((pregunta, index) => (
-            <div key={pregunta.id} className="bg-suenos-surface rounded-xl shadow-sm p-6">
-              <p className="font-medium text-suenos-text mb-4">
+            <div key={pregunta.id} className="bg-cloud-100 rounded-xl shadow-sm p-6">
+              <p className="font-medium text-ink mb-4">
                 {index + 1}. {pregunta.enunciado}
               </p>
               <div className="space-y-2">
                 {pregunta.opciones.map(opcion => (
                   <label
                     key={opcion}
-                    className={`block p-3 rounded-lg border border-suenos-border cursor-pointer transition-colors ${
+                    className={`block p-3 rounded-lg border cursor-pointer transition-colors ${
                       respuestas[pregunta.id] === opcion
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-suenos-border border-suenos-border hover:border-suenos-border border-suenos-border'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-ink/[0.07] hover:border-primary/30'
                     }`}
                   >
                     <input

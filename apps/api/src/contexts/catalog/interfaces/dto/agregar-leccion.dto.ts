@@ -1,4 +1,4 @@
-import { IsString, IsNumber, MinLength, IsPositive } from 'class-validator';
+import { IsString, IsNumber, MinLength, IsPositive, IsOptional, IsUrl } from 'class-validator';
 
 export class AgregarLeccionDto {
   @IsString()
@@ -12,4 +12,8 @@ export class AgregarLeccionDto {
   @IsNumber()
   @IsPositive()
   duracionSegundos!: number;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false }) // require_tld: false para permitir http://localhost:...
+  videoUrl?: string;
 }

@@ -5,6 +5,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Tema claro "cielo" (handoff): fuente de verdad para primary/secondary/
+        // accent/ink/cloud — ver Sueños Dev hero blanco/handoff/README.md.
+        primary: '#6366f1',
+        secondary: '#8b5cf6',
+        accent: '#f59e0b',
+        ink: {
+          DEFAULT: '#14162b',
+          muted: '#5a5d78',
+          soft: '#9a9db2',
+        },
+        cloud: {
+          50: '#ffffff',
+          100: '#f6f7fc',
+          200: '#eceffb',
+          300: '#dcdfeb',
+        },
+        // Namespace del tema oscuro anterior — todavía en uso en dashboard,
+        // admin, instructor, y varios formularios que no se migraron en este
+        // handoff. No quitar hasta que esas páginas se actualicen también.
         suenos: {
           midnight: '#0B0E1A',
           deep: '#111631',
@@ -21,13 +40,12 @@ const config: Config = {
           muted: '#94A3B8',
           dim: '#64748B',
         },
-        primary: '#7C3AED',
-        secondary: '#06B6D4',
       },
       fontFamily: {
+        sans: ['Manrope', 'Helvetica', 'Arial', 'sans-serif'],
         display: ['Space Grotesk', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        mono: ['"JetBrains Mono"', 'monospace'],
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',
@@ -38,6 +56,10 @@ const config: Config = {
         'fade-in-up-delay-2': 'fade-in-up 0.6s ease-out 0.4s forwards',
         'star-twinkle': 'star-twinkle 4s ease-in-out infinite',
         'drift': 'drift 24s ease-in-out infinite',
+        // Deriva de las nubes del nuevo Sky.tsx — valores exactos del handoff.
+        driftA: 'driftA 26s ease-in-out infinite',
+        driftB: 'driftB 32s ease-in-out infinite',
+        driftC: 'driftC 38s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -47,6 +69,18 @@ const config: Config = {
         drift: {
           '0%, 100%': { transform: 'translateX(0)' },
           '50%': { transform: 'translateX(5%)' },
+        },
+        driftA: {
+          '0%,100%': { transform: 'translate3d(0,0,0)' },
+          '50%': { transform: 'translate3d(38px,-14px,0)' },
+        },
+        driftB: {
+          '0%,100%': { transform: 'translate3d(0,0,0)' },
+          '50%': { transform: 'translate3d(-44px,12px,0)' },
+        },
+        driftC: {
+          '0%,100%': { transform: 'translate3d(0,0,0)' },
+          '50%': { transform: 'translate3d(26px,16px,0)' },
         },
         'glow-pulse': {
           '0%, 100%': { opacity: '1' },

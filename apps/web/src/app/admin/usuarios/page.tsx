@@ -47,17 +47,17 @@ export default function AdminUsuariosPage() {
       {loading ? (
         <p>Cargando...</p>
       ) : (
-        <div className="bg-suenos-surface rounded-xl shadow-sm border border-suenos-border overflow-hidden">
+        <div className="bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07] overflow-hidden">
           <table className="w-full">
-            <thead className="bg-suenos-deep">
+            <thead className="bg-white">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Nombre</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Email</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Rol</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-suenos-muted">Acciones</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Nombre</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Email</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Rol</th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-suenos-border border-suenos-border">
+            <tbody className="divide-y divide-ink/[0.07] border-ink/[0.07]">
               {usuarios.map((usuario) => (
                 <tr key={usuario.id}>
                   <td className="px-6 py-4">{usuario.nombre}</td>
@@ -66,7 +66,7 @@ export default function AdminUsuariosPage() {
                     <select
                       value={usuario.rol}
                       onChange={(e) => handleCambiarRol(usuario.id, e.target.value)}
-                      className="border border-suenos-border rounded px-2 py-1 text-sm"
+                      className="border border-ink/[0.07] rounded px-2 py-1 text-sm"
                     >
                       <option value="estudiante">Estudiante</option>
                       <option value="instructor">Instructor</option>

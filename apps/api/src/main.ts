@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as express from 'express';
 import { AppModule } from './app.module';
 import { initSentry } from './sentry.config';
 import { SentryInterceptor } from './sentry.interceptor';
@@ -9,9 +10,23 @@ import { SentryInterceptor } from './sentry.interceptor';
 async function bootstrap() {
   initSentry();
 
+  // bodyParser: false porque el body-parser por defecto de Nest tiene un
+  // límite de 100kb — insuficiente para el upload de video (POST /videos/upload
+  // manda el archivo como base64 dentro del JSON). Se registra manualmente
+  // más abajo con un límite mayor.
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
+    bodyParser: false,
   });
+  const VIDEO_BODY_LIMIT = '600mb';
+  // `verify` replica lo que hacía la opción `rawBody: true` de Nest con su
+  // parser por defecto — StripeWebhookController necesita el buffer crudo
+  // (sin parsear) para verificar la firma del webhook.
+  const captureRawBody = (req: express.Request, _res: express.Response, buf: Buffer) => {
+    (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+  };
+  app.use(express.json({ limit: VIDEO_BODY_LIMIT, verify: captureRawBody }));
+  app.use(express.urlencoded({ limit: VIDEO_BODY_LIMIT, extended: true, verify: captureRawBody }));
 
   // El filtro global de Sentry se registra vía DI en AppModule (APP_FILTER),
   // NO con `useGlobalFilters(new SentryGlobalFilter())`: SentryGlobalFilter

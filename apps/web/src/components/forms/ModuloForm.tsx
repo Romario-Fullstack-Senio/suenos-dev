@@ -31,7 +31,7 @@ export function ModuloForm({ cursoId, onModuloCreated }: ModuloFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-suenos-surface rounded-xl p-6 shadow-sm border border-suenos-border mb-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] mb-4">
       <h3 className="font-semibold mb-4">Agregar Módulo</h3>
       <div className="flex gap-4">
         <div className="flex-1">

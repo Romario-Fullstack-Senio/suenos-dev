@@ -28,6 +28,17 @@ export class CursoOrmEntity {
   @Column('uuid')
   instructor_id!: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  imagen_url!: string | null;
+
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  categoria!: string | null;
+
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  nivel!: string | null;
+
   @OneToMany(() => ModuloOrmEntity, (m) => m.curso, { cascade: true })
   modulos!: ModuloOrmEntity[];
 

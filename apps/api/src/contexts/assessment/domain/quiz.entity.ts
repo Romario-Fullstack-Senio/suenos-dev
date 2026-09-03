@@ -50,7 +50,13 @@ export class Quiz extends AggregateRoot<string> {
     this.touch();
   }
 
-  resolver(intentoId: string, estudianteId: string, respuestas: number[]): boolean {
+  /**
+   * Corrige y devuelve solo si aprobó — pura lógica de dominio, sin efectos
+   * secundarios. Publicar el evento QuizAprobado (con nombres de estudiante/
+   * curso incluidos, que este agregado no conoce) es responsabilidad de
+   * ResolverQuizUseCase, que sí puede consultar esos otros contextos.
+   */
+  resolver(respuestas: number[]): boolean {
     let respuestasCorrectas = 0;
     for (let i = 0; i < this.props.preguntas.length; i++) {
       const pregunta = this.props.preguntas[i];
@@ -60,15 +66,6 @@ export class Quiz extends AggregateRoot<string> {
     }
     const totalPreguntas = this.props.preguntas.length;
     const puntaje = totalPreguntas > 0 ? (respuestasCorrectas / totalPreguntas) * 100 : 0;
-    const aprobado = puntaje >= this.props.puntajeMinimo;
-
-    if (aprobado) {
-      this.addDomainEvent({
-        eventName: 'QuizAprobado',
-        occurredOn: new Date(),
-        aggregateId: this.id,
-      });
-    }
-    return aprobado;
+    return puntaje >= this.props.puntajeMinimo;
   }
 }

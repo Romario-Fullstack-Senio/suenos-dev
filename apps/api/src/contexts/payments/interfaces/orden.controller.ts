@@ -2,16 +2,10 @@ import { Body, Controller, Post, Param, UseGuards, Inject } from '@nestjs/common
 import { CrearOrdenUseCase, CrearOrdenCommand } from '../application/crear-orden.use-case';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import {
-  STRIPE_PAYMENT_INTENT,
-  StripePaymentIntent,
-} from '../domain/stripe-payment-intent.port';
-import {
   ORDEN_REPOSITORY,
   OrdenRepository,
 } from '../domain/orden.repository.port';
 import { EventBus } from '../../../common/event-bus';
-import { Orden } from '../domain/orden.entity';
-import { randomUUID } from 'crypto';
 import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
 
@@ -19,7 +13,6 @@ import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usu
 export class OrdenController {
   constructor(
     private readonly crearOrden: CrearOrdenUseCase,
-    @Inject(STRIPE_PAYMENT_INTENT) private readonly paymentIntent: StripePaymentIntent,
     @Inject(ORDEN_REPOSITORY) private readonly ordenRepository: OrdenRepository,
     @Inject(CURSO_REPOSITORY) private readonly cursoRepository: CursoRepository,
     @Inject(USUARIO_REPOSITORY) private readonly usuarioRepository: UsuarioRepository,
@@ -29,28 +22,7 @@ export class OrdenController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async crear(@Body() command: CrearOrdenCommand) {
-    const result = await this.paymentIntent.createPaymentIntent({
-      amount: command.precio,
-      currency: 'usd',
-      cursoId: command.cursoId,
-      cursoNombre: command.cursoNombre,
-    });
-
-    const ordenId = randomUUID();
-    const orden = Orden.crear(
-      ordenId,
-      command.estudianteId,
-      command.cursoId,
-      command.precio,
-      'usd',
-      result.paymentIntentId,
-    );
-    await this.ordenRepository.save(orden);
-
-    return {
-      ordenId,
-      clientSecret: result.clientSecret,
-    };
+    return this.crearOrden.execute(command);
   }
 
   @Post(':id/confirm')
