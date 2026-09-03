@@ -38,20 +38,20 @@ export default function CertificadosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Cargando certificados...</p>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-ink-muted">Cargando certificados...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-white p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Mis Certificados</h1>
+        <h1 className="text-2xl font-bold text-ink mb-8">Mis Certificados</h1>
 
         {certificados.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-500">
+          <div className="bg-cloud-100 rounded-xl shadow-sm p-8 text-center">
+            <p className="text-ink-muted">
               Aun no tienes certificados. Completa un curso para obtener uno.
             </p>
           </div>
@@ -60,15 +60,15 @@ export default function CertificadosPage() {
             {certificados.map(cert => (
               <div
                 key={cert.id}
-                className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500"
+                className="bg-cloud-100 rounded-xl shadow-sm p-6 border-l-4 border-blue-500"
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{cert.cursoNombre}</h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <h3 className="font-semibold text-ink">{cert.cursoNombre}</h3>
+                    <p className="text-sm text-ink-muted mt-1">
                       Emitido: {new Date(cert.fechaEmision).toLocaleDateString()}
                     </p>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-ink-soft mt-2">
                       Codigo: {cert.codigoVerificacion}
                     </p>
                   </div>

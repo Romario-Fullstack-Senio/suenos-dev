@@ -35,4 +35,9 @@ export class StripePaymentIntentAdapter implements StripePaymentIntent {
       paymentIntentId: paymentIntent.id,
     };
   }
+
+  async refund(paymentIntentId: string): Promise<{ refundId: string }> {
+    const refund = await this.stripe.refunds.create({ payment_intent: paymentIntentId });
+    return { refundId: refund.id };
+  }
 }

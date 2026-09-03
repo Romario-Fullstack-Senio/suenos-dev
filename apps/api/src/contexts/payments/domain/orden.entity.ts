@@ -1,7 +1,8 @@
-import { AggregateRoot } from '@suenos-dev/shared-kernel';
+import { AggregateRoot, DomainError } from '@suenos-dev/shared-kernel';
 import { CursoCompradoEvent } from './events/curso-comprado.event';
+import { OrdenReembolsadaEvent } from './events/orden-reembolsada.event';
 
-export type OrdenEstado = 'pendiente' | 'completada' | 'fallida';
+export type OrdenEstado = 'pendiente' | 'completada' | 'fallida' | 'reembolsada';
 
 export interface OrdenProps {
   estudianteId: string;
@@ -65,6 +66,17 @@ export class Orden extends AggregateRoot<string> {
     } as CursoCompradoEvent);
   }
 
+  reembolsar(): void {
+    if (this.props.estado !== 'completada') {
+      throw new DomainError('Solo se puede reembolsar una orden completada');
+    }
+    this.props.estado = 'reembolsada';
+    this.touch();
+    this.addDomainEvent(
+      new OrdenReembolsadaEvent(this.id, this.props.estudianteId, this.props.cursoId, this.props.monto),
+    );
+  }
+
   static crear(
     id: string,
     estudianteId: string,
@@ -91,8 +103,9 @@ export class Orden extends AggregateRoot<string> {
     moneda: string,
     stripeSessionId: string,
     estado: OrdenEstado,
+    createdAt?: Date,
   ): Orden {
-    return new Orden(id, {
+    const orden = new Orden(id, {
       estudianteId,
       cursoId,
       monto,
@@ -100,5 +113,13 @@ export class Orden extends AggregateRoot<string> {
       stripeSessionId,
       estado,
     });
+    // Entity's constructor siempre pisa _createdAt con `new Date()` — sin
+    // esto, una orden reconstituida desde la DB "olvida" cuándo se compró
+    // de verdad (encontrado al implementar la ventana de reembolso, que
+    // necesita la fecha real de compra).
+    if (createdAt) {
+      Object.defineProperty(orden, '_createdAt', { value: createdAt });
+    }
+    return orden;
   }
 }

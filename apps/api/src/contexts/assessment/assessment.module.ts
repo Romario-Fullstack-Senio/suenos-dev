@@ -4,20 +4,30 @@ import { QuizOrmEntity } from './infrastructure/typeorm/quiz.orm-entity';
 import { PreguntaOrmEntity } from './infrastructure/typeorm/pregunta.orm-entity';
 import { IntentoOrmEntity } from './infrastructure/typeorm/intento.orm-entity';
 import { QuizTypeOrmRepository } from './infrastructure/typeorm/quiz.typeorm-repository';
+import { IntentoTypeOrmRepository } from './infrastructure/typeorm/intento.typeorm-repository';
 import { CrearQuizUseCase } from './application/crear-quiz.use-case';
 import { ResolverQuizUseCase } from './application/resolver-quiz.use-case';
 import { QuizController } from './interfaces/quiz.controller';
 import { QUIZ_REPOSITORY } from './domain/quiz.repository.port';
+import { INTENTO_REPOSITORY } from './domain/intento.repository.port';
+import { IdentityModule } from '../identity/identity.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([QuizOrmEntity, PreguntaOrmEntity, IntentoOrmEntity]),
+    IdentityModule,
+    CatalogModule,
   ],
   controllers: [QuizController],
   providers: [
     {
       provide: QUIZ_REPOSITORY,
       useClass: QuizTypeOrmRepository,
+    },
+    {
+      provide: INTENTO_REPOSITORY,
+      useClass: IntentoTypeOrmRepository,
     },
     CrearQuizUseCase,
     ResolverQuizUseCase,

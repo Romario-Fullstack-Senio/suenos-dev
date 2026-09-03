@@ -1,4 +1,4 @@
-import { ValueObject } from '@suenos-dev/shared-kernel';
+import { ValueObject, DomainError } from '@suenos-dev/shared-kernel';
 
 interface EmailProps {
   value: string;
@@ -17,7 +17,7 @@ export class Email extends ValueObject<EmailProps> {
 
   static create(email: string): Email {
     if (!email || !EMAIL_REGEX.test(email)) {
-      throw new Error(`Email inválido: ${email}`);
+      throw new DomainError(`Email inválido: ${email}`);
     }
     return new Email({ value: email.toLowerCase().trim() });
   }

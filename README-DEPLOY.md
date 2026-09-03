@@ -224,56 +224,23 @@ sudo journalctl -u caddy -f
 
 ---
 
-## Correr Migraciones TypeORM
+## Migraciones TypeORM
 
-Las migraciones se ejecutan como un job separado, **NO** durante el arranque del contenedor API.
+A diferencia de lo que decía esta guía antes, las migraciones **SÍ corren automáticamente** al arrancar el contenedor de la API — `app.module.ts` tiene `migrationsRun: true`, así que cada vez que `api` bootea revisa `apps/api/src/migrations/` y aplica lo que falte, dentro de una transacción. No hace falta ningún job separado ni un flag `--migrate-only` (ese flag no existe en `main.ts`).
 
-### Opción 1: Usar el contenedor existente
-
-```bash
-# Ejecutar migraciones dentro del contenedor API
-docker compose exec api node dist/main.js --migrate-only
-```
-
-### Opción 2: Crear un job dedicado
+Para correr una migración a mano (por ejemplo, para revertir una) sin esperar a un restart del contenedor:
 
 ```bash
-# Crear script de migración
-cat > ~/deploy/suenos-dev/migrate.sh <<'EOF'
-#!/bin/bash
-set -e
+# Correr manualmente lo pendiente (usa el CLI de typeorm sobre JS ya
+# compilado — el contenedor de producción no tiene ts-node, se podó junto
+# al resto de las devDependencies)
+docker compose exec api npx typeorm migration:run -d dist/data-source.js
 
-cd ~/deploy/suenos-dev
-
-echo "Running database migrations..."
-docker compose run --rm api node dist/main.js --migrate-only
-
-echo "Migrations completed successfully!"
-EOF
-
-chmod +x ~/deploy/suenos-dev/migrate.sh
-
-# Ejecutar
-./migrate.sh
+# Revertir la última migración aplicada
+docker compose exec api npx typeorm migration:revert -d dist/data-source.js
 ```
 
-### Opción 3: Agregar comando npm para migraciones
-
-En `apps/api/package.json`, agregar script:
-
-```json
-{
-  "scripts": {
-    "migrate": "node dist/main.js --migrate-only"
-  }
-}
-```
-
-Luego ejecutar:
-
-```bash
-docker compose run --rm api npm run migrate
-```
+Generar una migración nueva se hace en desarrollo, contra una DB vacía (ver `CLAUDE.md`, sección "Database migrations") — el servidor de producción nunca genera migraciones, solo las aplica.
 
 ---
 
@@ -385,24 +352,45 @@ docker stats
 # Limpiar imágenes no usadas
 docker image prune -a
 
-# Backup de PostgreSQL
-docker compose exec postgres pg_dump -U suenos_admin suenos_prod > backup_$(date +%Y%m%d).sql
+# Backup de PostgreSQL (manual, puntual)
+docker compose exec postgres pg_dump -U "$DATABASE_USER" "$DATABASE_NAME" > backup_$(date +%Y%m%d).sql
 
 # Restaurar backup
-cat backup_20240101.sql | docker compose exec -T postgres psql -U suenos_admin -d suenos_prod
+cat backup_20240101.sql | docker compose exec -T postgres psql -U "$DATABASE_USER" -d "$DATABASE_NAME"
 ```
+
+### Backups automáticos
+
+No confiar en el volumen de Docker como backup — un `docker compose down -v`, un disco corrupto o un `rm -rf` del volumen se lleva los datos sin ningún punto de restauración. Usar `infra/scripts/backup-postgres.sh` (dump + gzip + rotación de retención) por cron:
+
+```bash
+chmod +x infra/scripts/backup-postgres.sh
+crontab -e
+# Backup diario de producción a las 3am, retiene 14 días:
+0 3 * * * /home/deploy/suenos-dev/infra/scripts/backup-postgres.sh ~/deploy/suenos-dev suenos-dev 14 >> ~/backups/backup.log 2>&1
+```
+
+Los backups quedan en `~/backups/<proyecto>/postgres-<timestamp>.sql.gz`. El propio script imprime el comando de restauración exacto al final.
 
 ---
 
 ## Variables de Entorno de Referencia
 
+Estos nombres son los que realmente lee el código (`app.module.ts`, `identity.module.ts`, `main.ts`) — usar cualquier otro nombre (`POSTGRES_DB`, `DB_HOST`, `JWT_EXPIRATION`, etc.) hace que la API caiga en sus defaults de desarrollo en vez de conectar a los servicios reales del contenedor.
+
 | Variable | Descripción | Ejemplo |
 |----------|-------------|---------|
-| `POSTGRES_DB` | Nombre de la base de datos | `suenos_prod` |
-| `POSTGRES_USER` | Usuario de PostgreSQL | `suenos_admin` |
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL | `SuperSecret123!` |
-| `REDIS_PASSWORD` | Contraseña de Redis | `RedisSecret456!` |
-| `JWT_SECRET` | Secreto para JWT (hex 32) | `a1b2c3d4e5f6...` |
+| `DATABASE_NAME` | Nombre de la base de datos | `suenos_prod` |
+| `DATABASE_USER` | Usuario de PostgreSQL | `suenos_admin` |
+| `DATABASE_PASSWORD` | Contraseña de PostgreSQL | `SuperSecret123!` |
+| `REDIS_PASSWORD` | Contraseña de Redis (usada por Bull y por el healthcheck) | `RedisSecret456!` |
+| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` | Credenciales de MinIO (root del contenedor y cliente de la API) | — |
+| `MINIO_PUBLIC_URL` | Host de MinIO alcanzable por el NAVEGADOR (portadas de curso) — nunca `127.0.0.1` ni el nombre del servicio Docker | `https://minio.suenos-dev.dev` |
+| `JWT_SECRET` | Secreto para JWT (hex 32) — el mismo valor va a `api` y a `web` (middleware de rutas protegidas) | `a1b2c3d4e5f6...` |
+| `JWT_EXPIRES_IN` | Vida del access token | `7d` |
+| `APP_URL` | Origin público del frontend — de acá sale también `WEB_URL` (CORS) que le pasa el compose a la API | `https://suenos-dev.dev` |
+| `API_URL` | Origin público de la API | `https://api.suenos-dev.dev` |
+| `ENABLE_SWAGGER` | Prende `/docs` en producción (apagado por default, ver `main.ts`) | `false` |
 | `STRIPE_SECRET_KEY` | Clave secreta Stripe | `sk_live_...` |
 | `STRIPE_WEBHOOK_SECRET` | Webhook secret Stripe | `whsec_...` |
 | `STRIPE_PUBLISHABLE_KEY` | Clave pública Stripe | `pk_live_...` |
@@ -412,6 +400,60 @@ cat backup_20240101.sql | docker compose exec -T postgres psql -U suenos_admin -
 | `SMTP_PASS` | Contraseña SMTP | `app-password` |
 | `SENTRY_DSN` | DSN de Sentry (opcional) | `https://...@sentry.io/...` |
 | `SENDGRID_API_KEY` | API Key SendGrid (opcional) | `SG....` |
+| `*_HOST_PORT` (`POSTGRES_HOST_PORT`, `API_HOST_PORT`, etc.) | Puerto publicado en 127.0.0.1 — solo hace falta tocarlos si corrés más de un stack en el mismo servidor (ver sección Preproducción) | `5432` |
+
+---
+
+## Preproducción
+
+Antes no existía ningún ambiente intermedio — `main` deployeaba directo al dominio real vía `deploy.yml`. Ahora hay un segundo stack completo (su propia DB/Redis/MinIO, nunca comparte datos con producción), en el **mismo servidor**, corriendo en paralelo:
+
+| | Producción | Preproducción |
+|---|---|---|
+| Rama que dispara el deploy | `main` | `develop` |
+| Workflow | `deploy.yml` | `deploy-preprod.yml` |
+| Directorio en el servidor | `~/deploy/suenos-dev` | `~/deploy/suenos-dev-preprod` |
+| Proyecto de Compose (`-p`) | `suenos-dev` (default) | `suenos-preprod` |
+| Dominio web | `suenos-dev.dev` | `preprod.suenos-dev.dev` |
+| Dominio API | `api.suenos-dev.dev` | `api-preprod.suenos-dev.dev` |
+| Stripe | modo live | modo test |
+
+### Setup inicial (una sola vez)
+
+```bash
+# 1. Clonar en un directorio separado
+cd ~/deploy
+git clone https://github.com/Romario-Fullstack-Senior/suenos-dev.git suenos-dev-preprod
+cd suenos-dev-preprod
+
+# 2. Variables de entorno propias — NUNCA reusar las de producción
+cp infra/.env.example .env.preprod
+cat infra/.env.preprod.example >> .env.preprod
+nano .env.preprod   # completar los CHANGE_ME (contraseñas y JWT_SECRET propios)
+
+# 3. Levantar el stack con su propio nombre de proyecto
+docker compose -p suenos-preprod --env-file .env.preprod -f infra/docker-compose.prod.yml pull
+docker compose -p suenos-preprod --env-file .env.preprod -f infra/docker-compose.prod.yml up -d
+```
+
+Agregar los registros DNS (`preprod.suenos-dev.dev`, `api-preprod.suenos-dev.dev` → misma IP del servidor) y el bloque de preprod ya viene incluido en `infra/Caddyfile` (copiarlo de nuevo a `/etc/caddy/Caddyfile` y `sudo systemctl reload caddy`).
+
+### Flujo de trabajo
+
+1. Se desarrolla y mergea a `develop`.
+2. `Build & Push` corre tests + lint (gate obligatorio) y buildea las imágenes.
+3. `deploy-preprod.yml` se dispara solo, despliega a `preprod.suenos-dev.dev`.
+4. Se prueba ahí con datos/Stripe de test, sin tocar nada real.
+5. Cuando está validado, se mergea `develop` → `main`, lo que dispara el deploy real a producción.
+
+`deploy-preprod.yml` usa su propio set de secrets — separado del de producción a propósito, para que dar de alta preprod no habilite un deploy automático a producción (y viceversa) aunque compartan el mismo servidor físico:
+
+| Secret | Descripción |
+|---|---|
+| `PREPROD_SERVER_HOST` | IP o dominio del servidor (puede ser el mismo que `SERVER_HOST`) |
+| `PREPROD_SERVER_USER` | Usuario SSH |
+| `PREPROD_SERVER_SSH_KEY` | Clave privada SSH (puede ser la misma que `SERVER_SSH_KEY` o una dedicada) |
+| `PREPROD_SERVER_PORT` | Puerto SSH (default: `22`) |
 
 ---
 
@@ -485,18 +527,28 @@ docker compose up -d --force-recreate api web
 ## Estructura de Archivos en el Servidor
 
 ```
-~/deploy/suenos-dev/
-├── docker-compose.yml    # ← Copiar de infra/docker-compose.prod.yml
-├── .env                  # ← Variables de entorno (NO en el repo)
-├── migrate.sh            # ← Script de migraciones (opcional)
-└── logs/                 # ← Logs locales (opcional)
+~/deploy/suenos-dev/                # ← Producción
+├── docker-compose.yml              # ← Copiar de infra/docker-compose.prod.yml
+├── .env                            # ← Variables de entorno (NO en el repo)
+└── infra/scripts/backup-postgres.sh
+
+~/deploy/suenos-dev-preprod/        # ← Preproducción (mismo servidor, dir separado)
+├── docker-compose.prod.yml         # ← Mismo archivo, se referencia con -f
+├── .env.preprod                    # ← Variables propias, nunca las de prod
+└── infra/scripts/backup-postgres.sh
 
 /etc/caddy/
-└── Caddyfile             # ← Configuración de Caddy
+└── Caddyfile                       # ← Prod + preprod en el mismo archivo
 
 /var/log/caddy/
-├── suenos-dev.log        # ← Logs del frontend
-└── api-suenos-dev.log    # ← Logs del backend
+├── suenos-dev.log                  # ← Logs del frontend (prod)
+├── api-suenos-dev.log              # ← Logs del backend (prod)
+├── preprod-suenos-dev.log          # ← Logs del frontend (preprod)
+└── api-preprod-suenos-dev.log      # ← Logs del backend (preprod)
+
+~/backups/
+├── suenos-dev/postgres-*.sql.gz    # ← Backups de producción
+└── suenos-preprod/postgres-*.sql.gz
 ```
 
 ---
@@ -542,8 +594,11 @@ En tu repositorio de GitHub → Settings → Secrets and variables → Actions:
 ## Notas Importantes
 
 1. **El servidor NUNCA compila código** — solo hace pull de imágenes pre-construidas
-2. **Build Once, Deploy Anywhere** — la misma imagen se puede desplegar en dev, staging, prod
-3. **Rollback rápido** — cambiar el tag SHA en .env y reiniciar (< 1 minuto)
-4. **Sin downtime** — Docker Compose reconoce contenedores nuevos gradualmente
-5. **Logs centralizados** — todos los logs se pueden ver con `docker compose logs`
-6. **SSL automático** — Caddy genera y renueva certificados automáticamente
+2. **Build Once, Deploy Anywhere** — la misma imagen (y el mismo `docker-compose.prod.yml`) sirve para preprod y para prod, con distinto `.env`
+3. **Tests + lint corren antes de buildear** — `build-and-push.yml` no arranca `build-api`/`build-web` si el job `test` falla (103 tests del backend + lint en todos los workspaces)
+4. **Migraciones automáticas** — `migrationsRun: true` las aplica solas en cada boot del contenedor de la API, dentro de una transacción
+5. **Rollback rápido** — cambiar el tag SHA en `.env` (o `.env.preprod`) y reiniciar (< 1 minuto)
+6. **Sin downtime** — Docker Compose reconoce contenedores nuevos gradualmente
+7. **Logs centralizados** — todos los logs se pueden ver con `docker compose logs`
+8. **SSL automático** — Caddy genera y renueva certificados automáticamente
+9. **Backups automáticos** — cron diario con `infra/scripts/backup-postgres.sh`, retención configurable

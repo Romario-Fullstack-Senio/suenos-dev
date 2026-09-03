@@ -23,7 +23,7 @@ export default function QuizForm({ preguntas, onSubmit }: QuizFormProps) {
   return (
     <div className="space-y-6">
       {preguntas.map((p, i) => (
-        <div key={p.id} className="bg-white rounded-xl p-6 shadow-sm border">
+        <div key={p.id} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
           <p className="font-medium mb-3">{i + 1}. {p.enunciado}</p>
           <div className="space-y-2">
             {p.opciones.map((opcion, idx) => (
@@ -42,7 +42,7 @@ export default function QuizForm({ preguntas, onSubmit }: QuizFormProps) {
       ))}
       <button
         onClick={() => onSubmit(respuestas)}
-        className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition"
+        className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition"
       >
         Enviar Respuestas
       </button>

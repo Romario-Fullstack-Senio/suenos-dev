@@ -25,8 +25,25 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       rol: usuario.rol.value,
       auth_provider: usuario.authProvider.value,
       provider_id: usuario.providerId,
+      email_verificado: usuario.emailVerificado,
+      verificacion_token: usuario.verificacionToken,
+      verificacion_token_expira: usuario.verificacionTokenExpira,
+      reset_password_token: usuario.resetPasswordToken,
+      reset_password_expira: usuario.resetPasswordExpira,
     });
     await this.repo.save(orm);
+  }
+
+  async findByVerificacionToken(token: string): Promise<Usuario | null> {
+    const orm = await this.repo.findOne({ where: { verificacion_token: token } });
+    if (!orm) return null;
+    return this.toDomain(orm);
+  }
+
+  async findByResetPasswordToken(token: string): Promise<Usuario | null> {
+    const orm = await this.repo.findOne({ where: { reset_password_token: token } });
+    if (!orm) return null;
+    return this.toDomain(orm);
   }
 
   async findByEmail(email: string): Promise<Usuario | null> {
@@ -53,15 +70,19 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
   }
 
   private toDomain(orm: UsuarioOrmEntity): Usuario {
-    return Usuario.reconstitute(
-      orm.id,
-      orm.nombre,
-      Email.create(orm.email),
-      orm.password_hash ? Password.fromHash(orm.password_hash) : null,
-      Rol.from(orm.rol),
-      orm.created_at,
-      AuthProvider.from(orm.auth_provider),
-      orm.provider_id,
-    );
+    return Usuario.reconstitute(orm.id, {
+      nombre: orm.nombre,
+      email: Email.create(orm.email),
+      password: orm.password_hash ? Password.fromHash(orm.password_hash) : null,
+      rol: Rol.from(orm.rol),
+      createdAt: orm.created_at,
+      authProvider: AuthProvider.from(orm.auth_provider),
+      providerId: orm.provider_id,
+      emailVerificado: orm.email_verificado,
+      verificacionToken: orm.verificacion_token,
+      verificacionTokenExpira: orm.verificacion_token_expira,
+      resetPasswordToken: orm.reset_password_token,
+      resetPasswordExpira: orm.reset_password_expira,
+    });
   }
 }

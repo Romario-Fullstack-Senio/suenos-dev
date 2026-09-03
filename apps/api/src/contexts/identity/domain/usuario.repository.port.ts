@@ -9,4 +9,6 @@ export interface UsuarioRepository {
   findById(id: string): Promise<Usuario | null>;
   findByProvider(provider: AuthProviderTipo, providerId: string): Promise<Usuario | null>;
   findAll(): Promise<Usuario[]>;
+  findByVerificacionToken(token: string): Promise<Usuario | null>;
+  findByResetPasswordToken(token: string): Promise<Usuario | null>;
 }

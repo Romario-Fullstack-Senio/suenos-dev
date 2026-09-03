@@ -8,12 +8,20 @@ export class UsuarioRegistradoEvent implements DomainEvent {
   readonly email: string;
   readonly nombre: string;
   readonly authProvider: AuthProviderTipo;
+  readonly verificacionToken?: string;
 
-  constructor(aggregateId: string, email: string, nombre: string, authProvider: AuthProviderTipo) {
+  constructor(
+    aggregateId: string,
+    email: string,
+    nombre: string,
+    authProvider: AuthProviderTipo,
+    verificacionToken?: string,
+  ) {
     this.aggregateId = aggregateId;
     this.email = email;
     this.nombre = nombre;
     this.authProvider = authProvider;
+    this.verificacionToken = verificacionToken;
     this.occurredOn = new Date();
   }
 }

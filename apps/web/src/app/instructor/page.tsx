@@ -59,16 +59,16 @@ export default function InstructorDashboardPage() {
 
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <p className="text-sm text-gray-500">Mis Cursos</p>
+          <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
+            <p className="text-sm text-ink-muted">Mis Cursos</p>
             <p className="text-3xl font-bold text-blue-600">{stats.totalCursos}</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <p className="text-sm text-gray-500">Total Inscripciones</p>
+          <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
+            <p className="text-sm text-ink-muted">Total Inscripciones</p>
             <p className="text-3xl font-bold text-green-600">{stats.totalInscripciones}</p>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <p className="text-sm text-gray-500">Ingresos Estimados</p>
+          <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
+            <p className="text-sm text-ink-muted">Ingresos Estimados</p>
             <p className="text-3xl font-bold text-purple-600">
               ${stats.ingresosEstimados.toLocaleString()} USD
             </p>
@@ -78,14 +78,19 @@ export default function InstructorDashboardPage() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Mis Cursos</h2>
-        <Link href="/instructor/cursos/nuevo">
-          <Button>Crear Curso</Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/instructor/analytics" className="text-secondary hover:underline text-sm self-center">
+            Ver analítica →
+          </Link>
+          <Link href="/instructor/cursos/nuevo">
+            <Button>Crear Curso</Button>
+          </Link>
+        </div>
       </div>
 
       {cursos.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border">
-          <p className="text-gray-600 mb-4">No has creado cursos</p>
+        <div className="text-center py-16 bg-cloud-100 rounded-xl border border-ink/[0.07]">
+          <p className="text-ink-muted mb-4">No has creado cursos</p>
           <Link href="/instructor/cursos/nuevo">
             <Button>Crear mi primer curso</Button>
           </Link>
@@ -93,10 +98,10 @@ export default function InstructorDashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cursos.map((curso) => (
-            <div key={curso.id} className="bg-white rounded-xl p-6 shadow-sm border">
+            <div key={curso.id} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
               <h3 className="font-semibold mb-2">{curso.titulo}</h3>
-              <p className="text-sm text-gray-500 mb-1">${curso.precio} USD</p>
-              <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+              <p className="text-sm text-ink-muted mb-1">${curso.precio} USD</p>
+              <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'}`}>
                 {curso.estado}
               </span>
               <div className="mt-4 flex gap-2">

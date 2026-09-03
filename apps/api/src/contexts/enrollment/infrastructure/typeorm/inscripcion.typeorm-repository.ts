@@ -24,6 +24,11 @@ export class InscripcionTypeOrmRepository implements InscripcionRepository {
   }
 
   async findByCursoYEstudiante(cursoId: string, estudianteId: string): Promise<Inscripcion | null> {
+    // OJO: devuelve la inscripción exista o no `activa` (OtorgarAccesoHandler
+    // depende de esto para reactivar una inscripción vieja en vez de crear
+    // una fila duplicada si el alumno recompra tras un reembolso). Quien
+    // necesite "¿está inscripto DE VERDAD ahora?" (acceso a video, reseñas,
+    // certificados) tiene que chequear `.activa` sobre el resultado.
     const entity = await this.ormRepo.findOne({ where: { cursoId, estudianteId } });
     if (!entity) return null;
     return this.toDomain(entity);
@@ -39,11 +44,21 @@ export class InscripcionTypeOrmRepository implements InscripcionRepository {
     return entities.map((e) => this.toDomain(e));
   }
 
+  async findAll(): Promise<Inscripcion[]> {
+    const entities = await this.ormRepo.find();
+    return entities.map((e) => this.toDomain(e));
+  }
+
   private toDomain(entity: InscripcionOrmEntity): Inscripcion {
-    return Inscripcion.crear(
-      entity.id,
-      entity.estudianteId,
-      entity.cursoId,
-    );
+    // Antes usaba Inscripcion.crear(), que siempre pone activa=true y
+    // fechaInscripcion=ahora — descartando los valores reales persistidos.
+    // Encontrado al implementar reembolsos (desactivar() no sobrevivía a un
+    // roundtrip por la DB).
+    return Inscripcion.reconstitute(entity.id, {
+      estudianteId: entity.estudianteId,
+      cursoId: entity.cursoId,
+      fechaInscripcion: entity.fechaInscripcion,
+      activa: entity.activa,
+    });
   }
 }

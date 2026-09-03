@@ -1,13 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
 @Entity('intentos')
 export class IntentoOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
   @Column({ name: 'estudiante_id' })
   estudiante_id!: string;
 
+  @Index()
   @Column({ name: 'quiz_id' })
   quiz_id!: string;
 

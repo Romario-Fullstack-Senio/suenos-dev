@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
 import { CursoRepository, CURSO_REPOSITORY } from '../domain/curso.repository.port';
 import { EventBus } from '../../../common/event-bus';
 
@@ -13,7 +14,7 @@ export class PublicarCursoUseCase {
   async execute(cursoId: string): Promise<void> {
     const curso = await this.cursoRepo.findById(cursoId);
     if (!curso) {
-      throw new Error('Curso no encontrado');
+      throw new NotFoundDomainError('Curso no encontrado');
     }
 
     curso.publicar();

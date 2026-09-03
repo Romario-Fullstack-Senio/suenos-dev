@@ -16,7 +16,7 @@ providers:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@suenosdev.com
+      email: admin@suenos-dev.dev
       storage: acme.json
       httpChallenge:
         entryPoint: web

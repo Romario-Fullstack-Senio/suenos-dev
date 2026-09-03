@@ -14,4 +14,5 @@ export interface PaymentIntentResult {
 
 export interface StripePaymentIntent {
   createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResult>;
+  refund(paymentIntentId: string): Promise<{ refundId: string }>;
 }

@@ -15,6 +15,8 @@
     "build:web": "npm run build --workspace=apps/web",
     "build": "npm run build:shared && npm run build:api && npm run build:web",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "docker:up": "docker compose -f infra/docker-compose.yml up -d",
     "docker:down": "docker compose -f infra/docker-compose.yml down",
     "docker:dev": "docker compose -f infra/docker-compose.yml up --build"
@@ -29,6 +31,10 @@
   },
   "devDependencies": {
     "@types/passport-github2": "^1.2.9",
-    "@types/passport-google-oauth20": "^2.0.17"
+    "@types/passport-google-oauth20": "^2.0.17",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.0"
   }
 }

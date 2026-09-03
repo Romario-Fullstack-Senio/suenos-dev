@@ -28,7 +28,7 @@ export class SendGridAdapter implements EmailSender {
     try {
       await sgMail.send({
         to,
-        from: process.env.SMTP_FROM || 'noreply@suenosdev.com',
+        from: process.env.SMTP_FROM || 'noreply@suenos-dev.dev',
         subject,
         html: body,
       });

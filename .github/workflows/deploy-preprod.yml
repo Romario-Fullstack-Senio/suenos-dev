@@ -1,0 +1,102 @@
+# ============================================================
+# CD: Deploy to PREPRODUCCIÓN via SSH
+# Se dispara automáticamente cuando termina el build de la rama `develop`,
+# o manualmente. Corre en un directorio separado del servidor, con su
+# propio .env — nunca toca los contenedores/datos de producción.
+# ============================================================
+name: Deploy to Preprod
+
+on:
+  workflow_run:
+    workflows: ["Build & Push"]
+    types:
+      - completed
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA a desplegar (vacío = el último de develop)'
+        required: false
+        type: string
+
+env:
+  DEPLOY_DIR: ~/deploy/suenos-dev-preprod
+  COMPOSE_PROJECT: suenos-preprod
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Set deploy variables
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DEPLOY_SHA="${{ github.event.inputs.sha || github.sha }}"
+          else
+            DEPLOY_SHA="${{ github.event.workflow_run.head_sha }}"
+          fi
+          SHORT_SHA=$(echo "$DEPLOY_SHA" | cut -c1-7)
+          echo "DEPLOY_SHA=$DEPLOY_SHA" >> $GITHUB_ENV
+          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
+          echo "Deploying to PREPROD: $SHORT_SHA"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.PREPROD_SERVER_HOST }}
+          username: ${{ secrets.PREPROD_SERVER_USER }}
+          key: ${{ secrets.PREPROD_SERVER_SSH_KEY }}
+          port: ${{ secrets.PREPROD_SERVER_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+
+            echo "=== Deploying suenos-dev PREPROD: $SHORT_SHA ==="
+
+            cd ${{ env.DEPLOY_DIR }}
+
+            # Update image tags in .env.preprod
+            sed -i "s|^API_TAG=.*|API_TAG=$SHORT_SHA|" .env.preprod
+            sed -i "s|^WEB_TAG=.*|WEB_TAG=$SHORT_SHA|" .env.preprod
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin 2>/dev/null || true
+
+            echo "Pulling images..."
+            docker compose -p ${{ env.COMPOSE_PROJECT }} --env-file .env.preprod -f docker-compose.prod.yml pull api web
+
+            echo "Restarting preprod services..."
+            docker compose -p ${{ env.COMPOSE_PROJECT }} --env-file .env.preprod -f docker-compose.prod.yml up -d --remove-orphans --force-recreate api web
+
+            echo "Waiting for health checks..."
+            sleep 15
+
+            echo "Verifying API health..."
+            for i in 1 2 3 4 5; do
+              if docker compose -p ${{ env.COMPOSE_PROJECT }} --env-file .env.preprod -f docker-compose.prod.yml exec -T api wget -qO- http://localhost:3001/health 2>/dev/null; then
+                echo ""
+                echo "API is healthy!"
+                break
+              fi
+              echo "Attempt $i: API not ready, waiting..."
+              sleep 5
+            done
+
+            echo ""
+            echo "=== Preprod deployment complete ==="
+            echo "API:  https://api-preprod.suenos-dev.dev/health"
+            echo "Web:  https://preprod.suenos-dev.dev"
+            echo "SHA:  $SHORT_SHA"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "Preprod deploy FAILED for commit $SHORT_SHA"
+          echo "Check server logs: ssh ${{ secrets.PREPROD_SERVER_USER }}@${{ secrets.PREPROD_SERVER_HOST }} 'cd ${{ env.DEPLOY_DIR }} && docker compose -p ${{ env.COMPOSE_PROJECT }} logs --tail=50 api web'"

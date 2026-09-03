@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('progreso_lecciones')
@@ -10,12 +11,15 @@ export class ProgresoLeccionOrmEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Index()
   @Column({ name: 'estudiante_id' })
   estudianteId!: string;
 
+  @Index()
   @Column({ name: 'leccion_id' })
   leccionId!: string;
 
+  @Index()
   @Column({ name: 'curso_id' })
   cursoId!: string;
 

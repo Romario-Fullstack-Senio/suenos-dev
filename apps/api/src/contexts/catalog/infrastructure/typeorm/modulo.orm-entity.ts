@@ -1,4 +1,4 @@
-import { Entity as TypeOrmEntity, PrimaryColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity as TypeOrmEntity, PrimaryColumn, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { CursoOrmEntity } from './curso.orm-entity';
 import { LeccionOrmEntity } from './leccion.orm-entity';
 
@@ -13,6 +13,7 @@ export class ModuloOrmEntity {
   @Column('int')
   orden!: number;
 
+  @Index()
   @Column('uuid')
   curso_id!: string;
 

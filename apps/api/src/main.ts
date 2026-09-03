@@ -1,19 +1,40 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import helmet from 'helmet';
+import * as express from 'express';
 import { AppModule } from './app.module';
 import { initSentry } from './sentry.config';
-import { SentryGlobalFilter } from '@sentry/nestjs/setup';
 import { SentryInterceptor } from './sentry.interceptor';
 
 async function bootstrap() {
   initSentry();
 
+  // bodyParser: false porque el body-parser por defecto de Nest tiene un
+  // límite de 100kb — insuficiente para el upload de video (POST /videos/upload
+  // manda el archivo como base64 dentro del JSON). Se registra manualmente
+  // más abajo con un límite mayor.
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
+    bodyParser: false,
   });
+  const VIDEO_BODY_LIMIT = '600mb';
+  // `verify` replica lo que hacía la opción `rawBody: true` de Nest con su
+  // parser por defecto — StripeWebhookController necesita el buffer crudo
+  // (sin parsear) para verificar la firma del webhook.
+  const captureRawBody = (req: express.Request, _res: express.Response, buf: Buffer) => {
+    (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+  };
+  app.use(express.json({ limit: VIDEO_BODY_LIMIT, verify: captureRawBody }));
+  app.use(express.urlencoded({ limit: VIDEO_BODY_LIMIT, extended: true, verify: captureRawBody }));
 
-  app.useGlobalFilters(new SentryGlobalFilter());
+  // El filtro global de Sentry se registra vía DI en AppModule (APP_FILTER),
+  // NO con `useGlobalFilters(new SentryGlobalFilter())`: SentryGlobalFilter
+  // extiende BaseExceptionFilter, que necesita que Nest le inyecte
+  // HttpAdapterHost para inicializar `applicationRef`. Instanciarlo con `new`
+  // deja `applicationRef` undefined y CUALQUIER excepción no controlada
+  // (un 404, un 401, un error de validación) tumba el proceso completo.
+  app.use(helmet());
   app.useGlobalInterceptors(new SentryInterceptor());
   app.setGlobalPrefix('api');
   app.enableCors({
@@ -28,27 +49,30 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Sueños Dev API')
-    .setDescription('API para plataforma e-learning Sueños Dev')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Swagger queda público sin ningún control de acceso propio — exponerlo
+  // tal cual en producción es un mapa completo de la API (rutas, DTOs,
+  // shapes de auth) para cualquiera. Se apaga por defecto en NODE_ENV=production,
+  // salvo que se pida explícitamente con ENABLE_SWAGGER=true (útil en preprod).
+  const swaggerHabilitado =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  if (swaggerHabilitado) {
+    const config = new DocumentBuilder()
+      .setTitle('Sueños Dev API')
+      .setDescription('API para plataforma e-learning Sueños Dev')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  app.getHttpAdapter().get('/health', (_req, res) => {
-    res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    });
-  });
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`🚀 API running on http://localhost:${port}/api`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
+  if (swaggerHabilitado) {
+    console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
+  }
 }
 bootstrap();

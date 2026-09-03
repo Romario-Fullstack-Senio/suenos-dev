@@ -49,4 +49,8 @@ export class Inscripcion extends AggregateRoot<string> {
       activa: true,
     });
   }
+
+  static reconstitute(id: string, props: InscripcionProps): Inscripcion {
+    return new Inscripcion(id, props);
+  }
 }

@@ -13,9 +13,20 @@ export interface ProgresoLeccionRepository {
     cursoId: string,
     estudianteId: string,
   ): Promise<ProgresoLeccion[]>;
+  findByCursoId(cursoId: string): Promise<ProgresoLeccion[]>;
+}
+
+export interface VideoObjectStream {
+  stream: NodeJS.ReadableStream;
+  contentType: string;
 }
 
 export interface VideoStorage {
   upload(file: Buffer, key: string): Promise<string>;
   getStreamUrl(key: string): Promise<string>;
+  /** Lee un archivo (manifest .m3u8 o segmento .ts) ya subido a MinIO, para
+   * servirlo a través de nuestro propio endpoint con control de acceso —
+   * nunca se expone la URL de MinIO directo (el bucket es privado acá,
+   * a diferencia de covers/*). */
+  getObject(key: string, filename: string): Promise<VideoObjectStream | null>;
 }

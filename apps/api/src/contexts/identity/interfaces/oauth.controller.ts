@@ -28,7 +28,7 @@ export class OAuthController {
         provider: AuthProviderTipo.GOOGLE,
         providerId: req.user.providerId,
       });
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }
@@ -51,7 +51,7 @@ export class OAuthController {
         provider: AuthProviderTipo.GITHUB,
         providerId: req.user.providerId,
       });
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }

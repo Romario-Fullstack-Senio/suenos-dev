@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
 import { CursoRepository, CURSO_REPOSITORY } from '../domain/curso.repository.port';
 import { Leccion } from '../domain/leccion.entity';
 import { v4 as uuid } from 'uuid';
@@ -6,9 +7,12 @@ import { v4 as uuid } from 'uuid';
 interface AgregarLeccionCommand {
   cursoId: string;
   moduloId: string;
+  id?: string;
   titulo: string;
   orden: number;
   duracionSegundos: number;
+  videoUrl?: string;
+  esVistaPrevia?: boolean;
 }
 
 @Injectable()
@@ -21,10 +25,19 @@ export class AgregarLeccionUseCase {
   async execute(command: AgregarLeccionCommand): Promise<{ leccionId: string }> {
     const curso = await this.cursoRepo.findById(command.cursoId);
     if (!curso) {
-      throw new Error('Curso no encontrado');
+      throw new NotFoundDomainError('Curso no encontrado');
     }
 
-    const leccion = Leccion.create(uuid(), command.titulo, command.orden, command.duracionSegundos);
+    const leccion = Leccion.create(
+      command.id ?? uuid(),
+      command.titulo,
+      command.orden,
+      command.duracionSegundos,
+      command.esVistaPrevia ?? false,
+    );
+    if (command.videoUrl) {
+      leccion.asignarVideo(command.videoUrl);
+    }
     curso.agregarLeccion(command.moduloId, leccion);
     await this.cursoRepo.save(curso);
 

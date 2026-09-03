@@ -5,13 +5,17 @@ FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-# Copy every package.json so npm can resolve the workspace graph
-COPY package.json ./
+# Copy every package.json + the root lockfile so npm can resolve the exact
+# same dependency graph as local/CI (a bare `npm install` with no lockfile
+# in this stage previously let npm resolve `typescript` to 6.0.3 — outside
+# the ^5.4.0 range every workspace declares — breaking the build with
+# TS6.0-only errors that never reproduced locally or in the `test` CI job).
+COPY package.json package-lock.json ./
 COPY shared-kernel/package.json ./shared-kernel/
 COPY apps/api/package.json ./apps/api/
 
 # Install ALL dependencies across every workspace (devDeps included for build)
-RUN npm install
+RUN npm ci
 
 # ============================================================
 # Stage 2: Build shared-kernel then API
@@ -20,11 +24,19 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Reuse the full node_modules tree from the install stage
+# Reuse the full node_modules tree from the install stage. Some packages
+# (e.g. @nestjs/cache-manager, @sentry/nestjs, @sentry/profiling-node) don't
+# hoist to the root due to peer-dependency conflicts and stay nested under
+# apps/api/node_modules — copy that too or tsc/nest build fails with
+# "Cannot find module" even though npm installed everything correctly.
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 
 # Copy source for both workspaces + root package.json (workspaces field)
-COPY package.json ./
+# tsconfig.base.json is required: both shared-kernel/tsconfig.json and
+# apps/api/tsconfig.json extend it — without it `tsc` fails with
+# TS5083: Cannot read file '/app/tsconfig.base.json'.
+COPY package.json tsconfig.base.json ./
 COPY shared-kernel/ ./shared-kernel/
 COPY apps/api/ ./apps/api/
 
@@ -52,7 +64,12 @@ COPY --from=builder --chown=suenos:suenos /app/apps/api/package.json ./
 COPY --from=builder --chown=suenos:suenos /app/node_modules ./node_modules
 
 # --- Shared-kernel build output (required at runtime) ---
-RUN mkdir -p node_modules/@suenos-dev/shared-kernel
+# node_modules/@suenos-dev/shared-kernel is a workspace symlink (created by
+# `npm ci`) pointing at ../../shared-kernel — that target doesn't exist in
+# this stage, so it must be removed before mkdir -p can create a real dir
+# in its place (mkdir refuses to descend through a dangling symlink).
+RUN rm -rf node_modules/@suenos-dev/shared-kernel \
+ && mkdir -p node_modules/@suenos-dev/shared-kernel
 COPY --from=builder --chown=suenos:suenos /app/shared-kernel/dist    ./node_modules/@suenos-dev/shared-kernel/dist
 COPY --from=builder --chown=suenos:suenos /app/shared-kernel/package.json ./node_modules/@suenos-dev/shared-kernel/
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { setTokens } from '@/lib/api';
 
 function CallbackContent() {
   const router = useRouter();
@@ -11,6 +12,8 @@ function CallbackContent() {
 
   useEffect(() => {
     const token = searchParams.get('token');
+    const refreshToken = searchParams.get('refreshToken');
+    const sessionToken = searchParams.get('sessionToken');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -18,13 +21,12 @@ function CallbackContent() {
       return;
     }
 
-    if (!token) {
+    if (!token || !refreshToken || !sessionToken) {
       setError('No se recibió token de autenticación.');
       return;
     }
 
-    // Persist token and redirect
-    localStorage.setItem('token', token);
+    setTokens({ token, refreshToken, sessionToken });
 
     // Decode JWT to get user info
     try {
@@ -34,6 +36,8 @@ function CallbackContent() {
         email: payload.email,
         rol: payload.rol,
         nombre: payload.nombre || payload.email.split('@')[0],
+        // Cuentas OAuth siempre arrancan verificadas (ver Usuario.registrarDesdeOAuth).
+        emailVerificado: true,
       };
       localStorage.setItem('user', JSON.stringify(user));
 
@@ -55,8 +59,8 @@ function CallbackContent() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error de Autenticación</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <a href="/auth/login" className="text-primary hover:underline">
+          <p className="text-ink-muted mb-4">{error}</p>
+          <a href="/auth/login" className="text-secondary hover:underline">
             Volver al Login
           </a>
         </div>
@@ -68,7 +72,7 @@ function CallbackContent() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-600">Autenticando...</p>
+        <p className="text-ink-muted">Autenticando...</p>
       </div>
     </div>
   );

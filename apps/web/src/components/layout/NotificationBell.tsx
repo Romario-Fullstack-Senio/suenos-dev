@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet, apiPut } from '@/lib/api';
 import Link from 'next/link';
+import { Bell, CheckCheck, ExternalLink } from 'lucide-react';
 
 interface Notificacion {
   id: string;
@@ -88,50 +89,51 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={abrirPanel}
-        className="relative p-2 text-gray-500 hover:text-primary transition"
+        className="relative p-2 text-ink-muted hover:text-ink transition-colors rounded-lg hover:bg-cloud-100"
         aria-label="Notificaciones"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-        </svg>
+        <Bell className="w-5 h-5" />
         {noLeidas > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
             {noLeidas > 99 ? '99+' : noLeidas}
           </span>
         )}
       </button>
 
       {abierta && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border z-50 max-h-96 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b">
-            <h3 className="font-semibold text-gray-800">Notificaciones</h3>
+        <div className="absolute right-0 mt-2 w-80 card overflow-hidden p-0">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-ink/[0.07]">
+            <h3 className="font-semibold text-sm text-ink">Notificaciones</h3>
             {noLeidas > 0 && (
               <button
                 onClick={marcarTodasLeidas}
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-primary hover:text-indigo-600 transition-colors inline-flex items-center gap-1"
               >
-                Marcar todas leídas
+                <CheckCheck className="w-3.5 h-3.5" />
+                Marcar leídas
               </button>
             )}
           </div>
 
-          <div className="overflow-y-auto max-h-72">
+          <div className="overflow-y-auto max-h-80">
             {cargando ? (
-              <div className="p-4 text-center text-gray-400 text-sm">Cargando...</div>
+              <div className="p-6 text-center">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
             ) : notificaciones.length === 0 ? (
-              <div className="p-4 text-center text-gray-400 text-sm">Sin notificaciones</div>
+              <div className="p-6 text-center">
+                <Bell className="w-8 h-8 text-ink-soft mx-auto mb-2" />
+                <p className="text-sm text-ink-muted">Sin notificaciones</p>
+              </div>
             ) : (
               notificaciones.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-50 transition ${
+                  className={`px-4 py-3 border-b border-ink/[0.07] last:border-b-0 cursor-pointer hover:bg-cloud-100 transition-colors ${
                     !n.leida ? 'bg-primary/5' : ''
                   }`}
                   onClick={() => {
                     if (!n.leida) marcarLeida(n.id);
-                    if (n.cursoId) {
-                      setAbierta(false);
-                    }
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -139,11 +141,11 @@ export function NotificationBell() {
                       <span className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!n.leida ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                      <p className={`text-sm ${!n.leida ? 'font-semibold text-ink' : 'text-ink-muted'}`}>
                         {n.titulo}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">{n.mensaje}</p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-ink-soft mt-0.5 line-clamp-2">{n.mensaje}</p>
+                      <p className="text-xs text-ink-soft/70 mt-1">
                         {new Date(n.fecha).toLocaleDateString('es-ES', {
                           day: 'numeric',
                           month: 'short',
@@ -155,10 +157,10 @@ export function NotificationBell() {
                     {n.cursoId && (
                       <Link
                         href={`/cursos/${n.cursoId}`}
-                        className="text-xs text-primary hover:underline flex-shrink-0 mt-1"
+                        className="text-primary hover:text-indigo-600 transition-colors flex-shrink-0 mt-0.5"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        Ver
+                        <ExternalLink className="w-4 h-4" />
                       </Link>
                     )}
                   </div>

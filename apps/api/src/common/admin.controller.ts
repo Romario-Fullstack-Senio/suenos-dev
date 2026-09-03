@@ -4,6 +4,7 @@ import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../contexts/identity/domain/usuario.repository.port';
 import { CURSO_REPOSITORY, CursoRepository } from '../contexts/catalog/domain/curso.repository.port';
+import { INSCRIPCION_REPOSITORY, InscripcionRepository } from '../contexts/enrollment/domain/inscripcion.repository.port';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14,17 +15,22 @@ export class AdminController {
     private readonly usuarioRepository: UsuarioRepository,
     @Inject(CURSO_REPOSITORY)
     private readonly cursoRepository: CursoRepository,
+    @Inject(INSCRIPCION_REPOSITORY)
+    private readonly inscripcionRepository: InscripcionRepository,
   ) {}
 
   @Get('stats')
   async getStats() {
-    const usuarios = await this.usuarioRepository.findAll();
-    const cursos = await this.cursoRepository.findAll();
+    const [usuarios, cursos, inscripciones] = await Promise.all([
+      this.usuarioRepository.findAll(),
+      this.cursoRepository.findAll(),
+      this.inscripcionRepository.findAll(),
+    ]);
 
     return {
       totalUsuarios: usuarios.length,
       totalCursos: cursos.length,
-      totalInscripciones: 0,
+      totalInscripciones: inscripciones.length,
     };
   }
 }

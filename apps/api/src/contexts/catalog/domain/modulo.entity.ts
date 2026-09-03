@@ -1,4 +1,4 @@
-import { Entity } from '@suenos-dev/shared-kernel';
+import { Entity, DomainError } from '@suenos-dev/shared-kernel';
 import { Leccion } from './leccion.entity';
 
 interface ModuloProps {
@@ -16,7 +16,7 @@ export class Modulo extends Entity<string> {
   }
 
   static create(id: string, titulo: string, orden: number): Modulo {
-    if (!titulo) throw new Error('El título del módulo es requerido');
+    if (!titulo) throw new DomainError('El título del módulo es requerido');
     return new Modulo(id, { titulo, orden, lecciones: [] });
   }
 

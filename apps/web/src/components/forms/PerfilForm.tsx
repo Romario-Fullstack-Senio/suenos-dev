@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { perfilSchema, PerfilFormData } from '@/lib/validations/perfil.schema';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiPut } from '@/lib/api';
+import { apiPut, apiPost } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { MailWarning } from 'lucide-react';
 
 export function PerfilForm() {
   const { user } = useAuth();
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
     resolver: zodResolver(perfilSchema),
     defaultValues: {
@@ -21,15 +26,48 @@ export function PerfilForm() {
   const onSubmit = async (data: PerfilFormData) => {
     try {
       await apiPut('/usuarios/me', data);
-      alert('Perfil actualizado');
+      toast.success('Perfil actualizado');
     } catch (error) {
-      alert('Error al actualizar perfil');
+      toast.error('Error al actualizar perfil');
+    }
+  };
+
+  const reenviarVerificacion = async () => {
+    if (!user) return;
+    setReenviando(true);
+    try {
+      await apiPost('/auth/resend-verification', { email: user.email });
+      setReenviado(true);
+    } catch (error) {
+      toast.error('Error al reenviar el email');
+    } finally {
+      setReenviando(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 p-8 bg-white rounded-xl shadow-sm border">
+    <div className="max-w-md mx-auto mt-16 p-8 bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07]">
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
+      {user && !user.emailVerificado && (
+        <div className="flex items-start gap-3 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <MailWarning className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-amber-800 font-medium">Tu email todavía no está verificado</p>
+            {reenviado ? (
+              <p className="text-sm text-amber-700 mt-1">Te enviamos un nuevo enlace, revisá tu bandeja.</p>
+            ) : (
+              <button
+                type="button"
+                onClick={reenviarVerificacion}
+                disabled={reenviando}
+                className="text-sm text-amber-800 underline hover:no-underline mt-1 disabled:opacity-50"
+              >
+                {reenviando ? 'Enviando…' : 'Reenviar email de verificación'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit(onSubmit)}>
         <Input
           label="Nombre"
