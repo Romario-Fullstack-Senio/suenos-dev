@@ -24,8 +24,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Reuse the full node_modules tree from the install stage
+# Reuse the full node_modules tree from the install stage. Some packages
+# (e.g. @nestjs/cache-manager, @sentry/nestjs, @sentry/profiling-node) don't
+# hoist to the root due to peer-dependency conflicts and stay nested under
+# apps/api/node_modules — copy that too or tsc/nest build fails with
+# "Cannot find module" even though npm installed everything correctly.
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 
 # Copy source for both workspaces + root package.json (workspaces field)
 # tsconfig.base.json is required: both shared-kernel/tsconfig.json and
