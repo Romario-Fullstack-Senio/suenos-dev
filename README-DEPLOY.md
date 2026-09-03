@@ -446,7 +446,14 @@ Agregar los registros DNS (`preprod.suenos-dev.dev`, `api-preprod.suenos-dev.dev
 4. Se prueba ahí con datos/Stripe de test, sin tocar nada real.
 5. Cuando está validado, se mergea `develop` → `main`, lo que dispara el deploy real a producción.
 
-No hace falta ningún secret de GitHub nuevo — `deploy-preprod.yml` reusa `SERVER_HOST`/`SERVER_USER`/`SERVER_SSH_KEY`/`SERVER_PORT` (mismo servidor, directorio distinto).
+`deploy-preprod.yml` usa su propio set de secrets — separado del de producción a propósito, para que dar de alta preprod no habilite un deploy automático a producción (y viceversa) aunque compartan el mismo servidor físico:
+
+| Secret | Descripción |
+|---|---|
+| `PREPROD_SERVER_HOST` | IP o dominio del servidor (puede ser el mismo que `SERVER_HOST`) |
+| `PREPROD_SERVER_USER` | Usuario SSH |
+| `PREPROD_SERVER_SSH_KEY` | Clave privada SSH (puede ser la misma que `SERVER_SSH_KEY` o una dedicada) |
+| `PREPROD_SERVER_PORT` | Puerto SSH (default: `22`) |
 
 ---
 
