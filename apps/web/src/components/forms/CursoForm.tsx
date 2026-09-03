@@ -91,10 +91,19 @@ export function CursoForm() {
         }
       }
 
+      const aLineas = (texto?: string) =>
+        texto
+          ?.split('\n')
+          .map(l => l.trim())
+          .filter(Boolean);
+
       const result = await apiPost<{ id: string }>('/cursos', {
         ...data,
         categoria: data.categoria?.trim() || undefined,
         nivel: data.nivel || undefined,
+        objetivos: aLineas(data.objetivos),
+        requisitos: aLineas(data.requisitos),
+        audiencia: data.audiencia?.trim() || undefined,
         imagenUrl,
         instructorId: user.id,
       });
@@ -146,6 +155,26 @@ export function CursoForm() {
             { value: 'avanzado', label: 'Avanzado' },
           ]}
           {...register('nivel')}
+        />
+        <TextArea
+          label="Qué van a aprender (opcional, un ítem por línea)"
+          placeholder={'Armar una API REST con NestJS\nConectar una base de datos Postgres\nDesplegar en producción'}
+          rows={3}
+          error={errors.objetivos?.message}
+          {...register('objetivos')}
+        />
+        <TextArea
+          label="Requisitos (opcional, un ítem por línea)"
+          placeholder={'Conocimientos básicos de JavaScript\nUna computadora con internet'}
+          rows={2}
+          error={errors.requisitos?.message}
+          {...register('requisitos')}
+        />
+        <Input
+          label="Para quién es este curso (opcional)"
+          placeholder="Ej: Desarrolladores frontend que quieren aprender backend"
+          error={errors.audiencia?.message}
+          {...register('audiencia')}
         />
 
         <div className="mb-4">

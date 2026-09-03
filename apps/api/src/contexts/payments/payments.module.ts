@@ -6,6 +6,7 @@ import { OrdenTypeOrmRepository } from './infrastructure/typeorm/orden.typeorm-r
 import { CuponOrmEntity } from './infrastructure/typeorm/cupon.orm-entity';
 import { CuponTypeOrmRepository } from './infrastructure/typeorm/cupon.typeorm-repository';
 import { CrearOrdenUseCase } from './application/crear-orden.use-case';
+import { ReembolsarOrdenUseCase } from './application/reembolsar-orden.use-case';
 import { CrearCuponUseCase } from './application/crear-cupon.use-case';
 import { ValidarCuponUseCase } from './application/validar-cupon.use-case';
 import { ListarCuponesUseCase } from './application/listar-cupones.use-case';
@@ -20,8 +21,11 @@ import { STRIPE_CHECKOUT } from './domain/stripe-checkout.port';
 import { StripeCheckoutAdapter } from './infrastructure/stripe/stripe-checkout.adapter';
 import { STRIPE_PAYMENT_INTENT } from './domain/stripe-payment-intent.port';
 import { StripePaymentIntentAdapter } from './infrastructure/stripe/stripe-payment-intent.adapter';
+import { FACTURA_GENERATOR } from './domain/factura-generator.port';
+import { FacturaPdfKitAdapter } from './infrastructure/pdf/factura-pdfkit.adapter';
 import { IdentityModule } from '../identity/identity.module';
 import { CatalogModule } from '../catalog/catalog.module';
+import { EnrollmentModule } from '../enrollment/enrollment.module';
 
 @Module({
   imports: [
@@ -29,6 +33,7 @@ import { CatalogModule } from '../catalog/catalog.module';
     EventEmitterModule.forRoot(),
     IdentityModule,
     CatalogModule,
+    EnrollmentModule,
   ],
   controllers: [OrdenController, CuponController, StripeWebhookController],
   providers: [
@@ -48,12 +53,18 @@ import { CatalogModule } from '../catalog/catalog.module';
       provide: STRIPE_PAYMENT_INTENT,
       useClass: StripePaymentIntentAdapter,
     },
+    {
+      provide: FACTURA_GENERATOR,
+      useClass: FacturaPdfKitAdapter,
+    },
     CrearOrdenUseCase,
+    ReembolsarOrdenUseCase,
     CrearCuponUseCase,
     ValidarCuponUseCase,
     ListarCuponesUseCase,
     DesactivarCuponUseCase,
     StripeWebhookHandler,
   ],
+  exports: [ORDEN_REPOSITORY],
 })
 export class PaymentsModule {}

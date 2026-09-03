@@ -123,7 +123,12 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Mis Cursos</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Mis Cursos</h1>
+        <Link href="/dashboard/compras" className="text-secondary hover:underline text-sm">
+          Ver mis compras y comprobantes →
+        </Link>
+      </div>
       {loading ? (
         <p>Cargando...</p>
       ) : cursos.length === 0 ? (

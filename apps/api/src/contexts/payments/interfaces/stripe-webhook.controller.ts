@@ -98,14 +98,19 @@ export class StripeWebhookController {
         alumnoEmail = usuario.email.value || String(usuario.email);
         alumnoNombre = usuario.nombre;
       }
-    } catch {}
+    } catch {
+      // Best-effort: si falla la lectura, el email sale con campos vacíos
+      // en vez de tumbar la confirmación del webhook de Stripe.
+    }
 
     try {
       const curso = await this.cursoRepository.findById(orden.cursoId);
       if (curso) {
         cursoNombre = curso.titulo;
       }
-    } catch {}
+    } catch {
+      // Idem.
+    }
 
     orden.completar({
       alumnoEmail,

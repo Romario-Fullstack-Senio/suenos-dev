@@ -5,15 +5,24 @@ import { ProgresoLeccionTypeormRepository } from './infrastructure/typeorm/progr
 import { MinioVideoStorageAdapter } from './infrastructure/minio/minio-video-storage.adapter';
 import { RegistrarProgresoUseCase } from './application/registrar-progreso.use-case';
 import { SubirVideoUseCase } from './application/subir-video.use-case';
+import { VerificarAccesoVideoUseCase } from './application/verificar-acceso-video.use-case';
 import { VideoController } from './interfaces/video.controller';
 import { ProgresoController } from './interfaces/progreso.controller';
 import {
   PROGRESO_LECCION_REPOSITORY,
   VIDEO_STORAGE,
 } from './domain/progreso-leccion.repository.port';
+import { CatalogModule } from '../catalog/catalog.module';
+import { EnrollmentModule } from '../enrollment/enrollment.module';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProgresoLeccionOrmEntity])],
+  imports: [
+    TypeOrmModule.forFeature([ProgresoLeccionOrmEntity]),
+    CatalogModule,
+    EnrollmentModule,
+    IdentityModule, // re-exporta JwtModule — necesario para verificar el token opcional en VideoController
+  ],
   controllers: [VideoController, ProgresoController],
   providers: [
     {
@@ -26,6 +35,8 @@ import {
     },
     RegistrarProgresoUseCase,
     SubirVideoUseCase,
+    VerificarAccesoVideoUseCase,
   ],
+  exports: [PROGRESO_LECCION_REPOSITORY],
 })
 export class ContentDeliveryModule {}

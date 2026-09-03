@@ -16,9 +16,15 @@ import { LeccionOrmEntity } from './infrastructure/typeorm/leccion.orm-entity';
 import { CURSO_REPOSITORY } from './domain/curso.repository.port';
 import { IMAGE_STORAGE } from './domain/image-storage.port';
 import { MinioImageStorageAdapter } from './infrastructure/minio/minio-image-storage.adapter';
+import { IdentityModule } from '../identity/identity.module';
+import { EnrollmentModule } from '../enrollment/enrollment.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CursoOrmEntity, ModuloOrmEntity, LeccionOrmEntity])],
+  imports: [
+    TypeOrmModule.forFeature([CursoOrmEntity, ModuloOrmEntity, LeccionOrmEntity]),
+    IdentityModule,
+    EnrollmentModule,
+  ],
   controllers: [CursoController],
   providers: [
     { provide: CURSO_REPOSITORY, useClass: CursoTypeOrmRepository },

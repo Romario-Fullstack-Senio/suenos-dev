@@ -14,8 +14,17 @@ export default function HLSPlayer({ src }: HLSPlayerProps) {
     const video = videoRef.current;
     if (!video || !src) return;
 
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
     if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls({
+        // El endpoint de video ahora exige acceso (vista previa gratuita,
+        // inscripción, o dueño/admin) — este header autentica tanto el
+        // manifest como cada segmento .ts que hls.js pida.
+        xhrSetup: (xhr) => {
+          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        },
+      });
       hls.loadSource(src);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -25,7 +34,10 @@ export default function HLSPlayer({ src }: HLSPlayerProps) {
         hls.destroy();
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = src;
+      // Safari (HLS nativo) no manda headers custom — el token va como
+      // query param; el backend reescribe el manifest para que cada
+      // segmento también lo lleve (ver VideoController#serveHls).
+      video.src = token ? `${src}${src.includes('?') ? '&' : '?'}token=${token}` : src;
       video.addEventListener('loadedmetadata', () => {
         video.play().catch(() => {});
       });

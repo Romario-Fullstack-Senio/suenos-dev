@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiGet } from '@/lib/api';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
 
 interface Curso {
@@ -15,6 +15,15 @@ interface Curso {
   imagenUrl?: string;
   categoria?: string;
   nivel?: string;
+  instructorNombre?: string;
+  alumnosInscriptos?: number;
+}
+
+interface ListadoCursos {
+  cursos: Curso[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 const NIVEL_LABEL: Record<string, string> = {
@@ -23,8 +32,25 @@ const NIVEL_LABEL: Record<string, string> = {
   avanzado: 'Avanzado',
 };
 
+function CourseCardSkeleton() {
+  return (
+    <div className="card overflow-hidden p-0 h-full flex flex-col animate-pulse">
+      <div className="w-full aspect-video bg-ink/[0.06]" />
+      <div className="p-6 flex flex-col flex-1 gap-2">
+        <div className="h-5 bg-ink/[0.06] rounded w-3/4" />
+        <div className="h-4 bg-ink/[0.06] rounded w-full" />
+        <div className="h-4 bg-ink/[0.06] rounded w-2/3" />
+        <div className="h-5 bg-ink/[0.06] rounded w-1/3 mt-auto" />
+      </div>
+    </div>
+  );
+}
+
 export default function CursosPage() {
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -35,12 +61,12 @@ export default function CursosPage() {
   // Categorías para el filtro: se cargan una sola vez, sin filtros, para que
   // no desaparezcan opciones del dropdown al filtrar por categoría/nivel.
   useEffect(() => {
-    apiGet<Curso[]>('/cursos')
-      .then(data => setCategorias(Array.from(new Set(data.map(c => c.categoria).filter(Boolean))) as string[]))
+    apiGet<ListadoCursos>('/cursos?limit=100')
+      .then(data => setCategorias(Array.from(new Set(data.cursos.map(c => c.categoria).filter(Boolean))) as string[]))
       .catch(() => {});
   }, []);
 
-  const fetchCursos = useCallback(async () => {
+  const fetchCursos = useCallback(async (paginaAPedir: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -48,9 +74,11 @@ export default function CursosPage() {
       if (categoria) params.set('categoria', categoria);
       if (nivel) params.set('nivel', nivel);
       if (sort !== 'reciente') params.set('sort', sort);
-      const qs = params.toString();
-      const data = await apiGet<Curso[]>(`/cursos${qs ? `?${qs}` : ''}`);
-      setCursos(data);
+      params.set('page', String(paginaAPedir));
+      const data = await apiGet<ListadoCursos>(`/cursos?${params.toString()}`);
+      setCursos(data.cursos);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -58,11 +86,25 @@ export default function CursosPage() {
     }
   }, [search, categoria, nivel, sort]);
 
-  // Debounce del texto libre para no disparar una request por cada tecla.
+  // Cualquier cambio de filtro vuelve a la página 1. Debounce en el texto
+  // libre para no disparar una request por cada tecla.
   useEffect(() => {
-    const timeout = setTimeout(fetchCursos, 300);
+    setPage(1);
+    const timeout = setTimeout(() => fetchCursos(1), 300);
     return () => clearTimeout(timeout);
-  }, [fetchCursos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, categoria, nivel, sort]);
+
+  useEffect(() => {
+    fetchCursos(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  const irAPagina = (nueva: number) => {
+    if (nueva < 1 || nueva > totalPages) return;
+    setPage(nueva);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 min-h-screen">
@@ -110,41 +152,84 @@ export default function CursosPage() {
         </select>
       </div>
 
+      {!loading && total > 0 && (
+        <p className="text-ink-soft text-sm mb-4">{total} {total === 1 ? 'curso encontrado' : 'cursos encontrados'}</p>
+      )}
+
       {loading ? (
-        <p className="text-ink-muted">Cargando cursos...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => <CourseCardSkeleton key={i} />)}
+        </div>
       ) : cursos.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No se encontraron cursos con esos filtros</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cursos.map((curso) => (
-            <Link key={curso.id} href={`/cursos/${curso.slug}`}>
-              <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col">
-                <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
-                <div className="p-6 flex flex-col flex-1">
-                  {(curso.categoria || curso.nivel) && (
-                    <div className="flex gap-2 mb-2">
-                      {curso.categoria && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          {curso.categoria}
-                        </span>
-                      )}
-                      {curso.nivel && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                          {NIVEL_LABEL[curso.nivel] ?? curso.nivel}
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cursos.map((curso) => (
+              <Link key={curso.id} href={`/cursos/${curso.slug}`}>
+                <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col">
+                  <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
+                  <div className="p-6 flex flex-col flex-1">
+                    {(curso.categoria || curso.nivel) && (
+                      <div className="flex gap-2 mb-2">
+                        {curso.categoria && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {curso.categoria}
+                          </span>
+                        )}
+                        {curso.nivel && (
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                            {NIVEL_LABEL[curso.nivel] ?? curso.nivel}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <h3 className="font-semibold text-lg mb-1 text-ink">{curso.titulo}</h3>
+                    {curso.instructorNombre && (
+                      <p className="text-ink-soft text-xs mb-2">Por {curso.instructorNombre}</p>
+                    )}
+                    <p className="text-ink-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
+                    <div className="mt-auto flex items-center justify-between">
+                      <p className="text-accent font-bold">${curso.precio} USD</p>
+                      {!!curso.alumnosInscriptos && (
+                        <span className="flex items-center gap-1 text-xs text-ink-soft">
+                          <Users className="w-3.5 h-3.5" />
+                          {curso.alumnosInscriptos}
                         </span>
                       )}
                     </div>
-                  )}
-                  <h3 className="font-semibold text-lg mb-2 text-ink">{curso.titulo}</h3>
-                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
-                  <p className="text-accent font-bold mt-auto">${curso.precio} USD</p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-10">
+              <button
+                type="button"
+                onClick={() => irAPagina(page - 1)}
+                disabled={page <= 1}
+                className="p-2 rounded-lg border border-ink/[0.12] text-ink disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cloud-100 transition-colors"
+                aria-label="Página anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-ink-muted">Página {page} de {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => irAPagina(page + 1)}
+                disabled={page >= totalPages}
+                className="p-2 rounded-lg border border-ink/[0.12] text-ink disabled:opacity-30 disabled:cursor-not-allowed hover:bg-cloud-100 transition-colors"
+                aria-label="Página siguiente"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

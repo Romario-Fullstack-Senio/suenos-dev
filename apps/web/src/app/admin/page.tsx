@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Link href="/admin/usuarios" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Gestionar Usuarios</h3>
           <p className="text-ink-muted text-sm">Administrar roles y permisos</p>
@@ -59,6 +59,10 @@ export default function AdminDashboardPage() {
         <Link href="/admin/cupones" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Gestionar Cupones</h3>
           <p className="text-ink-muted text-sm">Crear y desactivar códigos de descuento</p>
+        </Link>
+        <Link href="/admin/ordenes" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
+          <h3 className="font-semibold text-lg mb-2">Órdenes</h3>
+          <p className="text-ink-muted text-sm">Ver ventas y procesar reembolsos</p>
         </Link>
       </div>
     </div>

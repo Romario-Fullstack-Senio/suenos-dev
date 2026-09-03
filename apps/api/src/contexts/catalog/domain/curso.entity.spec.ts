@@ -38,6 +38,23 @@ describe('Curso.actualizar', () => {
     curso.actualizar({ imagenUrl: 'http://localhost:9000/suenos-dev/covers/x.png' });
     expect(curso.imagenUrl).toBe('http://localhost:9000/suenos-dev/covers/x.png');
   });
+
+  it('arranca sin objetivos/requisitos y los completa con actualizar()', () => {
+    const curso = crearCurso();
+    expect(curso.objetivos).toEqual([]);
+    expect(curso.requisitos).toEqual([]);
+    expect(curso.audiencia).toBeUndefined();
+
+    curso.actualizar({
+      objetivos: ['Armar una API REST', 'Desplegar en producción'],
+      requisitos: ['JavaScript básico'],
+      audiencia: 'Devs frontend que quieren aprender backend',
+    });
+
+    expect(curso.objetivos).toEqual(['Armar una API REST', 'Desplegar en producción']);
+    expect(curso.requisitos).toEqual(['JavaScript básico']);
+    expect(curso.audiencia).toBe('Devs frontend que quieren aprender backend');
+  });
 });
 
 describe('Curso.publicar / despublicar', () => {

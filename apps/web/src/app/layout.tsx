@@ -1,12 +1,29 @@
 import type { Metadata } from 'next';
+import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
 import { Sky } from '@/components/layout/Sky';
+import { CookieConsent } from '@/components/CookieConsent';
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
-  title: 'Suenos Dev - Plataforma de E-Learning',
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: 'Sueños Dev - Plataforma de E-Learning',
+    template: '%s | Sueños Dev',
+  },
   description: 'Aprende desarrollo web con cursos practicos y certificados verificables.',
+  openGraph: {
+    siteName: 'Sueños Dev',
+    type: 'website',
+    locale: 'es_ES',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
 };
 
 export default function RootLayout({
@@ -21,7 +38,10 @@ export default function RootLayout({
         <AuthProvider>
           <Header />
           <main className="relative z-[1]">{children}</main>
+          <Footer />
+          <CookieConsent />
         </AuthProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

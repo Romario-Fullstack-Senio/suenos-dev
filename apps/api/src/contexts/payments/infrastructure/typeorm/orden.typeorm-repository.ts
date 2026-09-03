@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Orden } from '../../domain/orden.entity';
 import { OrdenRepository } from '../../domain/orden.repository.port';
 import { OrdenOrmEntity } from './orden.orm-entity';
@@ -37,15 +37,36 @@ export class OrdenTypeOrmRepository implements OrdenRepository {
     return this.toDomain(entity);
   }
 
+  async findByEstudianteId(estudianteId: string): Promise<Orden[]> {
+    const entities = await this.ormRepo.find({ where: { estudianteId }, order: { createdAt: 'DESC' } });
+    return entities.map(e => this.toDomain(e));
+  }
+
+  async findByCursoIds(cursoIds: string[]): Promise<Orden[]> {
+    if (cursoIds.length === 0) return [];
+    const entities = await this.ormRepo.find({ where: { cursoId: In(cursoIds) } });
+    return entities.map(e => this.toDomain(e));
+  }
+
+  async findAll(): Promise<Orden[]> {
+    const entities = await this.ormRepo.find({ order: { createdAt: 'DESC' } });
+    return entities.map(e => this.toDomain(e));
+  }
+
   private toDomain(entity: OrdenOrmEntity): Orden {
     return Orden.restore(
       entity.id,
       entity.estudianteId,
       entity.cursoId,
-      entity.monto,
+      // El driver de pg devuelve las columnas `numeric`/`decimal` como
+      // string (para no perder precisión) — sin este Number(), orden.monto
+      // rompía cualquier operación aritmética o .toFixed() downstream
+      // (encontrado generando el PDF de factura).
+      Number(entity.monto),
       entity.moneda,
       entity.stripeSessionId,
       entity.estado as any,
+      entity.createdAt,
     );
   }
 }

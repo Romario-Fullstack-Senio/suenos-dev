@@ -9,6 +9,10 @@ export const crearCursoSchema = z.object({
   imagenUrl: z.string().url().optional(),
   categoria: z.string().optional(),
   nivel: z.enum(NIVELES_CURSO).optional().or(z.literal('')),
+  // Un ítem por línea en el textarea — se parsean a string[] antes de mandar al backend.
+  objetivos: z.string().optional(),
+  requisitos: z.string().optional(),
+  audiencia: z.string().optional(),
 });
 
 export type CrearCursoFormData = z.infer<typeof crearCursoSchema>;
@@ -25,6 +29,7 @@ export const agregarLeccionSchema = z.object({
   orden: z.number().positive('Debe ser un número positivo'),
   duracionSegundos: z.number().positive('Debe ser un número positivo'),
   videoUrl: z.string().url().optional(),
+  esVistaPrevia: z.boolean().optional(),
 });
 
 export type AgregarLeccionFormData = z.infer<typeof agregarLeccionSchema>;

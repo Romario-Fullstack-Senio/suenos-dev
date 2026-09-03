@@ -13,6 +13,9 @@ interface EditarCursoCommand {
   imagenUrl?: string;
   categoria?: string;
   nivel?: NivelCurso;
+  objetivos?: string[];
+  requisitos?: string[];
+  audiencia?: string;
 }
 
 @Injectable()
@@ -38,6 +41,9 @@ export class EditarCursoUseCase {
       imagenUrl: command.imagenUrl,
       categoria: command.categoria,
       nivel: command.nivel,
+      objetivos: command.objetivos,
+      requisitos: command.requisitos,
+      audiencia: command.audiencia,
     });
     await this.cursoRepo.save(curso);
   }

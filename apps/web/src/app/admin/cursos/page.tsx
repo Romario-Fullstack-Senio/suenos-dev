@@ -19,7 +19,7 @@ export default function AdminCursosPage() {
 
   const fetchCursos = async () => {
     try {
-      const data = await apiGet<Curso[]>('/cursos');
+      const data = await apiGet<Curso[]>('/cursos/admin/todos');
       setCursos(data);
     } catch (error) {
       console.error('Error:', error);

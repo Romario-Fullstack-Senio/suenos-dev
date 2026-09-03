@@ -7,10 +7,12 @@ import { v4 as uuid } from 'uuid';
 interface AgregarLeccionCommand {
   cursoId: string;
   moduloId: string;
+  id?: string;
   titulo: string;
   orden: number;
   duracionSegundos: number;
   videoUrl?: string;
+  esVistaPrevia?: boolean;
 }
 
 @Injectable()
@@ -26,7 +28,13 @@ export class AgregarLeccionUseCase {
       throw new NotFoundDomainError('Curso no encontrado');
     }
 
-    const leccion = Leccion.create(uuid(), command.titulo, command.orden, command.duracionSegundos);
+    const leccion = Leccion.create(
+      command.id ?? uuid(),
+      command.titulo,
+      command.orden,
+      command.duracionSegundos,
+      command.esVistaPrevia ?? false,
+    );
     if (command.videoUrl) {
       leccion.asignarVideo(command.videoUrl);
     }

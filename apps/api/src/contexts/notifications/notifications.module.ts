@@ -6,6 +6,7 @@ import { EnviarEmailCursoCompradoHandler } from './application/enviar-email-curs
 import { EnviarEmailCertificadoHandler } from './application/enviar-email-certificado.handler';
 import { EnviarEmailVerificacionHandler } from './application/enviar-email-verificacion.handler';
 import { EnviarEmailResetPasswordHandler } from './application/enviar-email-reset-password.handler';
+import { EnviarEmailReembolsoHandler } from './application/enviar-email-reembolso.handler';
 import { NotificarCursoNuevoHandler } from './application/notificar-curso-nuevo.handler';
 import { NotificacionService } from './application/notificacion.service';
 import { NotificacionCursoNuevoProcessor } from './infrastructure/queue/notificacion-curso-nuevo.processor';
@@ -14,12 +15,14 @@ import { NotificacionTypeOrmRepository } from './infrastructure/typesorm/notific
 import { NOTIFICACION_REPOSITORY } from './domain/notificacion.repository.port';
 import { NotificacionesController } from './interfaces/notificaciones.controller';
 import { IdentityModule } from '../identity/identity.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 const QUEUE_NAME = 'curso-nuevo-emails';
 
 @Module({
   imports: [
     IdentityModule,
+    CatalogModule,
     EmailModule,
     TypeOrmModule.forFeature([NotificacionOrmEntity]),
     BullModule.registerQueue({
@@ -46,6 +49,7 @@ const QUEUE_NAME = 'curso-nuevo-emails';
     EnviarEmailCertificadoHandler,
     EnviarEmailVerificacionHandler,
     EnviarEmailResetPasswordHandler,
+    EnviarEmailReembolsoHandler,
     NotificarCursoNuevoHandler,
     NotificacionCursoNuevoProcessor,
   ],

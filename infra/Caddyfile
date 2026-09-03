@@ -2,16 +2,25 @@
 # Caddyfile — Reverse proxy para suenos-dev
 # Ubicación en servidor: /etc/caddy/Caddyfile
 # Caddy maneja automáticamente certificados SSL (Let's Encrypt)
+#
+# Caddy corre en el HOST (no como contenedor de este compose — no hay
+# ningún servicio `caddy` en docker-compose.prod.yml), así que apunta a
+# los puertos publicados en 127.0.0.1, NO a los nombres de servicio de
+# Docker (`web`/`api`) — esos solo resuelven entre contenedores de la
+# misma red de Docker, Caddy en el host no los ve. Antes esto decía
+# `reverse_proxy web:3000` / `api:3001`, que nunca hubiera conectado.
 # ============================================================
 
 # Email para notificaciones de Let's Encrypt
 {$CADDY_EMAIL}
 
 # ──────────────────────────────────────────────
-# Frontend: suenos-dev.dev → Next.js (puerto 3000)
+# PRODUCCIÓN
+# Frontend: suenos-dev.dev → Next.js (puerto host 3000, ver
+# infra/.env.example WEB_HOST_PORT)
 # ──────────────────────────────────────────────
 suenos-dev.dev {
-    reverse_proxy web:3000
+    reverse_proxy 127.0.0.1:3000
 
     # Headers de seguridad
     header {
@@ -33,12 +42,12 @@ suenos-dev.dev {
 }
 
 # ──────────────────────────────────────────────
-# API: api.suenos-dev.dev → NestJS (puerto 3001)
+# PRODUCCIÓN
+# API: api.suenos-dev.dev → NestJS (puerto host 3001)
 # ──────────────────────────────────────────────
 api.suenos-dev.dev {
-    reverse_proxy api:3001
+    reverse_proxy 127.0.0.1:3001
 
-    # Headers de seguridad
     header {
         X-Content-Type-Options nosniff
         X-Frame-Options DENY
@@ -52,10 +61,8 @@ api.suenos-dev.dev {
         max_size 500MB
     }
 
-    # Compresión gzip
     encode gzip zstd
 
-    # Logging
     log {
         output file /var/log/caddy/api-suenos-dev.log
         format json
@@ -63,8 +70,57 @@ api.suenos-dev.dev {
 }
 
 # ──────────────────────────────────────────────
+# PRODUCCIÓN
 # Redirección www → root domain
 # ──────────────────────────────────────────────
 www.suenos-dev.dev {
     redir https://suenos-dev.dev{uri} permanent
+}
+
+# ──────────────────────────────────────────────
+# PREPRODUCCIÓN
+# Mismo host físico, stack separado (ver infra/.env.preprod.example),
+# puertos distintos para no chocar con el stack de arriba.
+# ──────────────────────────────────────────────
+preprod.suenos-dev.dev {
+    reverse_proxy 127.0.0.1:3100
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        # Sin HSTS acá a propósito: preprod puede necesitar volver a HTTP
+        # plano alguna vez para debug, no queremos que el navegador lo
+        # fuerce a HTTPS por un año como en el dominio real.
+        -Server
+    }
+
+    encode gzip zstd
+
+    log {
+        output file /var/log/caddy/preprod-suenos-dev.log
+        format json
+    }
+}
+
+api-preprod.suenos-dev.dev {
+    reverse_proxy 127.0.0.1:3101
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    request_body {
+        max_size 500MB
+    }
+
+    encode gzip zstd
+
+    log {
+        output file /var/log/caddy/api-preprod-suenos-dev.log
+        format json
+    }
 }

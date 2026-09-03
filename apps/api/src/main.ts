@@ -49,19 +49,30 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('Sueños Dev API')
-    .setDescription('API para plataforma e-learning Sueños Dev')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  // Swagger queda público sin ningún control de acceso propio — exponerlo
+  // tal cual en producción es un mapa completo de la API (rutas, DTOs,
+  // shapes de auth) para cualquiera. Se apaga por defecto en NODE_ENV=production,
+  // salvo que se pida explícitamente con ENABLE_SWAGGER=true (útil en preprod).
+  const swaggerHabilitado =
+    process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true';
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  if (swaggerHabilitado) {
+    const config = new DocumentBuilder()
+      .setTitle('Sueños Dev API')
+      .setDescription('API para plataforma e-learning Sueños Dev')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`🚀 API running on http://localhost:${port}/api`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
+  if (swaggerHabilitado) {
+    console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
+  }
 }
 bootstrap();

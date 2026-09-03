@@ -1,136 +1,104 @@
-'use client';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { CursoDetalleClient, Curso } from '@/components/CursoDetalleClient';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { apiGet } from '@/lib/api';
-import Link from 'next/link';
-import { CourseCoverImage } from '@/components/CourseCoverImage';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-interface Leccion {
-  id: string;
-  titulo: string;
-  orden: number;
-  duracionSegundos: number;
-  videoUrl?: string;
+async function fetchCurso(slug: string): Promise<Curso | null> {
+  try {
+    const res = await fetch(`${API_URL}/cursos/slug/${slug}`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !('id' in data)) return null;
+    return data as Curso;
+  } catch {
+    return null;
+  }
 }
 
-interface Modulo {
-  id: string;
-  titulo: string;
-  orden: number;
-  lecciones: Leccion[];
+async function fetchResumenResenas(cursoId: string): Promise<{ promedio: number; total: number } | null> {
+  try {
+    const res = await fetch(`${API_URL}/cursos/${cursoId}/resenas`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
 }
 
-interface Curso {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  slug: string;
-  precio: number;
-  estado: string;
-  instructorId: string;
-  modulos: Modulo[];
-  imagenUrl?: string;
-}
-
-export default function CursoDetallePage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const [curso, setCurso] = useState<Curso | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchCurso = async () => {
-      try {
-        const data = await apiGet<Curso>(`/cursos/slug/${slug}`);
-        if (data && 'id' in data) {
-          setCurso(data);
-        } else {
-          setError('Curso no encontrado');
-        }
-      } catch (err) {
-        setError('Error al cargar el curso');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCurso();
-  }, [slug]);
-
-  if (loading) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <p>Cargando curso...</p>
-      </div>
-    );
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const curso = await fetchCurso(params.slug);
+  if (!curso) {
+    return { title: 'Curso no encontrado' };
   }
 
-  if (error || !curso) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <p className="text-red-600">{error || 'Curso no encontrado'}</p>
-        <Link href="/cursos" className="text-secondary hover:underline mt-4 block">
-          Volver a cursos
-        </Link>
-      </div>
-    );
+  const descripcion = curso.descripcion.length > 155 ? `${curso.descripcion.slice(0, 155)}…` : curso.descripcion;
+
+  return {
+    title: curso.titulo,
+    description: descripcion,
+    alternates: { canonical: `/cursos/${curso.slug}` },
+    openGraph: {
+      title: curso.titulo,
+      description: descripcion,
+      type: 'website',
+      images: curso.imagenUrl ? [{ url: curso.imagenUrl }] : undefined,
+    },
+    twitter: {
+      title: curso.titulo,
+      description: descripcion,
+      images: curso.imagenUrl ? [curso.imagenUrl] : undefined,
+    },
+  };
+}
+
+export default async function CursoDetallePage({ params }: { params: { slug: string } }) {
+  const curso = await fetchCurso(params.slug);
+  if (!curso) {
+    notFound();
   }
+
+  const resumenResenas = await fetchResumenResenas(curso.id);
+
+  // Structured data (schema.org Course) — ayuda a que Google entienda que
+  // esto es un curso vendible, no solo una página de texto genérica.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    name: curso.titulo,
+    description: curso.descripcion,
+    provider: {
+      '@type': 'Organization',
+      name: 'Sueños Dev',
+      sameAs: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+    },
+    ...(curso.instructorNombre && {
+      hasCourseInstance: {
+        '@type': 'CourseInstance',
+        courseMode: 'online',
+        instructor: { '@type': 'Person', name: curso.instructorNombre },
+      },
+    }),
+    ...(resumenResenas && resumenResenas.total > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: resumenResenas.promedio,
+        reviewCount: resumenResenas.total,
+      },
+    }),
+    offers: {
+      '@type': 'Offer',
+      price: curso.precio,
+      priceCurrency: 'USD',
+      availability: curso.estado === 'publicado' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+    },
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href="/cursos" className="text-secondary hover:underline mb-4 block">
-        &larr; Volver a cursos
-      </Link>
-
-      <CourseCoverImage
-        imagenUrl={curso.imagenUrl}
-        titulo={curso.titulo}
-        className="w-full h-56 md:h-72 rounded-xl mb-6"
-      />
-
-      <div className="bg-cloud-100 rounded-xl p-8 shadow-sm border border-ink/[0.07] mb-8">
-        <h1 className="text-3xl font-bold mb-4">{curso.titulo}</h1>
-        <p className="text-ink-muted mb-6">{curso.descripcion}</p>
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-2xl font-bold text-secondary">${curso.precio} USD</span>
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'
-          }`}>
-            {curso.estado}
-          </span>
-        </div>
-        <Link
-          href={`/checkout?cursoId=${curso.id}`}
-          className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
-        >
-          Comprar Curso
-        </Link>
-      </div>
-
-      <h2 className="text-2xl font-bold mb-6">Contenido del Curso</h2>
-      <div className="space-y-4">
-        {curso.modulos.map((modulo) => (
-          <div key={modulo.id} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
-            <h3 className="font-semibold text-lg mb-4">
-              Módulo {modulo.orden}: {modulo.titulo}
-            </h3>
-            <ul className="space-y-2">
-              {modulo.lecciones.map((leccion) => (
-                <li key={leccion.id} className="flex items-center gap-3 text-ink">
-                  <span className="w-6 h-6 bg-cloud-100 rounded-full flex items-center justify-center text-sm">
-                    {leccion.orden}
-                  </span>
-                  <span>{leccion.titulo}</span>
-                  <span className="text-ink-soft text-sm ml-auto">
-                    {Math.floor(leccion.duracionSegundos / 60)}:{String(leccion.duracionSegundos % 60).padStart(2, '0')}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
+    <>
+      {/* eslint-disable-next-line react/no-danger -- JSON-LD estático generado por nosotros, no HTML de usuario */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <CursoDetalleClient curso={curso} />
+    </>
   );
 }

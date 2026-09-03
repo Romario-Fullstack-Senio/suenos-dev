@@ -19,6 +19,9 @@ interface CursoProps {
   imagenUrl?: string;
   categoria?: string;
   nivel?: NivelCurso;
+  objetivos: string[];
+  requisitos: string[];
+  audiencia?: string;
 }
 
 export class Curso extends AggregateRoot<string> {
@@ -37,6 +40,9 @@ export class Curso extends AggregateRoot<string> {
     imagenUrl?: string;
     categoria?: string;
     nivel?: NivelCurso;
+    objetivos?: string[];
+    requisitos?: string[];
+    audiencia?: string;
   }): Curso {
     if (!params.titulo || params.titulo.length < 3) {
       throw new DomainError('El título debe tener al menos 3 caracteres');
@@ -52,6 +58,9 @@ export class Curso extends AggregateRoot<string> {
       imagenUrl: params.imagenUrl,
       categoria: params.categoria,
       nivel: params.nivel,
+      objetivos: params.objetivos ?? [],
+      requisitos: params.requisitos ?? [],
+      audiencia: params.audiencia,
     });
   }
 
@@ -69,6 +78,9 @@ export class Curso extends AggregateRoot<string> {
   get imagenUrl(): string | undefined { return this.props.imagenUrl; }
   get categoria(): string | undefined { return this.props.categoria; }
   get nivel(): NivelCurso | undefined { return this.props.nivel; }
+  get objetivos(): ReadonlyArray<string> { return this.props.objetivos; }
+  get requisitos(): ReadonlyArray<string> { return this.props.requisitos; }
+  get audiencia(): string | undefined { return this.props.audiencia; }
 
   publicar(): void {
     if (this.props.modulos.length === 0) {
@@ -98,6 +110,9 @@ export class Curso extends AggregateRoot<string> {
     imagenUrl?: string;
     categoria?: string;
     nivel?: NivelCurso;
+    objetivos?: string[];
+    requisitos?: string[];
+    audiencia?: string;
   }): void {
     if (params.titulo !== undefined) {
       if (params.titulo.length < 3) {
@@ -120,6 +135,15 @@ export class Curso extends AggregateRoot<string> {
     }
     if (params.nivel !== undefined) {
       this.props.nivel = params.nivel;
+    }
+    if (params.objetivos !== undefined) {
+      this.props.objetivos = params.objetivos;
+    }
+    if (params.requisitos !== undefined) {
+      this.props.requisitos = params.requisitos;
+    }
+    if (params.audiencia !== undefined) {
+      this.props.audiencia = params.audiencia;
     }
     this.touch();
   }

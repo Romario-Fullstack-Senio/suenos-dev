@@ -62,6 +62,11 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
   const onSubmit = async (data: AgregarLeccionFormData) => {
     try {
       let videoUrl: string | undefined;
+      // Mismo id para el upload de video y la lección creada después — el
+      // video queda en MinIO bajo esta key, y el control de acceso a video
+      // resuelve la lección por su id real. Generarlos por separado (como
+      // antes) dejaba el video sin dueño y rompía la reproducción.
+      const leccionId = crypto.randomUUID();
 
       if (videoFile) {
         setSubiendoVideo(true);
@@ -69,7 +74,7 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
           const base64 = await fileToBase64(videoFile);
           const result = await apiPost<{ url: string }>('/videos/upload', {
             file: base64,
-            leccionId: crypto.randomUUID(),
+            leccionId,
           });
           videoUrl = result.url;
         } finally {
@@ -77,7 +82,7 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
         }
       }
 
-      await apiPost(`/cursos/${cursoId}/modulos/${moduloId}/lecciones`, { ...data, videoUrl });
+      await apiPost(`/cursos/${cursoId}/modulos/${moduloId}/lecciones`, { id: leccionId, ...data, videoUrl });
       toast.success('Lección agregada correctamente');
       reset();
       setVideoFile(null);
@@ -142,6 +147,11 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
           </label>
         )}
       </div>
+
+      <label className="flex items-center gap-2 mb-4 text-sm text-ink-muted cursor-pointer">
+        <input type="checkbox" className="rounded border-ink/[0.2]" {...register('esVistaPrevia')} />
+        Vista previa gratuita (se puede ver sin comprar el curso)
+      </label>
 
       <Button type="submit" isLoading={isSubmitting || subiendoVideo} disabled={isSubmitting || subiendoVideo}>
         {subiendoVideo ? 'Subiendo y transcodificando…' : 'Agregar Lección'}

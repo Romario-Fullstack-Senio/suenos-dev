@@ -39,6 +39,17 @@ export class CursoOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   nivel!: string | null;
 
+  // simple-json (no simple-array): los ítems son frases libres que pueden
+  // contener comas, y simple-array de TypeORM las cortaría sin escapar.
+  @Column({ type: 'simple-json', nullable: true })
+  objetivos!: string[] | null;
+
+  @Column({ type: 'simple-json', nullable: true })
+  requisitos!: string[] | null;
+
+  @Column({ type: 'text', nullable: true })
+  audiencia!: string | null;
+
   @OneToMany(() => ModuloOrmEntity, (m) => m.curso, { cascade: true })
   modulos!: ModuloOrmEntity[];
 

@@ -18,6 +18,9 @@ export class LeccionOrmEntity {
   @Column('varchar', { nullable: true })
   video_url!: string | null;
 
+  @Column({ default: false })
+  es_vista_previa!: boolean;
+
   // Postgres no crea índice automático en el lado que referencia una FK
   // (solo en el lado referenciado) — sin esto, cada JOIN/lookup por módulo escanea toda la tabla.
   @Index()

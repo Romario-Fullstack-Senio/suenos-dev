@@ -78,9 +78,14 @@ export default function InstructorDashboardPage() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Mis Cursos</h2>
-        <Link href="/instructor/cursos/nuevo">
-          <Button>Crear Curso</Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link href="/instructor/analytics" className="text-secondary hover:underline text-sm self-center">
+            Ver analítica →
+          </Link>
+          <Link href="/instructor/cursos/nuevo">
+            <Button>Crear Curso</Button>
+          </Link>
+        </div>
       </div>
 
       {cursos.length === 0 ? (

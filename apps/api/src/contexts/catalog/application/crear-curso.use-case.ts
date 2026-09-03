@@ -11,6 +11,9 @@ interface CrearCursoCommand {
   imagenUrl?: string;
   categoria?: string;
   nivel?: NivelCurso;
+  objetivos?: string[];
+  requisitos?: string[];
+  audiencia?: string;
 }
 
 @Injectable()

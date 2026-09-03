@@ -56,15 +56,22 @@ export class ProgresoLeccionTypeormRepository
       where: { cursoId, estudianteId },
     });
 
-    return ormEntities.map(e =>
-      ProgresoLeccion.reconstitute(
-        e.id,
-        e.estudianteId,
-        e.leccionId,
-        e.cursoId,
-        PorcentajeVisto.create(e.porcentaje),
-        e.completada,
-      ),
+    return ormEntities.map(e => this.toDomain(e));
+  }
+
+  async findByCursoId(cursoId: string): Promise<ProgresoLeccion[]> {
+    const ormEntities = await this.ormRepository.find({ where: { cursoId } });
+    return ormEntities.map(e => this.toDomain(e));
+  }
+
+  private toDomain(e: ProgresoLeccionOrmEntity): ProgresoLeccion {
+    return ProgresoLeccion.reconstitute(
+      e.id,
+      e.estudianteId,
+      e.leccionId,
+      e.cursoId,
+      PorcentajeVisto.create(e.porcentaje),
+      e.completada,
     );
   }
 }
