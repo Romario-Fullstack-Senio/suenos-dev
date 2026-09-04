@@ -35,6 +35,7 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       two_factor_backup_codes: usuario.twoFactorBackupCodes,
       avatar_url: usuario.avatarUrl,
       cuenta_eliminada: usuario.cuentaEliminada,
+      notificar_curso_nuevo: usuario.notificarCursoNuevo,
     });
     await this.repo.save(orm);
   }
@@ -93,6 +94,7 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       twoFactorBackupCodes: orm.two_factor_backup_codes,
       avatarUrl: orm.avatar_url,
       cuentaEliminada: orm.cuenta_eliminada,
+      notificarCursoNuevo: orm.notificar_curso_nuevo,
     });
   }
 }
