@@ -41,6 +41,13 @@ interface AuthState {
    * para cuando PerfilForm guarda cambios y hay que reflejarlos ya (el
    * nombre en el header, etc.) sin forzar un logout/login. */
   updateUser: (cambios: Partial<User>) => void;
+  /** Igual que terminar un login por email/password pero para cuando los
+   * tokens ya vienen resueltos desde afuera (el callback de OAuth, que
+   * los recibe por query params tras el redirect de Google/GitHub) —
+   * sin esto el callback solo escribía a localStorage y el estado de
+   * React (y por lo tanto toda la UI que usa useAuth()) seguía viendo
+   * user: null hasta un refresh completo. */
+  loginConTokens: (result: LoginResponse) => void;
   isAuthenticated: boolean;
   hasRole: (role: string) => boolean;
 }
@@ -120,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, completeTwoFactorLogin, register, logout, updateUser, isAuthenticated, hasRole }}
+      value={{ user, token, isLoading, login, completeTwoFactorLogin, register, logout, updateUser, loginConTokens: finalizarLogin, isAuthenticated, hasRole }}
     >
       {children}
     </AuthContext.Provider>

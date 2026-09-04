@@ -1,16 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { setTokens } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 function CallbackContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const { loginConTokens } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  // El efecto puede re-ejecutarse (StrictMode, o searchParams/loginConTokens
+  // cambiando de referencia) — sin este guard, loginConTokens() se llamaría
+  // dos veces y el segundo router.push pisaría al primero a mitad de camino.
+  const yaProcesado = useRef(false);
 
   useEffect(() => {
+    if (yaProcesado.current) return;
+
     const token = searchParams.get('token');
     const refreshToken = searchParams.get('refreshToken');
     const sessionToken = searchParams.get('sessionToken');
@@ -26,12 +32,10 @@ function CallbackContent() {
       return;
     }
 
-    setTokens({ token, refreshToken, sessionToken });
-
     // Decode JWT to get user info
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      const user = {
+      const usuario = {
         id: payload.sub,
         email: payload.email,
         rol: payload.rol,
@@ -39,20 +43,15 @@ function CallbackContent() {
         // Cuentas OAuth siempre arrancan verificadas (ver Usuario.registrarDesdeOAuth).
         emailVerificado: true,
       };
-      localStorage.setItem('user', JSON.stringify(user));
-
-      // Redirect based on role
-      if (payload.rol === 'admin') {
-        router.push('/admin');
-      } else if (payload.rol === 'instructor') {
-        router.push('/instructor');
-      } else {
-        router.push('/dashboard');
-      }
+      yaProcesado.current = true;
+      // Actualiza el estado de React (no solo localStorage) y redirige
+      // según el rol — mismo camino que un login por email/password, ver
+      // AuthContext.finalizarLogin.
+      loginConTokens({ token, refreshToken, sessionToken, usuario });
     } catch {
       setError('Token inválido.');
     }
-  }, [searchParams, router]);
+  }, [searchParams, loginConTokens]);
 
   if (error) {
     return (
