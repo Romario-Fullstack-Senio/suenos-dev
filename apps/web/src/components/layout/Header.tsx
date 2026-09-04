@@ -6,6 +6,7 @@ import { ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { NotificationBell } from './NotificationBell';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function CartIcon() {
   const { items } = useCart();
@@ -45,6 +46,7 @@ function CloudMark() {
       }}
     >
       <div className="relative h-[11px] w-5">
+        {/* Marca fija sobre el degradé morado — se mantiene blanca en ambos temas */}
         <div className="absolute left-1 top-0 h-[11px] w-[11px] rounded-full bg-white" />
         <div className="absolute left-3 top-[3px] h-2 w-2 rounded-full bg-white" />
         <div className="absolute bottom-0 left-0 h-[7px] w-5 rounded-full bg-white" />
@@ -57,7 +59,7 @@ export function Header() {
   const { user, isAuthenticated, logout, hasRole } = useAuth();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-ink/[0.07] bg-white/[0.78] backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-ink/[0.07] bg-cloud-50/[0.78] backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4">
         <Link href="/" className="flex items-center gap-3">
           <CloudMark />
@@ -116,6 +118,9 @@ export function Header() {
               </Link>
             </>
           )}
+
+          <span className="h-6 w-px bg-ink/10" />
+          <ThemeToggle />
         </nav>
       </div>
     </header>

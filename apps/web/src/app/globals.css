@@ -4,24 +4,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Paleta como custom properties (RGB "r g b", sin rgb() envolvente, para que
+ * Tailwind pueda componer opacidad: rgb(var(--color-x) / <alpha-value>)).
+ * :root = tema claro. .dark = tema oscuro (clase que ThemeContext pone/saca
+ * de <html> según la preferencia guardada o el sistema). Un solo lugar
+ * define ambas paletas — toda la web usa las mismas clases de Tailwind
+ * (bg-cloud-50, text-ink, bg-primary, etc.) y cambia de color sola.
+ */
+:root {
+  --color-bg: 255 255 255; /* cloud-50 */
+  --color-bg-elevated: 246 247 252; /* cloud-100 */
+  --color-surface: 236 239 251; /* cloud-200 */
+  --color-border: 220 223 235; /* cloud-300 */
+  --color-ink: 20 22 43;
+  --color-ink-muted: 90 93 120;
+  --color-ink-soft: 154 157 178;
+  --color-primary: 99 102 241;
+  --color-secondary: 139 92 246;
+  --color-accent: 245 158 11;
+}
+
+.dark {
+  --color-bg: 11 14 26; /* suenos-midnight */
+  --color-bg-elevated: 17 22 49; /* suenos-deep */
+  --color-surface: 26 31 58; /* suenos-surface */
+  --color-border: 37 43 74; /* suenos-border */
+  --color-ink: 241 245 249;
+  --color-ink-muted: 148 163 184;
+  --color-ink-soft: 100 116 139;
+  --color-primary: 167 139 250; /* violet-light: más visible sobre fondo oscuro */
+  --color-secondary: 124 58 237;
+  --color-accent: 251 191 36; /* gold-light */
+}
+
 @layer base {
   body {
     font-family: 'Manrope', Helvetica, Arial, sans-serif;
-    background: #ffffff;
-    color: #14162b;
+    background: rgb(var(--color-bg));
+    color: rgb(var(--color-ink));
   }
   a {
-    color: #6366f1;
+    color: rgb(var(--color-primary));
     text-decoration: none;
   }
   a:hover {
-    color: #4f46e5;
+    color: rgb(var(--color-secondary));
+  }
+
+  /* Transición suave de color al cambiar de tema. Se activa solo mientras
+     <html> tiene .theme-transitioning (ver ThemeContext) para no pagar el
+     costo de transicionar TODO en cada render normal de la app. */
+  .theme-transitioning,
+  .theme-transitioning * {
+    transition:
+      background-color 0.4s ease,
+      border-color 0.4s ease,
+      color 0.4s ease,
+      fill 0.4s ease,
+      stroke 0.4s ease !important;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white border border-ink/[0.07] rounded-2xl p-6;
+    @apply bg-cloud-50 border border-ink/[0.07] rounded-2xl p-6;
     box-shadow: 0 20px 40px -32px rgba(20, 22, 43, 0.4);
   }
   .card-hover {
@@ -36,7 +83,7 @@
     box-shadow: 0 18px 34px -16px rgba(99, 102, 241, 0.7);
   }
   .btn-ghost {
-    @apply inline-flex items-center gap-2 rounded-xl border border-ink/[0.12] bg-white px-6 py-3 font-bold text-ink transition hover:bg-cloud-100;
+    @apply inline-flex items-center gap-2 rounded-xl border border-ink/[0.12] bg-cloud-50 px-6 py-3 font-bold text-ink transition hover:bg-cloud-100;
   }
 }
 

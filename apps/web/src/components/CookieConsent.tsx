@@ -30,7 +30,7 @@ export function CookieConsent() {
 
   return (
     <div className="fixed bottom-0 inset-x-0 z-40 p-4">
-      <div className="max-w-3xl mx-auto bg-white border border-ink/[0.1] rounded-2xl shadow-lg p-5 flex flex-col sm:flex-row items-center gap-4">
+      <div className="max-w-3xl mx-auto bg-cloud-50 border border-ink/[0.1] rounded-2xl shadow-lg p-5 flex flex-col sm:flex-row items-center gap-4">
         <p className="text-sm text-ink-muted flex-1">
           Usamos cookies técnicas necesarias para mantener tu sesión iniciada. No usamos cookies de
           rastreo publicitario.{' '}

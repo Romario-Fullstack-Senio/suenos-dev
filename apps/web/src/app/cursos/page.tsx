@@ -121,13 +121,13 @@ export default function CursosPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar cursos por título o descripción..."
-            className="w-full pl-9 pr-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="w-full pl-9 pr-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
         <select
           value={categoria}
           onChange={e => setCategoria(e.target.value)}
-          className="px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           <option value="">Todas las categorías</option>
           {categorias.map(c => (
@@ -137,7 +137,7 @@ export default function CursosPage() {
         <select
           value={nivel}
           onChange={e => setNivel(e.target.value)}
-          className="px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           <option value="">Todos los niveles</option>
           <option value="principiante">Principiante</option>
@@ -147,7 +147,7 @@ export default function CursosPage() {
         <select
           value={sort}
           onChange={e => setSort(e.target.value)}
-          className="px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           <option value="reciente">Más recientes</option>
           <option value="precio_asc">Precio: menor a mayor</option>

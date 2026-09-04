@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { mkdirSync } from 'fs';
 
 const BASE = 'http://localhost:3000';
 const API = 'http://localhost:3001/api';
@@ -32,6 +33,12 @@ async function apiCall(method, path, data, headers = {}, noApiPrefix = false) {
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   const page = await context.newPage();
+
+  // Trace Viewer: graba cada click, request y screenshot del run entero.
+  // Se guarda siempre (no solo en falla) porque este script corre de una
+  // sola pasada, no test por test — abrir con:
+  //   npx playwright show-trace tests/traces/<archivo>.zip
+  await context.tracing.start({ screenshots: true, snapshots: true, sources: true });
 
   try {
     // TEST 1: Home page
@@ -198,6 +205,11 @@ async function apiCall(method, path, data, headers = {}, noApiPrefix = false) {
   } catch (e) {
     console.error('Fatal error:', e);
   } finally {
+    mkdirSync('tests/traces', { recursive: true });
+    const tracePath = `tests/traces/qa-test-${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+    await context.tracing.stop({ path: tracePath });
+    console.log(`\nTrace guardada: ${tracePath}`);
+    console.log(`Verla con: npx playwright show-trace ${tracePath}`);
     await browser.close();
   }
 

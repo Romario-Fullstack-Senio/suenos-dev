@@ -125,7 +125,7 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
       <div className="mb-4">
         <label className="block text-sm font-semibold text-ink-muted mb-1">Video (opcional)</label>
         {videoFile ? (
-          <div className="flex items-center justify-between gap-2 px-3 py-2 border border-ink/[0.12] rounded-xl bg-white">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 border border-ink/[0.12] rounded-xl bg-cloud-50">
             <span className="flex items-center gap-2 text-sm text-ink truncate">
               <FileVideo className="w-4 h-4 text-primary flex-shrink-0" />
               {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(1)}MB)
@@ -140,7 +140,7 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
             </button>
           </div>
         ) : (
-          <label className="flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-ink/[0.2] rounded-xl bg-white text-sm text-ink-muted cursor-pointer hover:border-primary/50 hover:bg-cloud-100 transition-colors">
+          <label className="flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-ink/[0.2] rounded-xl bg-cloud-50 text-sm text-ink-muted cursor-pointer hover:border-primary/50 hover:bg-cloud-100 transition-colors">
             <UploadCloud className="w-4 h-4" />
             Seleccionar video (se transcodifica a HLS automáticamente)
             <input type="file" accept="video/*" className="hidden" onChange={handleFileChange} />

@@ -255,7 +255,7 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
                 <ul className="space-y-2 px-6 pb-6">
                   {modulo.lecciones.map((leccion) => (
                     <li key={leccion.id} className="flex items-center gap-3 text-ink">
-                      <span className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-sm flex-shrink-0">
+                      <span className="w-6 h-6 bg-cloud-50 rounded-full flex items-center justify-center text-sm flex-shrink-0">
                         {leccion.orden}
                       </span>
                       <span>{leccion.titulo}</span>

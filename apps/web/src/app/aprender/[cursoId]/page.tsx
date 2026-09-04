@@ -186,7 +186,7 @@ export default function AprenderPage() {
                           className={`text-left text-sm w-full px-2 py-1 rounded flex items-center gap-2 ${
                             leccionActual?.id === lec.id
                               ? 'bg-primary/10 text-primary font-medium'
-                              : 'text-ink-muted hover:bg-white'
+                              : 'text-ink-muted hover:bg-cloud-50'
                           }`}
                         >
                           {lecProgreso?.completada ? (
@@ -211,7 +211,7 @@ export default function AprenderPage() {
           {leccionActual?.videoUrl ? (
             <HLSPlayer src={leccionActual.videoUrl} subtitulosUrl={leccionActual.subtitulosUrl} />
           ) : (
-            <div className="bg-white aspect-video rounded-xl flex items-center justify-center text-white mb-6">
+            <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center text-white mb-6">
               <p className="text-ink-soft">Video no disponible</p>
             </div>
           )}

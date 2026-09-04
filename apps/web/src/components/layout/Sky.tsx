@@ -18,7 +18,10 @@ function Cloud({ className, width }: { className: string; width: number }) {
   const puffB = width * 0.31;
   return (
     <div
-      className={className}
+      // En modo oscuro las nubes blancas y opacas desentonan contra el cielo
+      // nocturno — se atenúan y oscurecen para leerse como nubes de noche en
+      // vez de manchas blancas, con una transición suave al cambiar de tema.
+      className={`${className} transition-[opacity,filter] duration-500 dark:opacity-[0.14] dark:brightness-[0.35]`}
       style={{ width, height: puffA, filter: 'drop-shadow(0 26px 40px rgba(99,102,241,0.16))' }}
     >
       <div
@@ -64,34 +67,45 @@ export function Sky() {
         style={{ background: 'radial-gradient(circle,rgba(245,158,11,0.10),rgba(245,158,11,0) 70%)' }}
       />
 
-      {/* luna */}
-      <div
-        className="absolute right-[9%] top-[118px] h-[104px] w-[104px] rounded-full"
-        style={{
-          background: 'linear-gradient(150deg,#fffdf5,#f3ecd8)',
-          boxShadow:
-            '0 0 0 18px rgba(245,200,90,0.10), 0 0 0 44px rgba(245,200,90,0.05), 0 26px 50px -18px rgba(160,130,40,0.26)',
-        }}
-      >
-        <div className="absolute left-5 top-7 h-[19px] w-[19px] rounded-full bg-[rgba(180,160,110,0.16)]" />
-        <div className="absolute left-[54px] top-[58px] h-3 w-3 rounded-full bg-[rgba(180,160,110,0.14)]" />
-        <div className="absolute left-[62px] top-5 h-[9px] w-[9px] rounded-full bg-[rgba(180,160,110,0.12)]" />
+      {/* sol / luna — mismo lugar, mismo gesto que el toggle del header: el
+          astro que sale se esconde cayendo y desvaneciéndose, el que entra
+          sube y aparece. Sol en modo claro, luna (el diseño de siempre) en
+          modo oscuro. */}
+      <div className="absolute right-[9%] top-[118px] h-[104px] w-[104px]">
+        <div
+          className="absolute inset-0 rounded-full transition-all duration-500 [transition-timing-function:cubic-bezier(0.4,0,0.2,1)] dark:translate-y-8 dark:scale-50 dark:rotate-45 dark:opacity-0"
+          style={{
+            background: 'radial-gradient(circle at 35% 30%,#fff7d6,#fbbf24 70%)',
+            boxShadow:
+              '0 0 0 18px rgba(251,191,36,0.14), 0 0 0 44px rgba(251,191,36,0.07), 0 26px 60px -18px rgba(217,119,6,0.35)',
+          }}
+        />
+        <div
+          className="absolute inset-0 rounded-full translate-y-8 scale-50 -rotate-45 opacity-0 transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] dark:translate-y-0 dark:scale-100 dark:rotate-0 dark:opacity-100"
+          style={{
+            background: 'linear-gradient(150deg,#fffdf5,#f3ecd8)',
+            boxShadow:
+              '0 0 0 18px rgba(245,200,90,0.10), 0 0 0 44px rgba(245,200,90,0.05), 0 26px 50px -18px rgba(160,130,40,0.26)',
+          }}
+        >
+          <div className="absolute left-5 top-7 h-[19px] w-[19px] rounded-full bg-[rgba(180,160,110,0.16)]" />
+          <div className="absolute left-[54px] top-[58px] h-3 w-3 rounded-full bg-[rgba(180,160,110,0.14)]" />
+          <div className="absolute left-[62px] top-5 h-[9px] w-[9px] rounded-full bg-[rgba(180,160,110,0.12)]" />
+        </div>
       </div>
 
-      {/* estrellas */}
+      {/* estrellas — solo visibles de noche */}
       {STARS.map((s) => (
         <div
           key={`${s.left}-${s.top}`}
-          className="absolute rounded-full"
-          style={{
-            left: s.left,
-            top: s.top,
-            width: s.size,
-            height: s.size,
-            background: s.color,
-            opacity: s.opacity,
-          }}
-        />
+          className="absolute opacity-0 transition-opacity duration-500 dark:opacity-100"
+          style={{ left: s.left, top: s.top }}
+        >
+          <div
+            className="rounded-full"
+            style={{ width: s.size, height: s.size, background: s.color, opacity: s.opacity }}
+          />
+        </div>
       ))}
 
       {/* nubes */}

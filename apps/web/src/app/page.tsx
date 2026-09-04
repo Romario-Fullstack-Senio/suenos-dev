@@ -30,7 +30,7 @@ const STATS = [
 export default function HomePage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col items-center px-4 pb-28 pt-24 text-center">
-      <span className="mb-9 inline-flex items-center gap-2.5 rounded-full border border-ink/[0.08] bg-white px-4.5 py-2.5 text-sm font-semibold text-ink-muted"
+      <span className="mb-9 inline-flex items-center gap-2.5 rounded-full border border-ink/[0.08] bg-cloud-50 px-4.5 py-2.5 text-sm font-semibold text-ink-muted"
         style={{ boxShadow: '0 12px 30px -14px rgba(20,22,43,0.22)' }}
       >
         <span className="text-accent">✦</span>
