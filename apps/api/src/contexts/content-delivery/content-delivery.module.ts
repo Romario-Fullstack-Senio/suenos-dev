@@ -37,6 +37,9 @@ import { IdentityModule } from '../identity/identity.module';
     SubirVideoUseCase,
     VerificarAccesoVideoUseCase,
   ],
-  exports: [PROGRESO_LECCION_REPOSITORY],
+  // VerificarAccesoVideoUseCase también lo reusa QaModule — mismo criterio
+  // de "quién puede ver esta lección" para saber quién puede preguntar/
+  // responder sobre ella, sin duplicar la lógica de inscripción/preview.
+  exports: [PROGRESO_LECCION_REPOSITORY, VerificarAccesoVideoUseCase],
 })
 export class ContentDeliveryModule {}

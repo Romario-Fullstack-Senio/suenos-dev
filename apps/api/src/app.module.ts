@@ -20,6 +20,7 @@ import { PaymentsModule } from './contexts/payments/payments.module';
 import { EnrollmentModule } from './contexts/enrollment/enrollment.module';
 import { NotificationsModule } from './contexts/notifications/notifications.module';
 import { ReviewsModule } from './contexts/reviews/reviews.module';
+import { QaModule } from './contexts/qa/qa.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { ReviewsModule } from './contexts/reviews/reviews.module';
     EnrollmentModule,
     NotificationsModule,
     ReviewsModule,
+    QaModule,
   ],
   controllers: [AdminController, InstructorController],
   providers: [
