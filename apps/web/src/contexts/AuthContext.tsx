@@ -11,6 +11,7 @@ interface User {
   rol: 'estudiante' | 'instructor' | 'admin';
   emailVerificado: boolean;
   avatarUrl?: string | null;
+  notificarCursoNuevo?: boolean;
 }
 
 interface LoginResponse {

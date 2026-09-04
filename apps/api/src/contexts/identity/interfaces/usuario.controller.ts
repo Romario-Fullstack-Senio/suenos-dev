@@ -4,6 +4,7 @@ import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.reposit
 import { ActualizarPerfilUseCase } from '../application/actualizar-perfil.use-case';
 import { ActualizarAvatarUseCase } from '../application/actualizar-avatar.use-case';
 import { EliminarCuentaUseCase } from '../application/eliminar-cuenta.use-case';
+import { ActualizarPreferenciaNotificacionUseCase } from '../application/actualizar-preferencia-notificacion.use-case';
 import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -25,6 +26,7 @@ export class UsuarioController {
     private readonly actualizarPerfilUC: ActualizarPerfilUseCase,
     private readonly actualizarAvatarUC: ActualizarAvatarUseCase,
     private readonly eliminarCuentaUC: EliminarCuentaUseCase,
+    private readonly actualizarPreferenciaNotificacionUC: ActualizarPreferenciaNotificacionUseCase,
   ) {}
 
   // Rutas "me" ANTES de ":id" — si no, ":id" las captura primero y "me" se
@@ -47,6 +49,7 @@ export class UsuarioController {
       rol: usuario.rol.value,
       emailVerificado: usuario.emailVerificado,
       avatarUrl: usuario.avatarUrl,
+      notificarCursoNuevo: usuario.notificarCursoNuevo,
     };
   }
 
@@ -86,6 +89,16 @@ export class UsuarioController {
   async eliminarCuenta(@Body('password') password: string | undefined, @Req() req: AuthenticatedRequest) {
     await this.eliminarCuentaUC.execute(req.user.id, password);
     return { message: 'Cuenta eliminada correctamente' };
+  }
+
+  @Put('me/preferencias-notificacion')
+  @Roles(...TODOS_LOS_ROLES)
+  async actualizarPreferenciaNotificacion(
+    @Body('notificarCursoNuevo') notificarCursoNuevo: boolean,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.actualizarPreferenciaNotificacionUC.execute(req.user.id, notificarCursoNuevo);
+    return { message: 'Preferencia actualizada' };
   }
 
   @Get()

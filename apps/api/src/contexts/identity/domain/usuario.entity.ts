@@ -24,6 +24,7 @@ interface UsuarioProps {
   twoFactorBackupCodes: string[] | null;
   avatarUrl: string | null;
   cuentaEliminada: boolean;
+  notificarCursoNuevo: boolean;
 }
 
 export class Usuario extends AggregateRoot<string> {
@@ -62,6 +63,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorBackupCodes: null,
       avatarUrl: null,
       cuentaEliminada: false,
+      notificarCursoNuevo: true,
     });
     usuario.addDomainEvent(
       new UsuarioRegistradoEvent(id, email.value, nombre, AuthProviderTipo.LOCAL, verificacionToken),
@@ -103,6 +105,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorBackupCodes: null,
       avatarUrl: params.avatarUrl ?? null,
       cuentaEliminada: false,
+      notificarCursoNuevo: true,
     });
     usuario.addDomainEvent(new UsuarioRegistradoEvent(params.id, params.email.value, params.nombre, params.provider));
     return usuario;
@@ -128,6 +131,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorBackupCodes?: string[] | null;
       avatarUrl?: string | null;
       cuentaEliminada?: boolean;
+      notificarCursoNuevo?: boolean;
     },
   ): Usuario {
     const usuario = new Usuario(id, {
@@ -147,6 +151,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorBackupCodes: props.twoFactorBackupCodes ?? null,
       avatarUrl: props.avatarUrl ?? null,
       cuentaEliminada: props.cuentaEliminada ?? false,
+      notificarCursoNuevo: props.notificarCursoNuevo ?? true,
     });
     Object.defineProperty(usuario, '_createdAt', { value: props.createdAt });
     return usuario;
@@ -218,6 +223,15 @@ export class Usuario extends AggregateRoot<string> {
 
   get cuentaEliminada(): boolean {
     return this.props.cuentaEliminada;
+  }
+
+  get notificarCursoNuevo(): boolean {
+    return this.props.notificarCursoNuevo;
+  }
+
+  actualizarPreferenciaCursoNuevo(valor: boolean): void {
+    this.props.notificarCursoNuevo = valor;
+    this.touch();
   }
 
   /** Borrado GDPR práctico: anonimiza los datos personales en vez de

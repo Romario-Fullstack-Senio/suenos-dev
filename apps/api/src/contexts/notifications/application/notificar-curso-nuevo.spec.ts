@@ -23,9 +23,9 @@ describe('NotificarCursoNuevoHandler', () => {
 
   it('debería guardar notificación en DB y agregar un job por cada usuario', async () => {
     const usuarios = [
-      { id: 'user-1', email: Email.create('user1@test.com'), nombre: 'Usuario 1' },
-      { id: 'user-2', email: Email.create('user2@test.com'), nombre: 'Usuario 2' },
-      { id: 'user-3', email: Email.create('user3@test.com'), nombre: 'Usuario 3' },
+      { id: 'user-1', email: Email.create('user1@test.com'), nombre: 'Usuario 1', notificarCursoNuevo: true },
+      { id: 'user-2', email: Email.create('user2@test.com'), nombre: 'Usuario 2', notificarCursoNuevo: true },
+      { id: 'user-3', email: Email.create('user3@test.com'), nombre: 'Usuario 3', notificarCursoNuevo: true },
     ];
     mockUsuarioRepo.findAll.mockResolvedValue(usuarios);
 
@@ -68,6 +68,7 @@ describe('NotificarCursoNuevoHandler', () => {
       id: `user-${i}`,
       email: Email.create(`user${i}@test.com`),
       nombre: `Usuario ${i}`,
+      notificarCursoNuevo: true,
     }));
     mockUsuarioRepo.findAll.mockResolvedValue(usuarios);
 
@@ -89,7 +90,7 @@ describe('NotificarCursoNuevoHandler', () => {
 
   it('debería incluir todos los datos del curso en cada job', async () => {
     mockUsuarioRepo.findAll.mockResolvedValue([
-      { id: 'user-test', email: Email.create('test@test.com'), nombre: 'Test User' },
+      { id: 'user-test', email: Email.create('test@test.com'), nombre: 'Test User', notificarCursoNuevo: true },
     ]);
 
     await handler.handle({
@@ -110,9 +111,26 @@ describe('NotificarCursoNuevoHandler', () => {
     });
   });
 
+  it('no notifica a usuarios que desactivaron los avisos de cursos nuevos', async () => {
+    mockUsuarioRepo.findAll.mockResolvedValue([
+      { id: 'user-1', email: Email.create('user1@test.com'), nombre: 'Usuario 1', notificarCursoNuevo: true },
+      { id: 'user-2', email: Email.create('user2@test.com'), nombre: 'Usuario 2', notificarCursoNuevo: false },
+    ]);
+
+    await handler.handle({
+      aggregateId: 'curso-123',
+      titulo: 'Curso',
+      slug: 'curso',
+      descripcion: 'Desc',
+    });
+
+    expect(mockNotificacionService.guardar).toHaveBeenCalledTimes(1);
+    expect(mockNotificacionService.guardar.mock.calls[0][0].usuarioId).toBe('user-1');
+  });
+
   it('debería guardar notificación con tipo correcto', async () => {
     mockUsuarioRepo.findAll.mockResolvedValue([
-      { id: 'u1', email: Email.create('a@b.com'), nombre: 'A' },
+      { id: 'u1', email: Email.create('a@b.com'), nombre: 'A', notificarCursoNuevo: true },
     ]);
 
     await handler.handle({

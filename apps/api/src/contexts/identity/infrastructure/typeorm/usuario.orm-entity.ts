@@ -53,6 +53,9 @@ export class UsuarioOrmEntity {
   @Column({ default: false })
   cuenta_eliminada!: boolean;
 
+  @Column({ default: true })
+  notificar_curso_nuevo!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 }

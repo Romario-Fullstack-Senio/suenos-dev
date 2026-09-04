@@ -36,10 +36,16 @@ export class NotificarCursoNuevoHandler {
       `[EVENT] CursoPublicado recibido: "${event.titulo}" (${event.aggregateId}). Encolando emails...`,
     );
 
-    const usuarios = await this.usuarioRepo.findAll();
+    const todos = await this.usuarioRepo.findAll();
+    // Respeta la preferencia "avisame de cursos nuevos" — a diferencia de
+    // las notificaciones ligadas a algo que el usuario hizo (respuesta a su
+    // pregunta, mensaje en su ticket), esta es la única que es puramente
+    // "marketing" (le llega a TODOS los usuarios registrados), así que es
+    // la candidata obvia para un opt-out. Ver Usuario.notificarCursoNuevo.
+    const usuarios = todos.filter((u) => u.notificarCursoNuevo);
 
     if (!usuarios || usuarios.length === 0) {
-      this.logger.warn('No hay usuarios registrados para notificar');
+      this.logger.warn('No hay usuarios para notificar (todos optaron por no recibir avisos de cursos nuevos, o no hay usuarios registrados)');
       return;
     }
 
