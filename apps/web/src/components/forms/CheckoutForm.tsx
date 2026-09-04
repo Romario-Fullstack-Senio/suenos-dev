@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { loadStripe } from '@stripe/stripe-js';
@@ -14,6 +15,12 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 interface Curso {
   id: string;
   titulo: string;
+  precio: number;
+}
+
+interface ItemCheckout {
+  cursoId: string;
+  cursoNombre: string;
   precio: number;
 }
 
@@ -67,7 +74,9 @@ function CheckoutFormInner({ ordenId }: { ordenId: string }) {
 export function CheckoutForm() {
   const searchParams = useSearchParams();
   const cursoId = searchParams.get('cursoId');
+  const esCarrito = searchParams.get('carrito') === '1';
   const { user, isAuthenticated } = useAuth();
+  const { items: itemsCarrito, total: totalCarrito } = useCart();
   const [curso, setCurso] = useState<Curso | null>(null);
   const [clientSecret, setClientSecret] = useState('');
   const [ordenId, setOrdenId] = useState('');
@@ -80,23 +89,39 @@ export function CheckoutForm() {
   const [validandoCupon, setValidandoCupon] = useState(false);
   const [cuponError, setCuponError] = useState('');
 
+  // Dos modos: un curso puntual (?cursoId=, botón "Comprar ahora", soporta
+  // cupón) o el carrito completo (?carrito=1, uno o más cursos desde
+  // CartContext — el backend rechaza cupón si hay más de un ítem, ver
+  // CrearOrdenUseCase).
+  const items: ItemCheckout[] = esCarrito
+    ? itemsCarrito.map((i) => ({ cursoId: i.cursoId, cursoNombre: i.titulo, precio: i.precio }))
+    : curso
+      ? [{ cursoId: curso.id, cursoNombre: curso.titulo, precio: curso.precio }]
+      : [];
+  const totalBase = esCarrito ? totalCarrito : curso?.precio ?? 0;
+
   useEffect(() => {
+    if (esCarrito) {
+      setLoading(false);
+      return;
+    }
     if (!cursoId) return;
     apiGet<Curso>(`/cursos/${cursoId}`)
       .then(setCurso)
       .catch(() => setError('Error al cargar el curso'))
       .finally(() => setLoading(false));
-  }, [cursoId]);
+  }, [cursoId, esCarrito]);
 
   const aplicarCupon = async () => {
-    if (!cursoId || !curso || !cuponInput.trim()) return;
+    const item = items[0];
+    if (!item || items.length > 1 || !cuponInput.trim()) return;
     setValidandoCupon(true);
     setCuponError('');
     try {
       const resultado = await apiPost<CuponAplicado>('/cupones/validar', {
         codigo: cuponInput.trim(),
-        cursoId,
-        precio: Number(curso.precio),
+        cursoId: item.cursoId,
+        precio: Number(item.precio),
       });
       setCuponAplicado(resultado);
     } catch (err) {
@@ -114,17 +139,15 @@ export function CheckoutForm() {
   };
 
   const irAPagar = async () => {
-    if (!cursoId || !curso || !user) return;
+    if (items.length === 0 || !user) return;
     setCreandoOrden(true);
     setError('');
     try {
       const result = await apiPost<{ clientSecret: string; ordenId: string }>('/ordenes', {
         estudianteId: user.id,
-        cursoId: cursoId,
-        precio: Number(curso.precio),
-        cursoNombre: curso.titulo,
+        items,
         successUrl: `${window.location.origin}/dashboard`,
-        cancelUrl: `${window.location.origin}/checkout?cursoId=${cursoId}`,
+        cancelUrl: esCarrito ? `${window.location.origin}/carrito` : `${window.location.origin}/checkout?cursoId=${cursoId}`,
         cuponCodigo: cuponAplicado?.codigo,
       });
       setClientSecret(result.clientSecret);
@@ -155,26 +178,45 @@ export function CheckoutForm() {
     );
   }
 
-  const precioMostrado = cuponAplicado ? cuponAplicado.precioFinal : curso?.precio ?? 49.99;
+  if (esCarrito && items.length === 0 && !clientSecret) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <p className="text-ink-muted mb-4">Tu carrito está vacío</p>
+        <Button onClick={() => window.location.href = '/cursos'}>Ver cursos</Button>
+      </div>
+    );
+  }
+
+  const precioMostrado = cuponAplicado ? cuponAplicado.precioFinal : totalBase;
+  // El cupón (Cupon.cursoId apunta a un curso puntual) solo tiene sentido
+  // comprando un único curso a la vez — ver CrearOrdenUseCase.
+  const puedeUsarCupon = items.length === 1;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold mb-8">Checkout</h1>
       <div className="bg-cloud-100 rounded-xl p-8 shadow-sm border border-ink/[0.07]">
         <p className="text-ink-muted mb-4">Resumen de tu compra:</p>
-        <div className="border-b pb-4 mb-6">
-          <p className="font-medium">{curso?.titulo || 'Curso'}</p>
-          {cuponAplicado ? (
-            <div className="flex items-baseline gap-2">
-              <p className="text-lg text-ink-soft line-through">${curso?.precio} USD</p>
-              <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>
+        <div className="border-b pb-4 mb-6 space-y-2">
+          {items.map((item) => (
+            <div key={item.cursoId} className="flex items-center justify-between gap-3">
+              <p className="font-medium truncate">{item.cursoNombre}</p>
+              <p className="text-ink-muted flex-shrink-0">${item.precio} USD</p>
             </div>
-          ) : (
-            <p className="text-2xl font-bold text-secondary">${precioMostrado} USD</p>
-          )}
+          ))}
+          <div className="flex items-baseline justify-end gap-2 pt-2">
+            {cuponAplicado ? (
+              <>
+                <p className="text-lg text-ink-soft line-through">${totalBase} USD</p>
+                <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>
+              </>
+            ) : (
+              <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>
+            )}
+          </div>
         </div>
 
-        {!clientSecret && (
+        {!clientSecret && puedeUsarCupon && (
           <div className="mb-6">
             <label className="block text-sm font-semibold text-ink-muted mb-1">Código de cupón</label>
             {cuponAplicado ? (
@@ -214,7 +256,7 @@ export function CheckoutForm() {
             <CheckoutFormInner ordenId={ordenId} />
           </Elements>
         ) : (
-          <Button className="w-full" onClick={irAPagar} isLoading={creandoOrden} disabled={creandoOrden || !curso}>
+          <Button className="w-full" onClick={irAPagar} isLoading={creandoOrden} disabled={creandoOrden || items.length === 0}>
             Continuar al pago
           </Button>
         )}

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { OrdenOrmEntity } from './infrastructure/typeorm/orden.orm-entity';
+import { OrdenItemOrmEntity } from './infrastructure/typeorm/orden-item.orm-entity';
 import { OrdenTypeOrmRepository } from './infrastructure/typeorm/orden.typeorm-repository';
 import { CuponOrmEntity } from './infrastructure/typeorm/cupon.orm-entity';
 import { CuponTypeOrmRepository } from './infrastructure/typeorm/cupon.typeorm-repository';
@@ -29,7 +30,7 @@ import { EnrollmentModule } from '../enrollment/enrollment.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([OrdenOrmEntity, CuponOrmEntity]),
+    TypeOrmModule.forFeature([OrdenOrmEntity, OrdenItemOrmEntity, CuponOrmEntity]),
     EventEmitterModule.forRoot(),
     IdentityModule,
     CatalogModule,

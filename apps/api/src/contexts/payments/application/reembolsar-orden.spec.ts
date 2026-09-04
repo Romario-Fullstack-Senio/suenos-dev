@@ -6,8 +6,7 @@ function crearOrdenCompletada(hace = 0) {
   const orden = Orden.restore(
     'o1',
     'estudiante-1',
-    'curso-1',
-    49.99,
+    [{ id: 'item-1', cursoId: 'curso-1', cursoNombre: 'Curso Uno', precio: 49.99 }],
     'usd',
     'pi_123',
     'completada',

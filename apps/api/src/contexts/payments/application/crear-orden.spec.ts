@@ -9,9 +9,7 @@ describe('CrearOrdenUseCase', () => {
 
   const command = {
     estudianteId: 'estudiante-1',
-    cursoId: 'curso-1',
-    precio: 100,
-    cursoNombre: 'Curso de React',
+    items: [{ cursoId: 'curso-1', cursoNombre: 'Curso de React', precio: 100 }],
     successUrl: 'http://localhost/success',
     cancelUrl: 'http://localhost/cancel',
   };
@@ -35,6 +33,36 @@ describe('CrearOrdenUseCase', () => {
     );
     expect(mockOrdenRepo.save).toHaveBeenCalledTimes(1);
     expect(mockOrdenRepo.save.mock.calls[0][0].monto).toBe(100);
+  });
+
+  it('crea una orden con varios cursos (carrito) y suma el total', async () => {
+    const result = await useCase.execute({
+      ...command,
+      items: [
+        { cursoId: 'curso-1', cursoNombre: 'Curso de React', precio: 100 },
+        { cursoId: 'curso-2', cursoNombre: 'Curso de NestJS', precio: 50 },
+      ],
+    });
+
+    expect(result.precioFinal).toBe(150);
+    expect(mockPaymentIntent.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 150 }),
+    );
+    expect(mockOrdenRepo.save.mock.calls[0][0].items).toHaveLength(2);
+  });
+
+  it('rechaza un cupón cuando el carrito tiene más de un curso', async () => {
+    await expect(
+      useCase.execute({
+        ...command,
+        items: [
+          { cursoId: 'curso-1', cursoNombre: 'Curso de React', precio: 100 },
+          { cursoId: 'curso-2', cursoNombre: 'Curso de NestJS', precio: 50 },
+        ],
+        cuponCodigo: 'DIEZ',
+      }),
+    ).rejects.toThrow('un curso a la vez');
+    expect(mockOrdenRepo.save).not.toHaveBeenCalled();
   });
 
   it('aplica el descuento del cupón y registra su uso', async () => {

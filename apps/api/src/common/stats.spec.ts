@@ -31,10 +31,10 @@ describe('InstructorController.getStats', () => {
     };
     const mockOrdenRepo = {
       findByCursoIds: jest.fn().mockResolvedValue([
-        { cursoId: 'curso-a', estado: 'completada', monto: 10 },
-        { cursoId: 'curso-a', estado: 'completada', monto: 10 },
-        { cursoId: 'curso-a', estado: 'reembolsada', monto: 10 }, // no debe sumar
-        { cursoId: 'curso-b', estado: 'completada', monto: 100 },
+        { estado: 'completada', items: [{ cursoId: 'curso-a', precio: 10 }] },
+        { estado: 'completada', items: [{ cursoId: 'curso-a', precio: 10 }] },
+        { estado: 'reembolsada', items: [{ cursoId: 'curso-a', precio: 10 }] }, // no debe sumar
+        { estado: 'completada', items: [{ cursoId: 'curso-b', precio: 100 }] },
       ]),
     };
     const mockProgresoRepo = { findByCursoId: jest.fn().mockResolvedValue([]) };
@@ -87,7 +87,7 @@ describe('InstructorController.getAnalytics', () => {
     };
     const mockOrdenRepo = {
       findByCursoIds: jest.fn().mockResolvedValue([
-        { cursoId: 'curso-a', estado: 'completada', monto: 50, createdAt: new Date() },
+        { estado: 'completada', items: [{ cursoId: 'curso-a', precio: 50 }], createdAt: new Date() },
       ]),
     };
     const mockProgresoRepo = {

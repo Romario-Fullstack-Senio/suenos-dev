@@ -8,10 +8,15 @@ import { Download, RotateCcw } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-interface Orden {
-  id: string;
+interface OrdenItem {
   cursoId: string;
   cursoNombre: string;
+  precio: number;
+}
+
+interface Orden {
+  id: string;
+  items: OrdenItem[];
   monto: number;
   moneda: string;
   estado: 'pendiente' | 'completada' | 'fallida' | 'reembolsada';
@@ -107,10 +112,13 @@ export default function MisComprasPage() {
           {ordenes.map((orden) => (
             <div key={orden.id} className="card flex flex-col md:flex-row md:items-center gap-4">
               <div className="flex-1">
-                <p className="font-semibold text-ink">{orden.cursoNombre}</p>
+                <p className="font-semibold text-ink">
+                  {orden.items.map(i => i.cursoNombre).join(', ')}
+                </p>
                 <p className="text-ink-muted text-sm">
                   {new Date(orden.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
                   {' · '}${orden.monto.toFixed(2)} {orden.moneda.toUpperCase()}
+                  {orden.items.length > 1 && ` · ${orden.items.length} cursos`}
                 </p>
               </div>
               <span className={`text-xs font-semibold px-3 py-1 rounded-full self-start md:self-center ${ESTADO_STYLE[orden.estado]}`}>

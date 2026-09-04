@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { apiGet, apiPost } from '@/lib/api';
 import Link from 'next/link';
 
@@ -54,6 +55,7 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const { clear: clearCart } = useCart();
   const searchParams = useSearchParams();
   const ordenId = searchParams.get('ordenId');
   const [cursos, setCursos] = useState<CursoConProgreso[]>([]);
@@ -69,6 +71,7 @@ function DashboardContent() {
           setConfirming(true);
           await apiPost(`/ordenes/${ordenId}/confirm`, {});
           setConfirming(false);
+          clearCart(); // el pago del carrito se confirmó — no dejar los cursos ahí para volver a comprarlos
         }
 
         const data = await apiGet<Inscripcion[]>(`/inscripciones/estudiante/${user.id}`);

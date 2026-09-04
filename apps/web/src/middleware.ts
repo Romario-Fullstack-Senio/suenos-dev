@@ -24,7 +24,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secre
 
 // Prefijos que requieren sesión. `/instructor` y `/admin` además requieren
 // el rol correspondiente (ver ROLE_PREFIXES).
-const PROTECTED_PREFIXES = ['/dashboard', '/checkout', '/aprender', '/perfil', '/instructor', '/admin'];
+const PROTECTED_PREFIXES = ['/dashboard', '/checkout', '/aprender', '/perfil', '/instructor', '/admin', '/favoritos'];
 
 const ROLE_PREFIXES: Record<string, string> = {
   '/admin': 'admin',
@@ -77,5 +77,5 @@ function redirectToLogin(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/checkout/:path*', '/aprender/:path*', '/perfil/:path*', '/instructor/:path*', '/admin/:path*'],
+  matcher: ['/dashboard/:path*', '/checkout/:path*', '/aprender/:path*', '/perfil/:path*', '/instructor/:path*', '/admin/:path*', '/favoritos/:path*'],
 };

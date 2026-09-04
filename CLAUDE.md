@@ -88,7 +88,7 @@ Email adapter fallback order (first configured wins): **Resend → SendGrid → 
 
 ### Frontend (`apps/web/src/app/`, Next.js 14 App Router)
 
-Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries are enforced server-side by `apps/web/src/middleware.ts` (redirects unauthenticated visits to protected prefixes, and role-gates `/admin`/`/instructor`) — new protected routes must be added to its `PROTECTED_PREFIXES`/`config.matcher`. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`. Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/instructor` (instructor role), `/admin` (admin role).
+Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries are enforced server-side by `apps/web/src/middleware.ts` (redirects unauthenticated visits to protected prefixes, and role-gates `/admin`/`/instructor`) — new protected routes must be added to its `PROTECTED_PREFIXES`/`config.matcher`. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`, `/carrito` (cart is client-side/localStorage via `CartContext`, no login needed until checkout). Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/favoritos` (wishlist, server-persisted per user), `/instructor` (instructor role), `/admin` (admin role).
 
 ### Auth: tokens, refresh, verification
 

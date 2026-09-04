@@ -52,10 +52,16 @@ export class ReembolsarOrdenUseCase {
     orden.reembolsar();
     await this.ordenRepo.save(orden);
 
-    const inscripcion = await this.inscripcionRepo.findByCursoYEstudiante(orden.cursoId, orden.estudianteId);
-    if (inscripcion?.activa) {
-      inscripcion.desactivar();
-      await this.inscripcionRepo.save(inscripcion);
+    // Revoca el acceso a TODOS los cursos de la orden — un reembolso es
+    // siempre de la orden completa, no de un curso puntual dentro del
+    // carrito (ver la nota en CrearOrdenCommand sobre por qué el carrito no
+    // desglosa reembolsos parciales por ítem en esta primera versión).
+    for (const item of orden.items) {
+      const inscripcion = await this.inscripcionRepo.findByCursoYEstudiante(item.cursoId, orden.estudianteId);
+      if (inscripcion?.activa) {
+        inscripcion.desactivar();
+        await this.inscripcionRepo.save(inscripcion);
+      }
     }
 
     for (const event of orden.pullDomainEvents()) {

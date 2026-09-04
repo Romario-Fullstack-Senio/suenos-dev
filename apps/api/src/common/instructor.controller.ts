@@ -33,6 +33,7 @@ export class InstructorController {
     const cursos = await this.cursoRepository.findByInstructorId(instructorId);
     const cursoIds = cursos.map(c => c.id);
     const ordenes = await this.ordenRepository.findByCursoIds(cursoIds);
+    const cursoIdSet = new Set(cursoIds);
 
     let totalInscripciones = 0;
     for (const curso of cursos) {
@@ -42,10 +43,15 @@ export class InstructorController {
 
     // Ingresos reales (Ordenes completadas, netas de reembolsos) — antes era
     // una estimación (inscripciones × precio actual del curso), que no
-    // reflejaba cupones aplicados ni cambios de precio históricos.
+    // reflejaba cupones aplicados ni cambios de precio históricos. Con el
+    // carrito, una orden puede traer cursos de otros instructores también
+    // — solo suma los ítems que son de ESTE instructor, no orden.monto
+    // completo (que sería el total del carrito entero).
     const ingresosReales = ordenes
       .filter(o => o.estado === 'completada')
-      .reduce((sum, o) => sum + o.monto, 0);
+      .flatMap(o => o.items)
+      .filter(item => cursoIdSet.has(item.cursoId))
+      .reduce((sum, item) => sum + item.precio, 0);
 
     return {
       totalCursos: cursos.length,
@@ -59,7 +65,13 @@ export class InstructorController {
     const cursos = await this.cursoRepository.findByInstructorId(instructorId);
     const cursoIds = cursos.map(c => c.id);
     const ordenes = await this.ordenRepository.findByCursoIds(cursoIds);
+    const cursoIdSet = new Set(cursoIds);
     const ordenesCompletadas = ordenes.filter(o => o.estado === 'completada');
+    // Ítems de este instructor, con la fecha de la orden a la que pertenecen
+    // (para el gráfico por día) — un ítem no tiene su propia createdAt.
+    const itemsDelInstructor = ordenesCompletadas.flatMap(o =>
+      o.items.filter(item => cursoIdSet.has(item.cursoId)).map(item => ({ item, createdAt: o.createdAt })),
+    );
 
     // Ingresos por día, últimos 30 días (para el gráfico de evolución).
     const hoy = new Date();
@@ -71,21 +83,21 @@ export class InstructorController {
       const diaSiguiente = new Date(dia);
       diaSiguiente.setDate(diaSiguiente.getDate() + 1);
 
-      const monto = ordenesCompletadas
-        .filter(o => o.createdAt >= dia && o.createdAt < diaSiguiente)
-        .reduce((sum, o) => sum + o.monto, 0);
+      const monto = itemsDelInstructor
+        .filter(({ createdAt }) => createdAt >= dia && createdAt < diaSiguiente)
+        .reduce((sum, { item }) => sum + item.precio, 0);
 
       ingresosPorDia.push({ fecha: dia.toISOString().slice(0, 10), monto: Math.round(monto * 100) / 100 });
     }
 
     // Ventas por curso (para saber de dónde viene la plata).
     const ventasPorCurso = cursos.map(curso => {
-      const ordenesDelCurso = ordenesCompletadas.filter(o => o.cursoId === curso.id);
+      const itemsDelCurso = itemsDelInstructor.filter(({ item }) => item.cursoId === curso.id);
       return {
         cursoId: curso.id,
         cursoNombre: curso.titulo,
-        ventas: ordenesDelCurso.length,
-        ingresos: Math.round(ordenesDelCurso.reduce((sum, o) => sum + o.monto, 0) * 100) / 100,
+        ventas: itemsDelCurso.length,
+        ingresos: Math.round(itemsDelCurso.reduce((sum, { item }) => sum + item.precio, 0) * 100) / 100,
       };
     });
 
