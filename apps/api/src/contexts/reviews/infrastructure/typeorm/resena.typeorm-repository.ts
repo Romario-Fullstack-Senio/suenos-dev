@@ -41,6 +41,11 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
     return orms.map(o => this.toDomain(o));
   }
 
+  async findAll(): Promise<Resena[]> {
+    const orms = await this.repo.find({ order: { createdAt: 'DESC' } });
+    return orms.map(o => this.toDomain(o));
+  }
+
   async delete(id: string): Promise<void> {
     await this.repo.delete(id);
   }

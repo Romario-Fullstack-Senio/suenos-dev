@@ -7,11 +7,18 @@ import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '@/lib/api';
 import { ModuloForm } from '@/components/forms/ModuloForm';
 import { LeccionForm } from '@/components/forms/LeccionForm';
 import { SubtitulosUpload } from '@/components/forms/SubtitulosUpload';
+import { RecursosUpload } from '@/components/forms/RecursosUpload';
 import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
+
+interface RecursoLeccion {
+  nombre: string;
+  archivo: string;
+  url: string;
+}
 
 interface Leccion {
   id: string;
@@ -19,6 +26,7 @@ interface Leccion {
   orden: number;
   videoUrl?: string;
   subtitulosUrl?: string;
+  recursos?: RecursoLeccion[];
 }
 
 interface Modulo {
@@ -227,6 +235,7 @@ export default function GestionarCursoPage() {
                       />
                     </div>
                   )}
+                  <RecursosUpload leccionId={lec.id} recursos={lec.recursos ?? []} onChange={fetchCurso} />
                 </div>
               ))}
             </>

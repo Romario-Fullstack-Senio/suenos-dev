@@ -1,11 +1,26 @@
 import { CrearOrdenUseCase } from './crear-orden.use-case';
 import { Cupon } from '../domain/cupon.entity';
 
+// Cursos "reales" del lado servidor — el precio/nombre que manda el cliente
+// en el command se ignora, así que estos son los valores que de verdad
+// terminan usándose. Ver crear-orden.use-case.ts.
+const CURSOS_REALES: Record<string, { id: string; titulo: string; precio: number }> = {
+  'curso-1': { id: 'curso-1', titulo: 'Curso de React', precio: 100 },
+  'curso-2': { id: 'curso-2', titulo: 'Curso de NestJS', precio: 50 },
+};
+
+function cursoFake(id: string) {
+  const c = CURSOS_REALES[id];
+  if (!c) return null;
+  return { id: c.id, titulo: c.titulo, precio: { value: c.precio } };
+}
+
 describe('CrearOrdenUseCase', () => {
   let useCase: CrearOrdenUseCase;
   let mockOrdenRepo: { save: jest.Mock };
   let mockPaymentIntent: { createPaymentIntent: jest.Mock };
   let mockCuponRepo: { findByCodigo: jest.Mock; save: jest.Mock };
+  let mockCursoRepo: { findById: jest.Mock };
 
   const command = {
     estudianteId: 'estudiante-1',
@@ -20,7 +35,13 @@ describe('CrearOrdenUseCase', () => {
       createPaymentIntent: jest.fn().mockResolvedValue({ clientSecret: 'secret_123', paymentIntentId: 'pi_123' }),
     };
     mockCuponRepo = { findByCodigo: jest.fn(), save: jest.fn().mockResolvedValue(undefined) };
-    useCase = new CrearOrdenUseCase(mockOrdenRepo as any, mockPaymentIntent as any, mockCuponRepo as any);
+    mockCursoRepo = { findById: jest.fn((id: string) => Promise.resolve(cursoFake(id))) };
+    useCase = new CrearOrdenUseCase(
+      mockOrdenRepo as any,
+      mockPaymentIntent as any,
+      mockCuponRepo as any,
+      mockCursoRepo as any,
+    );
   });
 
   it('crea la orden por el precio completo cuando no hay cupón', async () => {
@@ -84,6 +105,26 @@ describe('CrearOrdenUseCase', () => {
     mockCuponRepo.findByCodigo.mockResolvedValue(null);
 
     await expect(useCase.execute({ ...command, cuponCodigo: 'NOEXISTE' })).rejects.toThrow('Cupón no encontrado');
+    expect(mockOrdenRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('ignora el precio y nombre que manda el cliente y usa los reales del curso', async () => {
+    const result = await useCase.execute({
+      ...command,
+      items: [{ cursoId: 'curso-1', cursoNombre: 'GRATIS TOTAL', precio: 0.01 }],
+    });
+
+    expect(result.precioFinal).toBe(100);
+    expect(mockPaymentIntent.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 100, cursoNombre: 'Curso de React' }),
+    );
+    expect(mockOrdenRepo.save.mock.calls[0][0].items[0].cursoNombre).toBe('Curso de React');
+  });
+
+  it('lanza NotFoundDomainError si el curso no existe', async () => {
+    await expect(
+      useCase.execute({ ...command, items: [{ cursoId: 'curso-inexistente', cursoNombre: 'x', precio: 1 }] }),
+    ).rejects.toThrow('no encontrado');
     expect(mockOrdenRepo.save).not.toHaveBeenCalled();
   });
 

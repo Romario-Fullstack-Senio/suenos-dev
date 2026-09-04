@@ -5,11 +5,16 @@ import { Orden } from '../domain/orden.entity';
 import { ORDEN_REPOSITORY, OrdenRepository } from '../domain/orden.repository.port';
 import { STRIPE_PAYMENT_INTENT, StripePaymentIntent } from '../domain/stripe-payment-intent.port';
 import { CUPON_REPOSITORY, CuponRepository } from '../domain/cupon.repository.port';
+import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
 
 export interface CrearOrdenItemInput {
   cursoId: string;
-  cursoNombre: string;
-  precio: number;
+  // El cliente puede seguir mandando cursoNombre/precio (así funcionaba el
+  // carrito antes), pero se ignoran: el precio y el nombre reales se
+  // resuelven acá contra CURSO_REPOSITORY. Si no, cualquiera con devtools
+  // podría mandar { cursoId: "x", precio: 0.01 } y comprar gratis.
+  cursoNombre?: string;
+  precio?: number;
 }
 
 export interface CrearOrdenCommand {
@@ -35,6 +40,8 @@ export class CrearOrdenUseCase {
     private readonly stripePaymentIntent: StripePaymentIntent,
     @Inject(CUPON_REPOSITORY)
     private readonly cuponRepository: CuponRepository,
+    @Inject(CURSO_REPOSITORY)
+    private readonly cursoRepository: CursoRepository,
   ) {}
 
   async execute(
@@ -43,13 +50,17 @@ export class CrearOrdenUseCase {
     if (!command.items || command.items.length === 0) {
       throw new DomainError('La orden necesita al menos un curso');
     }
-    for (const item of command.items) {
-      if (item.precio < 0) {
-        throw new DomainError('El precio de un curso no puede ser negativo');
-      }
-    }
 
-    const items = command.items.map((i) => ({ ...i, id: randomUUID(), precioFinal: i.precio }));
+    const items = await Promise.all(
+      command.items.map(async (i) => {
+        const curso = await this.cursoRepository.findById(i.cursoId);
+        if (!curso) {
+          throw new NotFoundDomainError(`Curso ${i.cursoId} no encontrado`);
+        }
+        const precio = curso.precio.value;
+        return { cursoId: curso.id, cursoNombre: curso.titulo, precio, id: randomUUID(), precioFinal: precio };
+      }),
+    );
     let descuento = 0;
 
     if (command.cuponCodigo) {

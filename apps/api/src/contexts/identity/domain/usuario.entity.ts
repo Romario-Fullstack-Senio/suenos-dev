@@ -5,6 +5,7 @@ import { Password } from './password.value-object';
 import { AuthProvider, AuthProviderTipo } from './auth-provider.value-object';
 import { UsuarioRegistradoEvent } from './usuario-registrado.event';
 import { ResetPasswordSolicitadoEvent } from './reset-password-solicitado.event';
+import { EmailActualizadoEvent } from './email-actualizado.event';
 
 interface UsuarioProps {
   nombre: string;
@@ -210,13 +211,32 @@ export class Usuario extends AggregateRoot<string> {
   }
 
   /** El caso de uso ya validó que el nuevo email (si cambió) no esté en
-   * uso por otra cuenta — acá solo la regla de dominio del nombre. */
-  actualizarPerfil(nombre: string, email: Email): void {
+   * uso por otra cuenta — acá solo la regla de dominio del nombre. Si el
+   * email SÍ cambió, la cuenta vuelve a quedar sin verificar (nadie
+   * confirmó todavía que ese buzón es del dueño de la cuenta) y se dispara
+   * un nuevo email de verificación con `nuevoVerificacionToken` — generado
+   * por el caso de uso, mismo criterio que asignarTokenVerificacion(). Las
+   * cuentas OAuth no reciben este reset: el proveedor sigue siendo dueño
+   * de la verificación de esa dirección, cambiarla acá ni siquiera debería
+   * pasar en la práctica (el email de una cuenta OAuth no es editable
+   * desde el formulario), pero por las dudas no la des-verifica. */
+  actualizarPerfil(nombre: string, email: Email, nuevoVerificacionToken?: string): void {
     if (!nombre || nombre.trim().length < 2) {
       throw new DomainError('El nombre debe tener al menos 2 caracteres');
     }
+    const cambioEmail = email.value !== this.props.email.value;
     this.props.nombre = nombre.trim();
     this.props.email = email;
+
+    if (cambioEmail && !this.props.authProvider.esOAuth) {
+      this.props.emailVerificado = false;
+      if (nuevoVerificacionToken) {
+        this.asignarTokenVerificacion(nuevoVerificacionToken);
+        this.addDomainEvent(
+          new EmailActualizadoEvent(this.id, email.value, this.props.nombre, nuevoVerificacionToken),
+        );
+      }
+    }
     this.touch();
   }
 

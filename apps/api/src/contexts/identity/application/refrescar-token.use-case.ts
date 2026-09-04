@@ -46,7 +46,16 @@ export class RefrescarTokenUseCase {
     const sessionToken = this.jwtService.sign({ ...payload, purpose: 'session-hint' }, { expiresIn: '30d' });
 
     const nuevoRefreshPlain = randomBytes(40).toString('hex');
-    const nuevoRefresh = RefreshToken.crear(uuid(), usuario.id, hashToken(nuevoRefreshPlain));
+    // Misma familyId/userAgent que el token que se está rotando — sigue
+    // siendo la misma sesión desde el punto de vista de "sesiones activas",
+    // solo cambió el valor del token en sí.
+    const nuevoRefresh = RefreshToken.crear(
+      uuid(),
+      usuario.id,
+      hashToken(nuevoRefreshPlain),
+      existente.familyId,
+      existente.userAgent,
+    );
     await this.refreshTokenRepo.save(nuevoRefresh);
 
     return { token, refreshToken: nuevoRefreshPlain, sessionToken };

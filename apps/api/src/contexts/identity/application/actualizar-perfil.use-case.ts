@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { NotFoundDomainError, ConflictDomainError } from '@suenos-dev/shared-kernel';
+import { randomBytes } from 'crypto';
 import { Email } from '../domain/email.value-object';
 import { UsuarioRepository, USUARIO_REPOSITORY } from '../domain/usuario.repository.port';
+import { EventBus } from '../../../common/event-bus';
 
 export interface ActualizarPerfilCommand {
   usuarioId: string;
@@ -14,6 +16,7 @@ export class ActualizarPerfilUseCase {
   constructor(
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepo: UsuarioRepository,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: ActualizarPerfilCommand): Promise<void> {
@@ -31,7 +34,15 @@ export class ActualizarPerfilUseCase {
       }
     }
 
-    usuario.actualizarPerfil(command.nombre, email);
+    // Si el email cambió, Usuario.actualizarPerfil des-verifica la cuenta y
+    // dispara un nuevo correo de verificación con este token — mismo
+    // criterio que el registro inicial.
+    const nuevoToken = randomBytes(32).toString('hex');
+    usuario.actualizarPerfil(command.nombre, email, nuevoToken);
     await this.usuarioRepo.save(usuario);
+
+    for (const event of usuario.pullDomainEvents()) {
+      await this.eventBus.publish(event);
+    }
   }
 }

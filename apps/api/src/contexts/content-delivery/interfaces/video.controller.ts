@@ -1,8 +1,10 @@
-import { Controller, Post, Get, Body, Param, Query, Req, Res, Inject, UseGuards, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, Query, Req, Res, Inject, UseGuards, NotFoundException, ForbiddenException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { SubirVideoUseCase } from '../application/subir-video.use-case';
 import { SubirSubtitulosUseCase } from '../application/subir-subtitulos.use-case';
+import { SubirRecursoUseCase } from '../application/subir-recurso.use-case';
+import { EliminarRecursoUseCase } from '../application/eliminar-recurso.use-case';
 import { VerificarAccesoVideoUseCase } from '../application/verificar-acceso-video.use-case';
 import { VIDEO_STORAGE, VideoStorage } from '../domain/progreso-leccion.repository.port';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -14,6 +16,8 @@ export class VideoController {
   constructor(
     private readonly subirVideoUseCase: SubirVideoUseCase,
     private readonly subirSubtitulosUseCase: SubirSubtitulosUseCase,
+    private readonly subirRecursoUseCase: SubirRecursoUseCase,
+    private readonly eliminarRecursoUseCase: EliminarRecursoUseCase,
     private readonly verificarAccesoUseCase: VerificarAccesoVideoUseCase,
     private readonly jwtService: JwtService,
     @Inject(VIDEO_STORAGE)
@@ -76,6 +80,66 @@ export class VideoController {
 
     res.set({
       'Content-Type': objeto.contentType,
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
+    });
+    objeto.stream.pipe(res);
+  }
+
+  // El archivo viaja como data URL (igual que el video) — el frontend usa
+  // readAsDataURL sin importar el tipo de archivo (PDF, zip, etc.).
+  @Post('upload-recurso')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('instructor', 'admin')
+  async uploadRecurso(@Body() body: { file: string; leccionId: string; nombre: string; nombreArchivo: string }) {
+    const base64 = body.file.includes(',') ? body.file.split(',')[1] : body.file;
+    const buffer = Buffer.from(base64, 'base64');
+    const url = await this.subirRecursoUseCase.execute(buffer, body.leccionId, body.nombre, body.nombreArchivo);
+    return { url };
+  }
+
+  @Delete('recursos/:leccionId/:archivo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('instructor', 'admin')
+  async eliminarRecurso(@Param('leccionId') leccionId: string, @Param('archivo') archivo: string) {
+    await this.eliminarRecursoUseCase.execute(leccionId, decodeURIComponent(archivo));
+    return { message: 'Recurso eliminado' };
+  }
+
+  // Mismo criterio de acceso que el video/subtítulos — un recurso de una
+  // lección paga no debe ser público. `Content-Disposition: attachment`
+  // fuerza la descarga en vez de intentar abrirlo inline en el navegador.
+  @Get('recursos/:leccionId/:archivo')
+  async serveRecurso(
+    @Param('leccionId') leccionId: string,
+    @Param('archivo') archivo: string,
+    @Query('token') tokenQuery: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const rawToken = this.extraerToken(req, tokenQuery);
+    const usuario = this.verificarToken(rawToken);
+
+    const { permitido, existe } = await this.verificarAccesoUseCase.execute({
+      leccionId,
+      usuarioId: usuario?.id,
+      usuarioRol: usuario?.rol,
+    });
+
+    if (!existe) throw new NotFoundException('Lección no encontrada');
+    if (!permitido) {
+      throw new ForbiddenException('No tenés acceso a este contenido — inscribite en el curso para verlo');
+    }
+
+    const nombreArchivo = decodeURIComponent(archivo);
+    const objeto = await this.videoStorage.getRecurso(leccionId, nombreArchivo);
+    if (!objeto) {
+      throw new NotFoundException('Recurso no encontrado');
+    }
+
+    res.set({
+      'Content-Type': objeto.contentType,
+      'Content-Disposition': `attachment; filename="${nombreArchivo.replace(/"/g, '')}"`,
       'Cache-Control': 'no-cache',
       'Access-Control-Allow-Origin': '*',
     });
@@ -154,7 +218,13 @@ export class VideoController {
     if (!rawToken) return null;
     try {
       const payload = this.jwtService.verify(rawToken);
-      if (payload.purpose === 'session-hint') return null; // ver JwtStrategy
+      // Cualquier token con `purpose` (session-hint del middleware, o
+      // two-factor-pending de un login a mitad de camino — ver
+      // JwtStrategy.validate) NO es un access token real: no pasó (o no
+      // pasó del todo) la autenticación completa, y este método hace su
+      // propia verificación manual de JWT sin pasar por JwtAuthGuard/
+      // JwtStrategy, así que el mismo chequeo hay que repetirlo acá.
+      if (payload.purpose) return null;
       return { id: payload.sub, rol: payload.rol };
     } catch {
       return null; // token vencido/inválido → tratamos como anónimo

@@ -41,7 +41,7 @@ describe('ConfirmarLoginDosFactoresUseCase', () => {
     const result = await useCase.execute({ tempToken: 'temp', codigo: codigoValido });
 
     expect(result).toEqual({ token: 'real-token' });
-    expect(mockLoginUseCase.emitirTokens).toHaveBeenCalledWith(usuario);
+    expect(mockLoginUseCase.emitirTokens).toHaveBeenCalledWith(usuario, null);
   });
 
   it('con un código de respaldo válido, lo consume y emite los tokens reales', async () => {

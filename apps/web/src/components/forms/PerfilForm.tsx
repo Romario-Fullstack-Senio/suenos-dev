@@ -36,8 +36,12 @@ export function PerfilForm() {
 
   const onSubmit = async (data: PerfilFormData) => {
     try {
-      await apiPut('/usuarios/me', data);
-      updateUser({ nombre: data.nombre, email: data.email });
+      // El backend devuelve el usuario post-guardado (no lo que mandamos) —
+      // si cambió el email, emailVerificado vuelve a false del lado del
+      // servidor, y necesitamos ESE valor para que el banner de "verificá
+      // tu email" reaparezca sin esperar a un refresh de página.
+      const { usuario } = await apiPut<{ usuario?: typeof data & { emailVerificado: boolean } }>('/usuarios/me', data);
+      if (usuario) updateUser(usuario);
       toast.success('Perfil actualizado');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Error al actualizar perfil');

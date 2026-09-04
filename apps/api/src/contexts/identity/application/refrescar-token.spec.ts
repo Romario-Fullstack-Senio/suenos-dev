@@ -16,7 +16,7 @@ describe('RefrescarTokenUseCase', () => {
 
     mockUsuarioRepo = { findById: jest.fn().mockResolvedValue(usuario) };
     mockRefreshRepo = {
-      findByTokenHash: jest.fn().mockResolvedValue(RefreshToken.crear('rt1', 'u1', 'hash-existente')),
+      findByTokenHash: jest.fn().mockResolvedValue(RefreshToken.crear('rt1', 'u1', 'hash-existente', 'family-1')),
       save: jest.fn().mockResolvedValue(undefined),
     };
     mockJwt = { sign: jest.fn().mockReturnValue('nuevo.jwt.token') };
@@ -39,7 +39,7 @@ describe('RefrescarTokenUseCase', () => {
   });
 
   it('rechaza un refresh token ya revocado', async () => {
-    const revocado = RefreshToken.crear('rt1', 'u1', 'hash');
+    const revocado = RefreshToken.crear('rt1', 'u1', 'hash', 'family-1');
     revocado.revocar();
     mockRefreshRepo.findByTokenHash.mockResolvedValue(revocado);
     await expect(useCase.execute('token-revocado')).rejects.toThrow('Sesión expirada');
