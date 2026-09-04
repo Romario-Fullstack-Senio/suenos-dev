@@ -38,6 +38,15 @@ export class UsuarioOrmEntity {
   @Column({ type: 'timestamp', nullable: true })
   reset_password_expira!: Date | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  two_factor_secret!: string | null;
+
+  @Column({ default: false })
+  two_factor_enabled!: boolean;
+
+  @Column({ type: 'simple-json', nullable: true })
+  two_factor_backup_codes!: string[] | null;
+
   @CreateDateColumn()
   created_at!: Date;
 }

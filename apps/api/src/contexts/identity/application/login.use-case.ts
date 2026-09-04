@@ -1,6 +1,7 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsuarioRepository, USUARIO_REPOSITORY } from '../domain/usuario.repository.port';
+import { Usuario } from '../domain/usuario.entity';
 import { RefreshTokenRepository, REFRESH_TOKEN_REPOSITORY } from '../domain/refresh-token.repository.port';
 import { RefreshToken } from '../domain/refresh-token.entity';
 import { hashToken } from './token-hash.util';
@@ -19,6 +20,11 @@ export interface LoginResult {
   usuario: { id: string; nombre: string; email: string; rol: string; emailVerificado: boolean };
 }
 
+export interface LoginTwoFactorPendingResult {
+  requiresTwoFactor: true;
+  tempToken: string;
+}
+
 @Injectable()
 export class LoginUseCase {
   constructor(
@@ -29,7 +35,7 @@ export class LoginUseCase {
     private readonly jwtService: JwtService,
   ) {}
 
-  async execute(command: LoginCommand): Promise<LoginResult> {
+  async execute(command: LoginCommand): Promise<LoginResult | LoginTwoFactorPendingResult> {
     const usuario = await this.usuarioRepo.findByEmail(command.email);
     if (!usuario) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -40,6 +46,24 @@ export class LoginUseCase {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
+    if (usuario.twoFactorEnabled) {
+      // No emitimos los tokens reales todavía — un `tempToken` de vida
+      // corta (purpose: 'two-factor-pending') es lo único que prueba "ya
+      // pasó la contraseña"; JwtStrategy lo rechaza igual que el
+      // session-hint, así que no sirve como bearer token real aunque se
+      // filtre. El login recién termina en
+      // ConfirmarLoginDosFactoresUseCase con el código TOTP.
+      const tempToken = this.jwtService.sign(
+        { sub: usuario.id, purpose: 'two-factor-pending' },
+        { expiresIn: '5m' },
+      );
+      return { requiresTwoFactor: true, tempToken };
+    }
+
+    return this.emitirTokens(usuario);
+  }
+
+  async emitirTokens(usuario: Usuario): Promise<LoginResult> {
     const payload = { sub: usuario.id, email: usuario.email.value, rol: usuario.rol.value };
     // Access token de vida corta — el refresh token es el que sostiene la
     // sesión larga y puede revocarse server-side sin tocar el JWT en sí.

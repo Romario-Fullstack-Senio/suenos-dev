@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams } from 'next/navigation';
@@ -13,9 +13,52 @@ import Link from 'next/link';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/api\/?$/, '');
 
+function TwoFactorStep({ tempToken }: { tempToken: string }) {
+  const { completeTwoFactorLogin } = useAuth();
+  const [codigo, setCodigo] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState('');
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnviando(true);
+    setError('');
+    try {
+      await completeTwoFactorLogin(tempToken, codigo.trim());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código incorrecto');
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-16 p-8 card">
+      <h1 className="text-2xl font-bold mb-2 text-center text-ink">Verificación en dos pasos</h1>
+      <p className="text-sm text-ink-muted text-center mb-6">
+        Ingresá el código de 6 dígitos de tu app de autenticación, o uno de tus códigos de respaldo.
+      </p>
+      <form onSubmit={onSubmit}>
+        <Input
+          label="Código"
+          placeholder="123456"
+          autoFocus
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value)}
+          error={error}
+        />
+        <Button type="submit" isLoading={enviando} disabled={!codigo.trim() || enviando} className="w-full mt-2">
+          Verificar
+        </Button>
+      </form>
+    </div>
+  );
+}
+
 export function LoginForm() {
   const { login } = useAuth();
   const searchParams = useSearchParams();
+  const [tempToken, setTempToken] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
@@ -28,11 +71,18 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
+      const resultado = await login(data.email, data.password);
+      if (resultado.requiresTwoFactor) {
+        setTempToken(resultado.tempToken);
+      }
     } catch (error) {
       toast.error('Credenciales inválidas');
     }
   };
+
+  if (tempToken) {
+    return <TwoFactorStep tempToken={tempToken} />;
+  }
 
   return (
     <div className="max-w-md mx-auto mt-16 p-8 card">

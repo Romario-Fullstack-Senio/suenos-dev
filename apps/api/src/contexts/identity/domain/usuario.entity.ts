@@ -18,6 +18,9 @@ interface UsuarioProps {
   verificacionTokenExpira: Date | null;
   resetPasswordToken: string | null;
   resetPasswordExpira: Date | null;
+  twoFactorSecret: string | null;
+  twoFactorEnabled: boolean;
+  twoFactorBackupCodes: string[] | null;
 }
 
 export class Usuario extends AggregateRoot<string> {
@@ -51,6 +54,9 @@ export class Usuario extends AggregateRoot<string> {
       verificacionTokenExpira: verificacionToken ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null,
       resetPasswordToken: null,
       resetPasswordExpira: null,
+      twoFactorSecret: null,
+      twoFactorEnabled: false,
+      twoFactorBackupCodes: null,
     });
     usuario.addDomainEvent(
       new UsuarioRegistradoEvent(id, email.value, nombre, AuthProviderTipo.LOCAL, verificacionToken),
@@ -86,6 +92,9 @@ export class Usuario extends AggregateRoot<string> {
       verificacionTokenExpira: null,
       resetPasswordToken: null,
       resetPasswordExpira: null,
+      twoFactorSecret: null,
+      twoFactorEnabled: false,
+      twoFactorBackupCodes: null,
     });
     usuario.addDomainEvent(new UsuarioRegistradoEvent(params.id, params.email.value, params.nombre, params.provider));
     return usuario;
@@ -106,6 +115,9 @@ export class Usuario extends AggregateRoot<string> {
       verificacionTokenExpira?: Date | null;
       resetPasswordToken?: string | null;
       resetPasswordExpira?: Date | null;
+      twoFactorSecret?: string | null;
+      twoFactorEnabled?: boolean;
+      twoFactorBackupCodes?: string[] | null;
     },
   ): Usuario {
     const usuario = new Usuario(id, {
@@ -120,6 +132,9 @@ export class Usuario extends AggregateRoot<string> {
       verificacionTokenExpira: props.verificacionTokenExpira ?? null,
       resetPasswordToken: props.resetPasswordToken ?? null,
       resetPasswordExpira: props.resetPasswordExpira ?? null,
+      twoFactorSecret: props.twoFactorSecret ?? null,
+      twoFactorEnabled: props.twoFactorEnabled ?? false,
+      twoFactorBackupCodes: props.twoFactorBackupCodes ?? null,
     });
     Object.defineProperty(usuario, '_createdAt', { value: props.createdAt });
     return usuario;
@@ -173,6 +188,18 @@ export class Usuario extends AggregateRoot<string> {
     return this.props.resetPasswordExpira;
   }
 
+  get twoFactorSecret(): string | null {
+    return this.props.twoFactorSecret;
+  }
+
+  get twoFactorEnabled(): boolean {
+    return this.props.twoFactorEnabled;
+  }
+
+  get twoFactorBackupCodes(): string[] | null {
+    return this.props.twoFactorBackupCodes;
+  }
+
   async verificarPassword(plain: string): Promise<boolean> {
     if (!this.props.password) return false;
     return this.props.password.verify(plain);
@@ -224,6 +251,48 @@ export class Usuario extends AggregateRoot<string> {
     this.props.resetPasswordToken = null;
     this.props.resetPasswordExpira = null;
     this.touch();
+  }
+
+  /** Guarda el secreto TOTP recién generado, todavía sin activar — el
+   * usuario tiene que confirmarlo escaneando el QR y mandando un código
+   * válido (confirmarActivacionDosFactores) antes de que 2FA empiece a
+   * exigirse en el login. Así un secreto generado pero nunca confirmado
+   * (usuario cerró la pantalla a mitad de camino) no deja la cuenta
+   * inaccesible. */
+  iniciarConfiguracionDosFactores(secret: string): void {
+    if (this.props.twoFactorEnabled) {
+      throw new DomainError('La verificación en dos pasos ya está activada — desactivala antes de reconfigurar');
+    }
+    this.props.twoFactorSecret = secret;
+    this.touch();
+  }
+
+  confirmarActivacionDosFactores(codigosRespaldoHasheados: string[]): void {
+    if (!this.props.twoFactorSecret) {
+      throw new DomainError('Primero tenés que iniciar la configuración de la verificación en dos pasos');
+    }
+    this.props.twoFactorEnabled = true;
+    this.props.twoFactorBackupCodes = codigosRespaldoHasheados;
+    this.touch();
+  }
+
+  desactivarDosFactores(): void {
+    this.props.twoFactorSecret = null;
+    this.props.twoFactorEnabled = false;
+    this.props.twoFactorBackupCodes = null;
+    this.touch();
+  }
+
+  /** Consume un código de respaldo (de un solo uso) si es válido — el hash
+   * ya viene calculado por el caso de uso, acá solo se compara y se saca
+   * de la lista para que no pueda reusarse. */
+  consumirCodigoRespaldo(codigoHasheado: string): boolean {
+    if (!this.props.twoFactorBackupCodes) return false;
+    const index = this.props.twoFactorBackupCodes.indexOf(codigoHasheado);
+    if (index === -1) return false;
+    this.props.twoFactorBackupCodes = this.props.twoFactorBackupCodes.filter((_, i) => i !== index);
+    this.touch();
+    return true;
   }
 
   vincularProveedor(provider: AuthProviderTipo, providerId: string): void {
