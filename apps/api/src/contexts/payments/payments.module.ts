@@ -27,6 +27,7 @@ import { FacturaPdfKitAdapter } from './infrastructure/pdf/factura-pdfkit.adapte
 import { IdentityModule } from '../identity/identity.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { EnrollmentModule } from '../enrollment/enrollment.module';
+import { BundlesModule } from '../bundles/bundles.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { EnrollmentModule } from '../enrollment/enrollment.module';
     IdentityModule,
     CatalogModule,
     EnrollmentModule,
+    BundlesModule,
   ],
   controllers: [OrdenController, CuponController, StripeWebhookController],
   providers: [

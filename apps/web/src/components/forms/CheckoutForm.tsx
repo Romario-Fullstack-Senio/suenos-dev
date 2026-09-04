@@ -18,6 +18,14 @@ interface Curso {
   precio: number;
 }
 
+interface Paquete {
+  id: string;
+  titulo: string;
+  descuentoPorcentaje: number;
+  precioFinal: number;
+  cursos: { id: string; titulo: string; precio: number }[];
+}
+
 interface ItemCheckout {
   cursoId: string;
   cursoNombre: string;
@@ -75,9 +83,11 @@ export function CheckoutForm() {
   const searchParams = useSearchParams();
   const cursoId = searchParams.get('cursoId');
   const esCarrito = searchParams.get('carrito') === '1';
+  const paqueteId = searchParams.get('paqueteId');
   const { user, isAuthenticated } = useAuth();
   const { items: itemsCarrito, total: totalCarrito } = useCart();
   const [curso, setCurso] = useState<Curso | null>(null);
+  const [paquete, setPaquete] = useState<Paquete | null>(null);
   const [clientSecret, setClientSecret] = useState('');
   const [ordenId, setOrdenId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -89,18 +99,32 @@ export function CheckoutForm() {
   const [validandoCupon, setValidandoCupon] = useState(false);
   const [cuponError, setCuponError] = useState('');
 
-  // Dos modos: un curso puntual (?cursoId=, botón "Comprar ahora", soporta
-  // cupón) o el carrito completo (?carrito=1, uno o más cursos desde
-  // CartContext — el backend rechaza cupón si hay más de un ítem, ver
+  // Tres modos: un curso puntual (?cursoId=, botón "Comprar ahora", soporta
+  // cupón), el carrito completo (?carrito=1, uno o más cursos desde
+  // CartContext) o un paquete (?paqueteId=, todos sus cursos con el
+  // descuento ya aplicado — ninguno de estos dos últimos soporta cupón, ver
   // CrearOrdenUseCase).
-  const items: ItemCheckout[] = esCarrito
-    ? itemsCarrito.map((i) => ({ cursoId: i.cursoId, cursoNombre: i.titulo, precio: i.precio }))
-    : curso
-      ? [{ cursoId: curso.id, cursoNombre: curso.titulo, precio: curso.precio }]
-      : [];
-  const totalBase = esCarrito ? totalCarrito : curso?.precio ?? 0;
+  const items: ItemCheckout[] = paqueteId && paquete
+    ? paquete.cursos.map((c) => ({ cursoId: c.id, cursoNombre: c.titulo, precio: c.precio }))
+    : esCarrito
+      ? itemsCarrito.map((i) => ({ cursoId: i.cursoId, cursoNombre: i.titulo, precio: i.precio }))
+      : curso
+        ? [{ cursoId: curso.id, cursoNombre: curso.titulo, precio: curso.precio }]
+        : [];
+  const totalBase = paqueteId && paquete
+    ? paquete.cursos.reduce((sum, c) => sum + c.precio, 0)
+    : esCarrito
+      ? totalCarrito
+      : curso?.precio ?? 0;
 
   useEffect(() => {
+    if (paqueteId) {
+      apiGet<Paquete>(`/paquetes/${paqueteId}`)
+        .then(setPaquete)
+        .catch(() => setError('Error al cargar el paquete'))
+        .finally(() => setLoading(false));
+      return;
+    }
     if (esCarrito) {
       setLoading(false);
       return;
@@ -110,7 +134,7 @@ export function CheckoutForm() {
       .then(setCurso)
       .catch(() => setError('Error al cargar el curso'))
       .finally(() => setLoading(false));
-  }, [cursoId, esCarrito]);
+  }, [cursoId, esCarrito, paqueteId]);
 
   const aplicarCupon = async () => {
     const item = items[0];
@@ -147,8 +171,13 @@ export function CheckoutForm() {
         estudianteId: user.id,
         items,
         successUrl: `${window.location.origin}/dashboard`,
-        cancelUrl: esCarrito ? `${window.location.origin}/carrito` : `${window.location.origin}/checkout?cursoId=${cursoId}`,
+        cancelUrl: paqueteId
+          ? `${window.location.origin}/paquetes/${paqueteId}`
+          : esCarrito
+            ? `${window.location.origin}/carrito`
+            : `${window.location.origin}/checkout?cursoId=${cursoId}`,
         cuponCodigo: cuponAplicado?.codigo,
+        paqueteId: paqueteId ?? undefined,
       });
       setClientSecret(result.clientSecret);
       setOrdenId(result.ordenId);
@@ -187,10 +216,12 @@ export function CheckoutForm() {
     );
   }
 
-  const precioMostrado = cuponAplicado ? cuponAplicado.precioFinal : totalBase;
+  const precioMostrado = paqueteId && paquete ? paquete.precioFinal : cuponAplicado ? cuponAplicado.precioFinal : totalBase;
   // El cupón (Cupon.cursoId apunta a un curso puntual) solo tiene sentido
-  // comprando un único curso a la vez — ver CrearOrdenUseCase.
-  const puedeUsarCupon = items.length === 1;
+  // comprando un único curso a la vez, y un paquete ya trae su propio
+  // descuento — ver CrearOrdenUseCase (rechaza combinar ambos).
+  const puedeUsarCupon = items.length === 1 && !paqueteId;
+  const hayDescuento = !!cuponAplicado || (!!paqueteId && !!paquete);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">
@@ -205,7 +236,7 @@ export function CheckoutForm() {
             </div>
           ))}
           <div className="flex items-baseline justify-end gap-2 pt-2">
-            {cuponAplicado ? (
+            {hayDescuento ? (
               <>
                 <p className="text-lg text-ink-soft line-through">${totalBase} USD</p>
                 <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>

@@ -70,6 +70,7 @@ export function Header() {
 
         <nav className="flex items-center gap-6">
           <NavLink href="/cursos">Cursos</NavLink>
+          <NavLink href="/paquetes">Paquetes</NavLink>
 
           {isAuthenticated ? (
             <>
