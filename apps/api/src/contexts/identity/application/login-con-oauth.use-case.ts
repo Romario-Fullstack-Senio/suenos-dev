@@ -18,13 +18,14 @@ interface LoginConOAuthCommand {
   provider: AuthProviderTipo;
   providerId: string;
   userAgent?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface LoginConOAuthResult {
   token: string;
   refreshToken: string;
   sessionToken: string;
-  usuario: { id: string; nombre: string; email: string; rol: string; emailVerificado: boolean };
+  usuario: { id: string; nombre: string; email: string; rol: string; emailVerificado: boolean; avatarUrl: string | null };
 }
 
 @Injectable()
@@ -49,8 +50,11 @@ export class LoginConOAuthUseCase {
       }
       if (!usuario.esOAuth) {
         usuario.vincularProveedor(command.provider, command.providerId);
-        await this.usuarioRepo.save(usuario);
       }
+      // Solo completa el avatar si el usuario todavía no tiene uno propio —
+      // nunca pisa un avatar subido/elegido a mano.
+      usuario.actualizarAvatarDesdeOAuthSiVacio(command.avatarUrl ?? null);
+      await this.usuarioRepo.save(usuario);
     } else {
       const id = uuid();
       usuario = Usuario.registrarDesdeOAuth({
@@ -59,6 +63,7 @@ export class LoginConOAuthUseCase {
         email,
         provider: command.provider,
         providerId: command.providerId,
+        avatarUrl: command.avatarUrl,
       });
       await this.usuarioRepo.save(usuario);
       for (const event of usuario.pullDomainEvents()) {
@@ -91,6 +96,7 @@ export class LoginConOAuthUseCase {
         email: usuario.email.value,
         rol: usuario.rol.value,
         emailVerificado: usuario.emailVerificado,
+        avatarUrl: usuario.avatarUrl,
       },
     };
   }

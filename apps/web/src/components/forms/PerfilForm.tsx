@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiPut, apiPost } from '@/lib/api';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { AvatarUpload } from './AvatarUpload';
 import { MailWarning } from 'lucide-react';
 
 export function PerfilForm() {
@@ -64,6 +65,9 @@ export function PerfilForm() {
   return (
     <div className="max-w-md mx-auto mt-16 p-8 bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07]">
       <h1 className="text-2xl font-bold mb-6">Mi Perfil</h1>
+      <div className="mb-6">
+        <AvatarUpload />
+      </div>
       {user && !user.emailVerificado && (
         <div className="flex items-start gap-3 mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
           <MailWarning className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />

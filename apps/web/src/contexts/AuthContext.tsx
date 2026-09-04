@@ -10,6 +10,7 @@ interface User {
   email: string;
   rol: 'estudiante' | 'instructor' | 'admin';
   emailVerificado: boolean;
+  avatarUrl?: string | null;
 }
 
 interface LoginResponse {

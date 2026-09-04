@@ -22,6 +22,9 @@ import { ConfirmarLoginDosFactoresUseCase } from './application/confirmar-login-
 import { ActualizarPerfilUseCase } from './application/actualizar-perfil.use-case';
 import { ListarSesionesUseCase } from './application/listar-sesiones.use-case';
 import { RevocarSesionUseCase } from './application/revocar-sesion.use-case';
+import { ActualizarAvatarUseCase } from './application/actualizar-avatar.use-case';
+import { IMAGE_STORAGE } from '../catalog/domain/image-storage.port';
+import { MinioImageStorageAdapter } from '../catalog/infrastructure/minio/minio-image-storage.adapter';
 import { UsuarioTypeOrmRepository } from './infrastructure/typeorm/usuario.typeorm-repository';
 import { UsuarioOrmEntity } from './infrastructure/typeorm/usuario.orm-entity';
 import { RefreshTokenTypeOrmRepository } from './infrastructure/typeorm/refresh-token.typeorm-repository';
@@ -78,6 +81,10 @@ const githubStrategyProvider = {
   providers: [
     { provide: USUARIO_REPOSITORY, useClass: UsuarioTypeOrmRepository },
     { provide: REFRESH_TOKEN_REPOSITORY, useClass: RefreshTokenTypeOrmRepository },
+    // Reusa el mismo adapter de MinIO que catalog/ usa para portadas de
+    // curso (no se puede importar CatalogModule acá: ya importa
+    // IdentityModule, sería un ciclo — así que se registra localmente).
+    { provide: IMAGE_STORAGE, useClass: MinioImageStorageAdapter },
     RegistrarUsuarioUseCase,
     LoginUseCase,
     LoginConOAuthUseCase,
@@ -94,6 +101,7 @@ const githubStrategyProvider = {
     ActualizarPerfilUseCase,
     ListarSesionesUseCase,
     RevocarSesionUseCase,
+    ActualizarAvatarUseCase,
     JwtStrategy,
     googleStrategyProvider,
     githubStrategyProvider,

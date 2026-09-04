@@ -86,11 +86,16 @@ export function Header() {
 
               <Link
                 href="/perfil"
-                className="flex h-[34px] w-[34px] items-center justify-center rounded-full text-sm font-bold text-white"
+                className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
                 style={{ background: 'linear-gradient(140deg,#8b5cf6,#6366f1)' }}
                 title={user?.nombre}
               >
-                {user?.nombre?.charAt(0).toUpperCase()}
+                {user?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- viene de MinIO/Google/GitHub, no del pipeline de imágenes de Next
+                  <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  user?.nombre?.charAt(0).toUpperCase()
+                )}
               </Link>
 
               <button

@@ -18,7 +18,7 @@ export interface LoginResult {
   token: string;
   refreshToken: string;
   sessionToken: string;
-  usuario: { id: string; nombre: string; email: string; rol: string; emailVerificado: boolean };
+  usuario: { id: string; nombre: string; email: string; rol: string; emailVerificado: boolean; avatarUrl: string | null };
 }
 
 export interface LoginTwoFactorPendingResult {
@@ -95,6 +95,7 @@ export class LoginUseCase {
         email: usuario.email.value,
         rol: usuario.rol.value,
         emailVerificado: usuario.emailVerificado,
+        avatarUrl: usuario.avatarUrl,
       },
     };
   }
