@@ -1,4 +1,5 @@
 import { AggregateRoot, DomainError } from '@suenos-dev/shared-kernel';
+import { OrdenItem } from './orden-item.entity';
 import { CursoCompradoEvent } from './events/curso-comprado.event';
 import { OrdenReembolsadaEvent } from './events/orden-reembolsada.event';
 
@@ -6,8 +7,7 @@ export type OrdenEstado = 'pendiente' | 'completada' | 'fallida' | 'reembolsada'
 
 export interface OrdenProps {
   estudianteId: string;
-  cursoId: string;
-  monto: number;
+  items: OrdenItem[];
   moneda: string;
   stripeSessionId: string;
   estado: OrdenEstado;
@@ -18,6 +18,9 @@ export class Orden extends AggregateRoot<string> {
 
   private constructor(id: string, props: OrdenProps) {
     super(id);
+    if (props.items.length === 0) {
+      throw new DomainError('Una orden necesita al menos un ítem');
+    }
     this.props = props;
   }
 
@@ -25,12 +28,14 @@ export class Orden extends AggregateRoot<string> {
     return this.props.estudianteId;
   }
 
-  get cursoId(): string {
-    return this.props.cursoId;
+  get items(): OrdenItem[] {
+    return this.props.items;
   }
 
+  /** Total de la orden — suma de todos los ítems. Antes era un campo propio
+   * (`monto`); ahora se deriva de los ítems para no poder desincronizarse. */
   get monto(): number {
-    return this.props.monto;
+    return this.props.items.reduce((sum, item) => sum + item.precio, 0);
   }
 
   get moneda(): string {
@@ -45,25 +50,25 @@ export class Orden extends AggregateRoot<string> {
     return this.props.estado;
   }
 
-  completar(metadata?: {
-    alumnoEmail?: string;
-    alumnoNombre?: string;
-    cursoNombre?: string;
-    precio?: number;
-  }): void {
+  completar(alumno?: { email?: string; nombre?: string }): void {
     this.props.estado = 'completada';
     this.touch();
-    this.addDomainEvent({
-      eventName: 'CursoComprado',
-      occurredOn: new Date(),
-      aggregateId: this.id,
-      estudianteId: this.props.estudianteId,
-      cursoId: this.props.cursoId,
-      alumnoEmail: metadata?.alumnoEmail || '',
-      alumnoNombre: metadata?.alumnoNombre || '',
-      cursoNombre: metadata?.cursoNombre || '',
-      precio: metadata?.precio || this.props.monto,
-    } as CursoCompradoEvent);
+    // Un evento CursoComprado por ítem — es lo que ya usan
+    // OtorgarAccesoHandler (inscripción) y el email de confirmación de
+    // compra, sin cambios, tanto si la orden tiene 1 curso como 5.
+    for (const item of this.props.items) {
+      this.addDomainEvent(
+        new CursoCompradoEvent(
+          this.id,
+          this.props.estudianteId,
+          item.cursoId,
+          alumno?.email || '',
+          alumno?.nombre || '',
+          item.cursoNombre,
+          item.precio,
+        ),
+      );
+    }
   }
 
   reembolsar(): void {
@@ -72,23 +77,25 @@ export class Orden extends AggregateRoot<string> {
     }
     this.props.estado = 'reembolsada';
     this.touch();
-    this.addDomainEvent(
-      new OrdenReembolsadaEvent(this.id, this.props.estudianteId, this.props.cursoId, this.props.monto),
-    );
+    // Mismo criterio que completar(): un evento por ítem, así el email de
+    // reembolso y la baja de inscripción tratan cada curso por separado.
+    for (const item of this.props.items) {
+      this.addDomainEvent(
+        new OrdenReembolsadaEvent(this.id, this.props.estudianteId, item.cursoId, item.precio),
+      );
+    }
   }
 
   static crear(
     id: string,
     estudianteId: string,
-    cursoId: string,
-    monto: number,
+    items: { id: string; cursoId: string; cursoNombre: string; precio: number }[],
     moneda: string,
     stripeSessionId: string,
   ): Orden {
     return new Orden(id, {
       estudianteId,
-      cursoId,
-      monto,
+      items: items.map((i) => OrdenItem.crear(i.id, { cursoId: i.cursoId, cursoNombre: i.cursoNombre, precio: i.precio })),
       moneda,
       stripeSessionId,
       estado: 'pendiente',
@@ -98,8 +105,7 @@ export class Orden extends AggregateRoot<string> {
   static restore(
     id: string,
     estudianteId: string,
-    cursoId: string,
-    monto: number,
+    items: { id: string; cursoId: string; cursoNombre: string; precio: number }[],
     moneda: string,
     stripeSessionId: string,
     estado: OrdenEstado,
@@ -107,8 +113,7 @@ export class Orden extends AggregateRoot<string> {
   ): Orden {
     const orden = new Orden(id, {
       estudianteId,
-      cursoId,
-      monto,
+      items: items.map((i) => OrdenItem.reconstitute(i.id, { cursoId: i.cursoId, cursoNombre: i.cursoNombre, precio: i.precio })),
       moneda,
       stripeSessionId,
       estado,

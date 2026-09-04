@@ -11,7 +11,6 @@ import {
 } from '../domain/orden.repository.port';
 import { FACTURA_GENERATOR, FacturaGenerator } from '../domain/factura-generator.port';
 import { EventBus } from '../../../common/event-bus';
-import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
 import type { Request } from 'express';
 
@@ -32,7 +31,6 @@ export class OrdenController {
     private readonly crearOrden: CrearOrdenUseCase,
     private readonly reembolsarOrdenUC: ReembolsarOrdenUseCase,
     @Inject(ORDEN_REPOSITORY) private readonly ordenRepository: OrdenRepository,
-    @Inject(CURSO_REPOSITORY) private readonly cursoRepository: CursoRepository,
     @Inject(USUARIO_REPOSITORY) private readonly usuarioRepository: UsuarioRepository,
     @Inject(FACTURA_GENERATOR) private readonly facturaGenerator: FacturaGenerator,
     private readonly eventBus: EventBus,
@@ -48,12 +46,10 @@ export class OrdenController {
   @UseGuards(JwtAuthGuard)
   async misOrdenes(@Req() req: AuthenticatedRequest) {
     const ordenes = await this.ordenRepository.findByEstudianteId(req.user.id);
-    const cursos = await Promise.all(ordenes.map(o => this.cursoRepository.findById(o.cursoId)));
 
-    return ordenes.map((o, i) => ({
+    return ordenes.map((o) => ({
       id: o.id,
-      cursoId: o.cursoId,
-      cursoNombre: cursos[i]?.titulo ?? 'Curso',
+      items: o.items.map((i) => ({ cursoId: i.cursoId, cursoNombre: i.cursoNombre, precio: i.precio })),
       monto: o.monto,
       moneda: o.moneda,
       estado: o.estado,
@@ -66,13 +62,11 @@ export class OrdenController {
   @Roles('admin')
   async listarTodas() {
     const ordenes = await this.ordenRepository.findAll();
-    const cursos = await Promise.all(ordenes.map(o => this.cursoRepository.findById(o.cursoId)));
     const usuarios = await Promise.all(ordenes.map(o => this.usuarioRepository.findById(o.estudianteId)));
 
     return ordenes.map((o, i) => ({
       id: o.id,
-      cursoId: o.cursoId,
-      cursoNombre: cursos[i]?.titulo ?? 'Curso',
+      items: o.items.map((it) => ({ cursoId: it.cursoId, cursoNombre: it.cursoNombre, precio: it.precio })),
       estudianteNombre: usuarios[i]?.nombre ?? 'Estudiante',
       estudianteEmail: usuarios[i]?.email.value ?? '',
       monto: o.monto,
@@ -95,10 +89,10 @@ export class OrdenController {
       return { message: 'Orden ya completada', ordenId: orden.id };
     }
 
-    // Look up user and course data for the email event
+    // Look up user data for the email event — el nombre de cada curso ya
+    // viene denormalizado en orden.items.
     let alumnoEmail = '';
     let alumnoNombre = '';
-    let cursoNombre = '';
 
     try {
       const usuario = await this.usuarioRepository.findById(orden.estudianteId);
@@ -111,21 +105,7 @@ export class OrdenController {
       // en vez de tumbar la confirmación del pago.
     }
 
-    try {
-      const curso = await this.cursoRepository.findById(orden.cursoId);
-      if (curso) {
-        cursoNombre = curso.titulo;
-      }
-    } catch {
-      // Idem.
-    }
-
-    orden.completar({
-      alumnoEmail,
-      alumnoNombre,
-      cursoNombre,
-      precio: orden.monto,
-    });
+    orden.completar({ email: alumnoEmail, nombre: alumnoNombre });
     await this.ordenRepository.save(orden);
 
     for (const event of orden.pullDomainEvents()) {
@@ -154,17 +134,14 @@ export class OrdenController {
       throw new ForbiddenException('No tenés acceso a este comprobante');
     }
 
-    const [usuario, curso] = await Promise.all([
-      this.usuarioRepository.findById(orden.estudianteId),
-      this.cursoRepository.findById(orden.cursoId),
-    ]);
+    const usuario = await this.usuarioRepository.findById(orden.estudianteId);
 
     const pdf = await this.facturaGenerator.generate({
       numeroComprobante: orden.id.slice(0, 8).toUpperCase(),
       fecha: orden.createdAt,
       compradorNombre: usuario?.nombre ?? 'Estudiante',
       compradorEmail: usuario?.email.value ?? '',
-      cursoNombre: curso?.titulo ?? 'Curso',
+      items: orden.items.map((i) => ({ nombre: i.cursoNombre, precio: i.precio })),
       monto: orden.monto,
       moneda: orden.moneda,
       estado: ESTADO_LABEL[orden.estado] ?? orden.estado,

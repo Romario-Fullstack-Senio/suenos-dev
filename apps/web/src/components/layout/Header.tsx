@@ -2,8 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { NotificationBell } from './NotificationBell';
+
+function CartIcon() {
+  const { items } = useCart();
+  return (
+    <Link href="/carrito" className="relative text-ink-muted transition hover:text-primary" aria-label="Carrito">
+      <ShoppingCart className="w-5 h-5" />
+      {items.length > 0 && (
+        <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+          {items.length}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -56,12 +72,14 @@ export function Header() {
           {isAuthenticated ? (
             <>
               {hasRole('estudiante') && <NavLink href="/dashboard">Mis Cursos</NavLink>}
+              {hasRole('estudiante') && <NavLink href="/favoritos">Favoritos</NavLink>}
               {hasRole('estudiante') && <NavLink href="/certificados">Certificados</NavLink>}
               {hasRole('instructor') && <NavLink href="/instructor">Instructor</NavLink>}
               {hasRole('admin') && <NavLink href="/admin">Admin</NavLink>}
 
               <span className="h-6 w-px bg-ink/10" />
 
+              <CartIcon />
               <NotificationBell />
 
               <Link
@@ -82,6 +100,7 @@ export function Header() {
             </>
           ) : (
             <>
+              <CartIcon />
               <Link
                 href="/auth/login"
                 className="text-[15px] font-semibold text-ink-muted transition hover:text-primary"

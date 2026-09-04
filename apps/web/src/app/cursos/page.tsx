@@ -5,6 +5,8 @@ import { apiGet } from '@/lib/api';
 import Link from 'next/link';
 import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
+import { WishlistButton } from '@/components/WishlistButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Curso {
   id: string;
@@ -47,6 +49,7 @@ function CourseCardSkeleton() {
 }
 
 export default function CursosPage() {
+  const { isAuthenticated } = useAuth();
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -169,7 +172,13 @@ export default function CursosPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cursos.map((curso) => (
               <Link key={curso.id} href={`/cursos/${curso.slug}`}>
-                <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col">
+                <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col relative">
+                  {isAuthenticated && (
+                    <WishlistButton
+                      cursoId={curso.id}
+                      className="absolute top-3 right-3 z-[1] w-8 h-8 bg-cloud-50/90 backdrop-blur-sm shadow-sm"
+                    />
+                  )}
                   <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
                   <div className="p-6 flex flex-col flex-1">
                     {(curso.categoria || curso.nivel) && (

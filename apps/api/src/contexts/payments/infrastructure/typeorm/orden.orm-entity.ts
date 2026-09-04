@@ -4,7 +4,9 @@ import {
   Column,
   CreateDateColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
+import { OrdenItemOrmEntity } from './orden-item.orm-entity';
 
 @Entity('ordenes')
 export class OrdenOrmEntity {
@@ -15,12 +17,8 @@ export class OrdenOrmEntity {
   @Column({ name: 'estudiante_id' })
   estudianteId!: string;
 
-  @Index()
-  @Column({ name: 'curso_id' })
-  cursoId!: string;
-
-  @Column('decimal')
-  monto!: number;
+  @OneToMany(() => OrdenItemOrmEntity, (item) => item.orden, { cascade: true })
+  items!: OrdenItemOrmEntity[];
 
   @Column()
   moneda!: string;

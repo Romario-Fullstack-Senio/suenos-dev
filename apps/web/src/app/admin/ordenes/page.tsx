@@ -5,10 +5,15 @@ import { toast } from 'sonner';
 import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 
-interface Orden {
-  id: string;
+interface OrdenItem {
   cursoId: string;
   cursoNombre: string;
+  precio: number;
+}
+
+interface Orden {
+  id: string;
+  items: OrdenItem[];
   estudianteNombre: string;
   estudianteEmail: string;
   monto: number;
@@ -63,7 +68,7 @@ export default function AdminOrdenesPage() {
     !busqueda ||
     o.estudianteNombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     o.estudianteEmail.toLowerCase().includes(busqueda.toLowerCase()) ||
-    o.cursoNombre.toLowerCase().includes(busqueda.toLowerCase()),
+    o.items.some(i => i.cursoNombre.toLowerCase().includes(busqueda.toLowerCase())),
   );
 
   return (
@@ -104,7 +109,9 @@ export default function AdminOrdenesPage() {
                     <p className="text-ink font-medium">{orden.estudianteNombre}</p>
                     <p className="text-ink-soft text-xs">{orden.estudianteEmail}</p>
                   </td>
-                  <td className="px-6 py-4 text-ink-muted">{orden.cursoNombre}</td>
+                  <td className="px-6 py-4 text-ink-muted">
+                    {orden.items.map(i => i.cursoNombre).join(', ')}
+                  </td>
                   <td className="px-6 py-4 text-ink-muted">${orden.monto.toFixed(2)} {orden.moneda.toUpperCase()}</td>
                   <td className="px-6 py-4 text-ink-muted text-sm">
                     {new Date(orden.createdAt).toLocaleDateString('es-ES')}

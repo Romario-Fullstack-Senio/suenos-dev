@@ -21,6 +21,7 @@ import { EnrollmentModule } from './contexts/enrollment/enrollment.module';
 import { NotificationsModule } from './contexts/notifications/notifications.module';
 import { ReviewsModule } from './contexts/reviews/reviews.module';
 import { QaModule } from './contexts/qa/qa.module';
+import { WishlistModule } from './contexts/wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { QaModule } from './contexts/qa/qa.module';
     NotificationsModule,
     ReviewsModule,
     QaModule,
+    WishlistModule,
   ],
   controllers: [AdminController, InstructorController],
   providers: [

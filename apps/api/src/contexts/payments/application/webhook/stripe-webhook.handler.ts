@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { EventBus } from '../../../../common/event-bus';
 import { ORDEN_REPOSITORY, OrdenRepository } from '../../domain/orden.repository.port';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../../../identity/domain/usuario.repository.port';
-import { CURSO_REPOSITORY, CursoRepository } from '../../../catalog/domain/curso.repository.port';
 
 @Injectable()
 export class StripeWebhookHandler {
@@ -13,8 +12,6 @@ export class StripeWebhookHandler {
     private readonly ordenRepository: OrdenRepository,
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepository: UsuarioRepository,
-    @Inject(CURSO_REPOSITORY)
-    private readonly cursoRepository: CursoRepository,
     private readonly eventBus: EventBus,
   ) {}
 
@@ -26,10 +23,10 @@ export class StripeWebhookHandler {
       return;
     }
 
-    // Look up user and course data for the email event
+    // Look up user data for the email event — el nombre de cada curso ya
+    // viene denormalizado en orden.items, no hace falta resolverlo acá.
     let alumnoEmail = '';
     let alumnoNombre = '';
-    let cursoNombre = '';
 
     try {
       const usuario = await this.usuarioRepository.findById(orden.estudianteId);
@@ -42,21 +39,7 @@ export class StripeWebhookHandler {
       // en vez de tumbar la confirmación del webhook de Stripe.
     }
 
-    try {
-      const curso = await this.cursoRepository.findById(orden.cursoId);
-      if (curso) {
-        cursoNombre = curso.titulo;
-      }
-    } catch {
-      // Idem — no bloquear la confirmación del pago por esto.
-    }
-
-    orden.completar({
-      alumnoEmail,
-      alumnoNombre,
-      cursoNombre,
-      precio: orden.monto,
-    });
+    orden.completar({ email: alumnoEmail, nombre: alumnoNombre });
     await this.ordenRepository.save(orden);
 
     for (const event of orden.pullDomainEvents()) {

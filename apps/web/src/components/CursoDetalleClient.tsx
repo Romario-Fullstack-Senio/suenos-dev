@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { PlayCircle, ChevronDown, Users, Award, Clock, User } from 'lucide-react';
+import { PlayCircle, ChevronDown, Users, Award, Clock, User, ShoppingCart, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { LessonPreviewModal } from '@/components/LessonPreviewModal';
 import { RelatedCourses } from '@/components/RelatedCourses';
+import { WishlistButton } from '@/components/WishlistButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { apiGet } from '@/lib/api';
 
 export interface Leccion {
@@ -59,6 +62,7 @@ function formatearDuracion(totalSegundos: number): string {
 
 export function CursoDetalleClient({ curso }: { curso: Curso }) {
   const { user, isAuthenticated } = useAuth();
+  const { addItem, isInCart } = useCart();
   const [vistaPrevia, setVistaPrevia] = useState<Leccion | null>(null);
   const [yaInscripto, setYaInscripto] = useState(false);
   const [verificandoAcceso, setVerificandoAcceso] = useState(isAuthenticated);
@@ -157,12 +161,31 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
             Ir al curso
           </Link>
         ) : (
-          <Link
-            href={`/checkout?cursoId=${curso.id}`}
-            className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
-          >
-            Comprar Curso
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href={`/checkout?cursoId=${curso.id}`}
+              className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
+            >
+              Comprar ahora
+            </Link>
+            {isInCart(curso.id) ? (
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-secondary bg-secondary/10">
+                <Check className="w-4 h-4" /> En el carrito
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  addItem({ cursoId: curso.id, titulo: curso.titulo, precio: curso.precio, imagenUrl: curso.imagenUrl, slug: curso.slug });
+                  toast.success('Agregado al carrito');
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-ink border border-ink/[0.12] hover:bg-cloud-100 transition"
+              >
+                <ShoppingCart className="w-4 h-4" /> Agregar al carrito
+              </button>
+            )}
+            <WishlistButton cursoId={curso.id} className="w-11 h-11 border border-ink/[0.12] hover:bg-cloud-100" />
+          </div>
         )}
       </div>
 

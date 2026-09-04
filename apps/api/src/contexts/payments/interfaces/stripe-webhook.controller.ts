@@ -4,7 +4,6 @@ import Stripe from 'stripe';
 import { Inject } from '@nestjs/common';
 import { ORDEN_REPOSITORY, OrdenRepository } from '../domain/orden.repository.port';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
-import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
 import { EventBus } from '../../../common/event-bus';
 
 @Controller()
@@ -17,8 +16,6 @@ export class StripeWebhookController {
     private readonly ordenRepository: OrdenRepository,
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepository: UsuarioRepository,
-    @Inject(CURSO_REPOSITORY)
-    private readonly cursoRepository: CursoRepository,
     private readonly eventBus: EventBus,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -87,10 +84,10 @@ export class StripeWebhookController {
       return;
     }
 
-    // Look up user and course data for the email event
+    // Look up user data for the email event — el nombre de cada curso ya
+    // viene denormalizado en orden.items.
     let alumnoEmail = '';
     let alumnoNombre = '';
-    let cursoNombre = '';
 
     try {
       const usuario = await this.usuarioRepository.findById(orden.estudianteId);
@@ -103,21 +100,7 @@ export class StripeWebhookController {
       // en vez de tumbar la confirmación del webhook de Stripe.
     }
 
-    try {
-      const curso = await this.cursoRepository.findById(orden.cursoId);
-      if (curso) {
-        cursoNombre = curso.titulo;
-      }
-    } catch {
-      // Idem.
-    }
-
-    orden.completar({
-      alumnoEmail,
-      alumnoNombre,
-      cursoNombre,
-      precio: orden.monto,
-    });
+    orden.completar({ email: alumnoEmail, nombre: alumnoNombre });
     await this.ordenRepository.save(orden);
 
     for (const event of orden.pullDomainEvents()) {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { CartProvider } from '@/contexts/CartContext';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Sky } from '@/components/layout/Sky';
@@ -36,10 +37,12 @@ export default function RootLayout({
       <body className="relative min-h-screen overflow-x-hidden bg-white text-ink">
         <Sky />
         <AuthProvider>
-          <Header />
-          <main className="relative z-[1]">{children}</main>
-          <Footer />
-          <CookieConsent />
+          <CartProvider>
+            <Header />
+            <main className="relative z-[1]">{children}</main>
+            <Footer />
+            <CookieConsent />
+          </CartProvider>
         </AuthProvider>
         <Toaster position="top-right" richColors />
       </body>
