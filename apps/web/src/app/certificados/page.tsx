@@ -38,14 +38,14 @@ export default function CertificadosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-cloud-50 flex items-center justify-center">
         <p className="text-ink-muted">Cargando certificados...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white p-4 md:p-8">
+    <div className="min-h-screen bg-cloud-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-ink mb-8">Mis Certificados</h1>
 

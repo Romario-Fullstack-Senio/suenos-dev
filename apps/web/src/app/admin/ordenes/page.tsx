@@ -75,7 +75,7 @@ export default function AdminOrdenesPage() {
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         placeholder="Buscar por alumno, email o curso..."
-        className="w-full mb-6 px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full mb-6 px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
       />
 
       {loading ? (

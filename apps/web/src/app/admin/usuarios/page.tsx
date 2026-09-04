@@ -49,7 +49,7 @@ export default function AdminUsuariosPage() {
       ) : (
         <div className="bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07] overflow-hidden">
           <table className="w-full">
-            <thead className="bg-white">
+            <thead className="bg-cloud-50">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Nombre</th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-ink-muted">Email</th>

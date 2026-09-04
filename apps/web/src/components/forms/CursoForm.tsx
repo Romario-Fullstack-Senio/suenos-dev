@@ -180,7 +180,7 @@ export function CursoForm() {
         <div className="mb-4">
           <label className="block text-sm font-semibold text-ink-muted mb-1">Imagen de portada (opcional)</label>
           {imagenFile && previewUrl ? (
-            <div className="flex items-center gap-3 px-3 py-2 border border-ink/[0.12] rounded-xl bg-white">
+            <div className="flex items-center gap-3 px-3 py-2 border border-ink/[0.12] rounded-xl bg-cloud-50">
               {/* eslint-disable-next-line @next/next/no-img-element -- preview local via object URL */}
               <img src={previewUrl} alt="Vista previa" className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
               <span className="flex-1 text-sm text-ink truncate">
@@ -196,7 +196,7 @@ export function CursoForm() {
               </button>
             </div>
           ) : (
-            <label className="flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-ink/[0.2] rounded-xl bg-white text-sm text-ink-muted cursor-pointer hover:border-primary/50 hover:bg-cloud-100 transition-colors">
+            <label className="flex items-center justify-center gap-2 px-3 py-4 border border-dashed border-ink/[0.2] rounded-xl bg-cloud-50 text-sm text-ink-muted cursor-pointer hover:border-primary/50 hover:bg-cloud-100 transition-colors">
               <ImagePlus className="w-4 h-4" />
               Seleccionar imagen de portada
               <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />

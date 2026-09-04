@@ -120,7 +120,7 @@ export function ReviewsSection({ cursoId }: { cursoId: string }) {
             onChange={(e) => setComentario(e.target.value)}
             placeholder="¿Qué te pareció el curso? (opcional)"
             rows={3}
-            className="w-full px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 mb-3"
+            className="w-full px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40 mb-3"
           />
           <div className="flex gap-2">
             <Button onClick={enviarResena} isLoading={enviando} disabled={enviando}>

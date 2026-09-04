@@ -2,43 +2,47 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Tema claro "cielo" (handoff): fuente de verdad para primary/secondary/
-        // accent/ink/cloud — ver Sueños Dev hero blanco/handoff/README.md.
-        primary: '#6366f1',
-        secondary: '#8b5cf6',
-        accent: '#f59e0b',
+        // primary/secondary/accent/ink/cloud son la fuente de verdad de color
+        // en toda la web. Están atados a custom properties (definidas en
+        // globals.css, con overrides bajo .dark) en vez de valores fijos, para
+        // que un solo toggle de tema recolore la web entera sin tocar cada
+        // componente — ver ThemeContext + ThemeToggle.
+        primary: 'rgb(var(--color-primary) / <alpha-value>)',
+        secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
+        accent: 'rgb(var(--color-accent) / <alpha-value>)',
         ink: {
-          DEFAULT: '#14162b',
-          muted: '#5a5d78',
-          soft: '#9a9db2',
+          DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
+          muted: 'rgb(var(--color-ink-muted) / <alpha-value>)',
+          soft: 'rgb(var(--color-ink-soft) / <alpha-value>)',
         },
         cloud: {
-          50: '#ffffff',
-          100: '#f6f7fc',
-          200: '#eceffb',
-          300: '#dcdfeb',
+          50: 'rgb(var(--color-bg) / <alpha-value>)',
+          100: 'rgb(var(--color-bg-elevated) / <alpha-value>)',
+          200: 'rgb(var(--color-surface) / <alpha-value>)',
+          300: 'rgb(var(--color-border) / <alpha-value>)',
         },
-        // Namespace del tema oscuro anterior — todavía en uso en dashboard,
-        // admin, instructor, y varios formularios que no se migraron en este
-        // handoff. No quitar hasta que esas páginas se actualicen también.
+        // Namespace del tema oscuro anterior — sin uso en el código hoy
+        // (confirmado), pero mapeado a las mismas variables por si alguna
+        // página vieja reaparece; no aporta un tema fijo propio.
         suenos: {
-          midnight: '#0B0E1A',
-          deep: '#111631',
-          surface: '#1A1F3A',
-          border: '#252B4A',
-          violet: '#7C3AED',
-          'violet-light': '#A78BFA',
+          midnight: 'rgb(var(--color-bg) / <alpha-value>)',
+          deep: 'rgb(var(--color-bg-elevated) / <alpha-value>)',
+          surface: 'rgb(var(--color-surface) / <alpha-value>)',
+          border: 'rgb(var(--color-border) / <alpha-value>)',
+          violet: 'rgb(var(--color-primary) / <alpha-value>)',
+          'violet-light': 'rgb(var(--color-secondary) / <alpha-value>)',
           cyan: '#06B6D4',
           'cyan-light': '#22D3EE',
           gold: '#F59E0B',
           'gold-light': '#FBBF24',
           moon: '#E9E4FF',
-          text: '#F1F5F9',
-          muted: '#94A3B8',
-          dim: '#64748B',
+          text: 'rgb(var(--color-ink) / <alpha-value>)',
+          muted: 'rgb(var(--color-ink-muted) / <alpha-value>)',
+          dim: 'rgb(var(--color-ink-soft) / <alpha-value>)',
         },
       },
       fontFamily: {

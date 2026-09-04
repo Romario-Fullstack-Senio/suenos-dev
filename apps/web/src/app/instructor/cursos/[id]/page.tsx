@@ -168,7 +168,7 @@ export default function GestionarCursoPage() {
                 Publicar Curso
               </button>
             ) : (
-              <button onClick={handleDespublicar} className="bg-white border border-ink/[0.12] text-ink px-4 py-2 rounded-lg hover:bg-cloud-100 text-sm font-semibold">
+              <button onClick={handleDespublicar} className="bg-cloud-50 border border-ink/[0.12] text-ink px-4 py-2 rounded-lg hover:bg-cloud-100 text-sm font-semibold">
                 Volver a borrador
               </button>
             )}

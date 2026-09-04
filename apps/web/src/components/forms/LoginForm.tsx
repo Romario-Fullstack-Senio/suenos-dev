@@ -67,7 +67,7 @@ export function LoginForm() {
           <div className="w-full border-t border-ink/[0.07]" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-2 text-ink-soft">O continúa con</span>
+          <span className="bg-cloud-50 px-2 text-ink-soft">O continúa con</span>
         </div>
       </div>
 

@@ -18,7 +18,10 @@ function Cloud({ className, width }: { className: string; width: number }) {
   const puffB = width * 0.31;
   return (
     <div
-      className={className}
+      // En modo oscuro las nubes blancas y opacas desentonan contra el cielo
+      // nocturno — se atenúan y oscurecen para leerse como nubes de noche en
+      // vez de manchas blancas, con una transición suave al cambiar de tema.
+      className={`${className} transition-[opacity,filter] duration-500 dark:opacity-[0.14] dark:brightness-[0.35]`}
       style={{ width, height: puffA, filter: 'drop-shadow(0 26px 40px rgba(99,102,241,0.16))' }}
     >
       <div

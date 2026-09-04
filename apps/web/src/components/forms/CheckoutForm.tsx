@@ -194,7 +194,7 @@ export function CheckoutForm() {
                   value={cuponInput}
                   onChange={e => setCuponInput(e.target.value.toUpperCase())}
                   placeholder="Ej: BIENVENIDA10"
-                  className="flex-1 px-3 py-2 bg-white text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="flex-1 px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <Button type="button" variant="secondary" onClick={aplicarCupon} isLoading={validandoCupon} disabled={!cuponInput.trim() || validandoCupon}>
                   Aplicar
@@ -219,7 +219,7 @@ export function CheckoutForm() {
           </Button>
         )}
 
-        <div className="mt-4 p-3 bg-white rounded-lg text-xs text-ink-muted">
+        <div className="mt-4 p-3 bg-cloud-50 rounded-lg text-xs text-ink-muted">
           <p className="font-medium mb-1">Tarjetas de prueba:</p>
           <p>4242 4242 4242 4242 — Pago exitoso</p>
           <p>4000 0025 0000 3155 — Requiere autenticación</p>

@@ -88,7 +88,7 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-cloud-50 flex items-center justify-center">
         <p className="text-ink-muted">Cargando quiz...</p>
       </div>
     );
@@ -96,7 +96,7 @@ export default function QuizPage() {
 
   if (!quiz) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-cloud-50 flex items-center justify-center">
         <p className="text-ink-muted">No hay quiz disponible para este curso</p>
       </div>
     );
@@ -104,7 +104,7 @@ export default function QuizPage() {
 
   if (result) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-cloud-50 flex items-center justify-center p-4">
         <div className="bg-cloud-100 rounded-xl shadow-sm p-8 max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-ink mb-4">
             {result.aprobado ? '🎉 ¡Felicidades!' : '😔 No aprobado'}
@@ -125,7 +125,7 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-4 md:p-8">
+    <div className="min-h-screen bg-cloud-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-ink mb-2">{quiz.titulo}</h1>
         <p className="text-ink-muted mb-8">
