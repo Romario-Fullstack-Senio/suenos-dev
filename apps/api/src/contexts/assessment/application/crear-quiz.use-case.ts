@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Quiz } from '../domain/quiz.entity';
-import { Pregunta } from '../domain/pregunta.entity';
+import { Pregunta, TipoPregunta } from '../domain/pregunta.entity';
 import { QuizRepository, QUIZ_REPOSITORY } from '../domain/quiz.repository.port';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,7 +11,8 @@ export interface CrearQuizCommand {
   preguntas: {
     enunciado: string;
     opciones: string[];
-    respuestaCorrecta: number;
+    tipo?: TipoPregunta;
+    respuestasCorrectas: number[];
   }[];
 }
 
@@ -32,7 +33,8 @@ export class CrearQuizUseCase {
         preguntaId,
         preguntaData.enunciado,
         preguntaData.opciones,
-        preguntaData.respuestaCorrecta,
+        preguntaData.tipo ?? 'opcion_unica',
+        preguntaData.respuestasCorrectas,
       );
       quiz.agregarPregunta(pregunta);
     }

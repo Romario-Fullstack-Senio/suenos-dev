@@ -14,7 +14,7 @@ export class IntentoOrmEntity {
   quiz_id!: string;
 
   @Column('simple-json')
-  respuestas!: number[];
+  respuestas!: number[][];
 
   @Column('decimal', { precision: 5, scale: 2 })
   puntaje!: number;

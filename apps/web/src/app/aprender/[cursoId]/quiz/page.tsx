@@ -7,10 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 
+type TipoPregunta = 'opcion_unica' | 'verdadero_falso' | 'seleccion_multiple';
+
 interface Pregunta {
   id: string;
   enunciado: string;
   opciones: string[];
+  tipo: TipoPregunta;
 }
 
 interface Quiz {
@@ -33,7 +36,9 @@ export default function QuizPage() {
   const { user } = useAuth();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
-  const [respuestas, setRespuestas] = useState<Record<string, string>>({});
+  // Índices seleccionados por pregunta — un solo elemento para opción
+  // única/verdadero-falso, uno o más para selección múltiple.
+  const [respuestas, setRespuestas] = useState<Record<string, number[]>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -55,8 +60,19 @@ export default function QuizPage() {
     }
   }
 
-  function handleRespuesta(preguntaId: string, opcion: string) {
-    setRespuestas(prev => ({ ...prev, [preguntaId]: opcion }));
+  function seleccionarUnica(preguntaId: string, indice: number) {
+    setRespuestas(prev => ({ ...prev, [preguntaId]: [indice] }));
+  }
+
+  function toggleMultiple(preguntaId: string, indice: number) {
+    setRespuestas(prev => {
+      const actuales = prev[preguntaId] ?? [];
+      const yaMarcada = actuales.includes(indice);
+      return {
+        ...prev,
+        [preguntaId]: yaMarcada ? actuales.filter(i => i !== indice) : [...actuales, indice],
+      };
+    });
   }
 
   async function handleSubmit() {
@@ -64,13 +80,9 @@ export default function QuizPage() {
     setSubmitting(true);
 
     try {
-      // El backend espera un array de índices (number[]), en el MISMO orden
-      // que quiz.preguntas — no {preguntaId, respuesta}. Antes de este fix se
-      // mandaba la forma equivocada y class-validator rechazaba cada intento.
-      const respuestasArray = quiz.preguntas.map((pregunta) => {
-        const opcionElegida = respuestas[pregunta.id];
-        return pregunta.opciones.indexOf(opcionElegida);
-      });
+      // El backend espera un array por pregunta (number[][]), en el MISMO
+      // orden que quiz.preguntas — cada uno con los índices seleccionados.
+      const respuestasArray = quiz.preguntas.map((pregunta) => respuestas[pregunta.id] ?? []);
 
       const data = await apiPost('/quizzes/resolver', {
         quizId: quiz.id,
@@ -124,6 +136,8 @@ export default function QuizPage() {
     );
   }
 
+  const todasRespondidas = quiz.preguntas.every(p => (respuestas[p.id] ?? []).length > 0);
+
   return (
     <div className="min-h-screen bg-cloud-50 p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
@@ -133,41 +147,51 @@ export default function QuizPage() {
         </p>
 
         <div className="space-y-6">
-          {quiz.preguntas.map((pregunta, index) => (
-            <div key={pregunta.id} className="bg-cloud-100 rounded-xl shadow-sm p-6">
-              <p className="font-medium text-ink mb-4">
-                {index + 1}. {pregunta.enunciado}
-              </p>
-              <div className="space-y-2">
-                {pregunta.opciones.map(opcion => (
-                  <label
-                    key={opcion}
-                    className={`block p-3 rounded-lg border cursor-pointer transition-colors ${
-                      respuestas[pregunta.id] === opcion
-                        ? 'border-primary bg-primary/5'
-                        : 'border-ink/[0.07] hover:border-primary/30'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={pregunta.id}
-                      value={opcion}
-                      checked={respuestas[pregunta.id] === opcion}
-                      onChange={() => handleRespuesta(pregunta.id, opcion)}
-                      className="sr-only"
-                    />
-                    {opcion}
-                  </label>
-                ))}
+          {quiz.preguntas.map((pregunta, index) => {
+            const esMultiple = pregunta.tipo === 'seleccion_multiple';
+            const seleccionadas = respuestas[pregunta.id] ?? [];
+            return (
+              <div key={pregunta.id} className="bg-cloud-100 rounded-xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <p className="font-medium text-ink">
+                    {index + 1}. {pregunta.enunciado}
+                  </p>
+                  {esMultiple && (
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      Selección múltiple
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {pregunta.opciones.map((opcion, i) => (
+                    <label
+                      key={i}
+                      className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        seleccionadas.includes(i)
+                          ? 'border-primary bg-primary/5'
+                          : 'border-ink/[0.07] hover:border-primary/30'
+                      }`}
+                    >
+                      <input
+                        type={esMultiple ? 'checkbox' : 'radio'}
+                        name={pregunta.id}
+                        checked={seleccionadas.includes(i)}
+                        onChange={() => (esMultiple ? toggleMultiple(pregunta.id, i) : seleccionarUnica(pregunta.id, i))}
+                        className="flex-shrink-0"
+                      />
+                      {opcion}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={Object.keys(respuestas).length < quiz.preguntas.length || submitting}
+            disabled={!todasRespondidas || submitting}
             className="w-full"
           >
             {submitting ? 'Enviando...' : 'Enviar respuestas'}

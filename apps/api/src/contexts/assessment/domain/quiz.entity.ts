@@ -56,11 +56,11 @@ export class Quiz extends AggregateRoot<string> {
    * curso incluidos, que este agregado no conoce) es responsabilidad de
    * ResolverQuizUseCase, que sí puede consultar esos otros contextos.
    */
-  resolver(respuestas: number[]): boolean {
+  resolver(respuestas: number[][]): boolean {
     let respuestasCorrectas = 0;
     for (let i = 0; i < this.props.preguntas.length; i++) {
       const pregunta = this.props.preguntas[i];
-      if (pregunta.verificar(respuestas[i])) {
+      if (pregunta.verificar(respuestas[i] ?? [])) {
         respuestasCorrectas++;
       }
     }

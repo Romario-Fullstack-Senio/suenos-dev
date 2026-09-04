@@ -12,7 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
 export interface ResolverQuizCommand {
   quizId: string;
   estudianteId: string;
-  respuestas: number[];
+  // Una entrada por pregunta, cada una con los índices seleccionados —
+  // opción única/verdadero-falso mandan un array de 1 elemento, selección
+  // múltiple puede mandar varios.
+  respuestas: number[][];
 }
 
 @Injectable()
@@ -44,7 +47,7 @@ export class ResolverQuizUseCase {
     let respuestasCorrectas = 0;
     const preguntas = quiz.preguntas;
     for (let i = 0; i < preguntas.length; i++) {
-      if (preguntas[i].verificar(command.respuestas[i])) {
+      if (preguntas[i].verificar(command.respuestas[i] ?? [])) {
         respuestasCorrectas++;
       }
     }

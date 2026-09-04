@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
+export const tipoPreguntaSchema = z.enum(['opcion_unica', 'verdadero_falso', 'seleccion_multiple']);
+
 export const preguntaSchema = z.object({
   enunciado: z.string().min(5, 'Mínimo 5 caracteres'),
+  tipo: tipoPreguntaSchema,
   opciones: z.array(z.string().min(1, 'Opción vacía')).min(2, 'Mínimo 2 opciones'),
-  respuestaCorrecta: z.number().min(0, 'Selecciona una respuesta'),
+  respuestasCorrectas: z.array(z.number().min(0)).min(1, 'Marcá al menos una respuesta correcta'),
 });
 
 export const crearQuizSchema = z.object({
@@ -15,11 +18,12 @@ export const crearQuizSchema = z.object({
 
 export type CrearQuizFormData = z.infer<typeof crearQuizSchema>;
 export type PreguntaFormData = z.infer<typeof preguntaSchema>;
+export type TipoPregunta = z.infer<typeof tipoPreguntaSchema>;
 
 export const resolverQuizSchema = z.object({
   quizId: z.string().uuid(),
   estudianteId: z.string().uuid(),
-  respuestas: z.array(z.number().min(0)),
+  respuestas: z.array(z.array(z.number().min(0))),
 });
 
 export type ResolverQuizFormData = z.infer<typeof resolverQuizSchema>;

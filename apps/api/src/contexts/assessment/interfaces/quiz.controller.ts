@@ -32,6 +32,7 @@ export class QuizController {
         id: p.id,
         enunciado: p.enunciado,
         opciones: p.opciones,
+        tipo: p.tipo,
       })),
     };
   }
