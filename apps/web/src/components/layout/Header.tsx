@@ -78,6 +78,7 @@ export function Header() {
               {hasRole('estudiante') && <NavLink href="/certificados">Certificados</NavLink>}
               {hasRole('instructor') && <NavLink href="/instructor">Instructor</NavLink>}
               {hasRole('admin') && <NavLink href="/admin">Admin</NavLink>}
+              <NavLink href="/soporte">Soporte</NavLink>
 
               <span className="h-6 w-px bg-ink/10" />
 
