@@ -283,7 +283,7 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
 
       <ReviewsSection cursoId={curso.id} />
 
-      <RelatedCourses cursoId={curso.id} categoria={curso.categoria} />
+      <RelatedCourses cursoId={curso.id} />
 
       {vistaPrevia?.videoUrl && (
         <LessonPreviewModal

@@ -170,6 +170,75 @@ export class CursoController {
     return this.mapearDetalle(curso);
   }
 
+  // "Recomendado para vos": mira las categorías de los cursos en los que
+  // el estudiante ya está inscripto y sugiere otros cursos publicados de
+  // esas mismas categorías que todavía no tiene. Sin ML, sin historial de
+  // navegación — cross-sell simple basado en lo que ya demostró que le
+  // interesa comprando. Antes de ":id" porque si no ":id" la captura
+  // primero (mismo criterio que "me" en UsuarioController).
+  @Get('recomendados/mios')
+  @UseGuards(JwtAuthGuard)
+  async recomendados(@Req() req: AuthenticatedRequest) {
+    const inscripciones = await this.inscripcionRepository.findAllByEstudiante(req.user.id);
+    if (inscripciones.length === 0) return [];
+
+    const cursosInscriptos = await Promise.all(
+      inscripciones.map((i) => this.cursoRepository.findById(i.cursoId)),
+    );
+    const ownedIds = new Set(inscripciones.map((i) => i.cursoId));
+    const categorias = [...new Set(cursosInscriptos.filter((c): c is Curso => !!c?.categoria).map((c) => c!.categoria!))];
+    if (categorias.length === 0) return [];
+
+    const vistos = new Set(ownedIds);
+    const recomendados: Curso[] = [];
+    for (const categoria of categorias) {
+      if (recomendados.length >= 4) break;
+      const { cursos } = await this.cursoRepository.search({
+        categoria,
+        soloPublicados: true,
+        ordenarPor: 'reciente',
+        pagina: 1,
+        porPagina: 6,
+      });
+      for (const c of cursos) {
+        if (recomendados.length >= 4) break;
+        if (vistos.has(c.id)) continue;
+        vistos.add(c.id);
+        recomendados.push(c);
+      }
+    }
+
+    const nombres = await this.resolverNombresInstructores(recomendados.map((c) => c.instructorId));
+    const alumnos = await this.contarAlumnosPorCurso(recomendados.map((c) => c.id));
+    return recomendados.map((c) => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+  }
+
+  // "Cursos relacionados" simple: misma categoría, publicados, excluyendo
+  // el propio — sin ML ni historial de navegación, pero cubre el caso real
+  // (alguien terminando de leer un curso de React quiere ver más de React).
+  // Si el curso no tiene categoría cargada, no hay con qué relacionar —
+  // devuelve vacío en vez de "cursos random" que rompen la premisa.
+  @Get(':id/relacionados')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(30000)
+  async relacionados(@Param('id') id: string) {
+    const curso = await this.cursoRepository.findById(id);
+    if (!curso || !curso.categoria) return [];
+
+    const { cursos } = await this.cursoRepository.search({
+      categoria: curso.categoria,
+      soloPublicados: true,
+      ordenarPor: 'reciente',
+      pagina: 1,
+      porPagina: 5,
+    });
+    const relacionados = cursos.filter((c) => c.id !== id).slice(0, 4);
+
+    const nombres = await this.resolverNombresInstructores(relacionados.map((c) => c.instructorId));
+    const alumnos = await this.contarAlumnosPorCurso(relacionados.map((c) => c.id));
+    return relacionados.map((c) => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+  }
+
   @Get('slug/:slug')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(30000)
