@@ -30,6 +30,9 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       verificacion_token_expira: usuario.verificacionTokenExpira,
       reset_password_token: usuario.resetPasswordToken,
       reset_password_expira: usuario.resetPasswordExpira,
+      two_factor_secret: usuario.twoFactorSecret,
+      two_factor_enabled: usuario.twoFactorEnabled,
+      two_factor_backup_codes: usuario.twoFactorBackupCodes,
     });
     await this.repo.save(orm);
   }
@@ -83,6 +86,9 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       verificacionTokenExpira: orm.verificacion_token_expira,
       resetPasswordToken: orm.reset_password_token,
       resetPasswordExpira: orm.reset_password_expira,
+      twoFactorSecret: orm.two_factor_secret,
+      twoFactorEnabled: orm.two_factor_enabled,
+      twoFactorBackupCodes: orm.two_factor_backup_codes,
     });
   }
 }

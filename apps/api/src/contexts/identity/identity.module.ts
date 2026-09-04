@@ -15,6 +15,10 @@ import { SolicitarResetPasswordUseCase } from './application/solicitar-reset-pas
 import { ResetPasswordUseCase } from './application/reset-password.use-case';
 import { VerificarEmailUseCase } from './application/verificar-email.use-case';
 import { ReenviarVerificacionUseCase } from './application/reenviar-verificacion.use-case';
+import { Iniciar2FAUseCase } from './application/iniciar-2fa.use-case';
+import { Confirmar2FAUseCase } from './application/confirmar-2fa.use-case';
+import { Desactivar2FAUseCase } from './application/desactivar-2fa.use-case';
+import { ConfirmarLoginDosFactoresUseCase } from './application/confirmar-login-2fa.use-case';
 import { UsuarioTypeOrmRepository } from './infrastructure/typeorm/usuario.typeorm-repository';
 import { UsuarioOrmEntity } from './infrastructure/typeorm/usuario.orm-entity';
 import { RefreshTokenTypeOrmRepository } from './infrastructure/typeorm/refresh-token.typeorm-repository';
@@ -80,6 +84,10 @@ const githubStrategyProvider = {
     ResetPasswordUseCase,
     VerificarEmailUseCase,
     ReenviarVerificacionUseCase,
+    Iniciar2FAUseCase,
+    Confirmar2FAUseCase,
+    Desactivar2FAUseCase,
+    ConfirmarLoginDosFactoresUseCase,
     JwtStrategy,
     googleStrategyProvider,
     githubStrategyProvider,

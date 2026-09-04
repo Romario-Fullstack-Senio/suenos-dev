@@ -19,11 +19,22 @@ interface LoginResponse {
   usuario: User;
 }
 
+interface TwoFactorPendingResponse {
+  requiresTwoFactor: true;
+  tempToken: string;
+}
+
+/** `login()` puede terminar la sesión de una (usuario sin 2FA) o pedir un
+ * segundo paso — en ese caso el caller (LoginForm) muestra el input de
+ * código y llama a `completeTwoFactorLogin`. */
+type LoginOutcome = { requiresTwoFactor: false } | { requiresTwoFactor: true; tempToken: string };
+
 interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginOutcome>;
+  completeTwoFactorLogin: (tempToken: string, codigo: string) => Promise<void>;
   register: (nombre: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -48,8 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const result = await apiPost<LoginResponse>('/auth/login', { email, password });
+  const finalizarLogin = (result: LoginResponse) => {
     setTokens(result);
     localStorage.setItem('user', JSON.stringify(result.usuario));
     setToken(result.token);
@@ -58,6 +68,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (result.usuario.rol === 'admin') router.push('/admin');
     else if (result.usuario.rol === 'instructor') router.push('/instructor');
     else router.push('/dashboard');
+  };
+
+  const login = async (email: string, password: string): Promise<LoginOutcome> => {
+    const result = await apiPost<LoginResponse | TwoFactorPendingResponse>('/auth/login', { email, password });
+    if ('requiresTwoFactor' in result) {
+      return { requiresTwoFactor: true, tempToken: result.tempToken };
+    }
+    finalizarLogin(result);
+    return { requiresTwoFactor: false };
+  };
+
+  const completeTwoFactorLogin = async (tempToken: string, codigo: string) => {
+    const result = await apiPost<LoginResponse>('/auth/2fa/login', { tempToken, codigo });
+    finalizarLogin(result);
   };
 
   const register = async (nombre: string, email: string, password: string) => {
@@ -82,7 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasRole = (role: string) => user?.rol === role;
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout, isAuthenticated, hasRole }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, completeTwoFactorLogin, register, logout, isAuthenticated, hasRole }}
+    >
       {children}
     </AuthContext.Provider>
   );

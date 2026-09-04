@@ -75,3 +75,68 @@ describe('Usuario — reset de contraseña', () => {
     await expect(usuario.resetearPassword('reset-tok', 'nuevaPassword123')).rejects.toThrow('expiró');
   });
 });
+
+describe('Usuario — verificación en dos pasos (2FA)', () => {
+  it('un usuario nuevo arranca sin 2FA activado', async () => {
+    const usuario = await crearUsuario();
+    expect(usuario.twoFactorEnabled).toBe(false);
+    expect(usuario.twoFactorSecret).toBeNull();
+  });
+
+  it('iniciarConfiguracionDosFactores guarda el secreto pero no activa 2FA todavía', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    expect(usuario.twoFactorSecret).toBe('SECRETO123');
+    expect(usuario.twoFactorEnabled).toBe(false);
+  });
+
+  it('confirmarActivacionDosFactores sin haber iniciado la configuración lanza DomainError', async () => {
+    const usuario = await crearUsuario();
+    expect(() => usuario.confirmarActivacionDosFactores(['hash1'])).toThrow(
+      'Primero tenés que iniciar la configuración',
+    );
+  });
+
+  it('confirmarActivacionDosFactores activa 2FA y guarda los códigos de respaldo', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    usuario.confirmarActivacionDosFactores(['hash1', 'hash2']);
+    expect(usuario.twoFactorEnabled).toBe(true);
+    expect(usuario.twoFactorBackupCodes).toEqual(['hash1', 'hash2']);
+  });
+
+  it('iniciarConfiguracionDosFactores con 2FA ya activado lanza DomainError', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    usuario.confirmarActivacionDosFactores(['hash1']);
+    expect(() => usuario.iniciarConfiguracionDosFactores('OTRO-SECRETO')).toThrow('ya está activada');
+  });
+
+  it('desactivarDosFactores limpia secreto, flag y códigos de respaldo', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    usuario.confirmarActivacionDosFactores(['hash1']);
+    usuario.desactivarDosFactores();
+    expect(usuario.twoFactorEnabled).toBe(false);
+    expect(usuario.twoFactorSecret).toBeNull();
+    expect(usuario.twoFactorBackupCodes).toBeNull();
+  });
+
+  it('consumirCodigoRespaldo válido lo saca de la lista (un solo uso) y devuelve true', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    usuario.confirmarActivacionDosFactores(['hash1', 'hash2']);
+
+    expect(usuario.consumirCodigoRespaldo('hash1')).toBe(true);
+    expect(usuario.twoFactorBackupCodes).toEqual(['hash2']);
+    // el mismo código no puede reusarse
+    expect(usuario.consumirCodigoRespaldo('hash1')).toBe(false);
+  });
+
+  it('consumirCodigoRespaldo con un código que no existe devuelve false', async () => {
+    const usuario = await crearUsuario();
+    usuario.iniciarConfiguracionDosFactores('SECRETO123');
+    usuario.confirmarActivacionDosFactores(['hash1']);
+    expect(usuario.consumirCodigoRespaldo('no-existe')).toBe(false);
+  });
+});

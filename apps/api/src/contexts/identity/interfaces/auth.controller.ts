@@ -1,4 +1,6 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Inject, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
+import type { Request } from 'express';
 import { RegistrarUsuarioUseCase } from '../application/registrar-usuario.use-case';
 import { LoginUseCase } from '../application/login.use-case';
 import { RefrescarTokenUseCase } from '../application/refrescar-token.use-case';
@@ -7,12 +9,22 @@ import { SolicitarResetPasswordUseCase } from '../application/solicitar-reset-pa
 import { ResetPasswordUseCase } from '../application/reset-password.use-case';
 import { VerificarEmailUseCase } from '../application/verificar-email.use-case';
 import { ReenviarVerificacionUseCase } from '../application/reenviar-verificacion.use-case';
+import { Iniciar2FAUseCase } from '../application/iniciar-2fa.use-case';
+import { Confirmar2FAUseCase } from '../application/confirmar-2fa.use-case';
+import { Desactivar2FAUseCase } from '../application/desactivar-2fa.use-case';
+import { ConfirmarLoginDosFactoresUseCase } from '../application/confirmar-login-2fa.use-case';
 import { RegistrarDto } from './dto/registrar.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { Confirmar2FADto, Desactivar2FADto, ConfirmarLogin2FADto } from './dto/two-factor.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+
+interface AuthenticatedRequest extends Request {
+  user: { id: string; email: string; rol: string };
+}
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +37,12 @@ export class AuthController {
     private readonly resetPasswordUC: ResetPasswordUseCase,
     private readonly verificarEmailUC: VerificarEmailUseCase,
     private readonly reenviarVerificacionUC: ReenviarVerificacionUseCase,
+    private readonly iniciar2FAUC: Iniciar2FAUseCase,
+    private readonly confirmar2FAUC: Confirmar2FAUseCase,
+    private readonly desactivar2FAUC: Desactivar2FAUseCase,
+    private readonly confirmarLogin2FAUC: ConfirmarLoginDosFactoresUseCase,
+    @Inject(USUARIO_REPOSITORY)
+    private readonly usuarioRepo: UsuarioRepository,
   ) {}
 
   @Post('registro')
@@ -79,5 +97,45 @@ export class AuthController {
   async resendVerification(@Body() dto: ForgotPasswordDto) {
     await this.reenviarVerificacionUC.execute(dto.email);
     return { message: 'Si el email existe y no está verificado, vas a recibir un nuevo enlace' };
+  }
+
+  // --- Verificación en dos pasos (TOTP) ---
+
+  @Get('2fa/status')
+  @UseGuards(JwtAuthGuard)
+  async estado2FA(@Req() req: AuthenticatedRequest) {
+    const usuario = await this.usuarioRepo.findById(req.user.id);
+    return { enabled: usuario?.twoFactorEnabled ?? false };
+  }
+
+  @Post('2fa/setup')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async iniciar2FA(@Req() req: AuthenticatedRequest) {
+    return this.iniciar2FAUC.execute(req.user.id);
+  }
+
+  @Post('2fa/confirm')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async confirmar2FA(@Body() dto: Confirmar2FADto, @Req() req: AuthenticatedRequest) {
+    return this.confirmar2FAUC.execute(req.user.id, dto.codigo);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async desactivar2FA(@Body() dto: Desactivar2FADto, @Req() req: AuthenticatedRequest) {
+    await this.desactivar2FAUC.execute(req.user.id, dto.password);
+    return { message: 'Verificación en dos pasos desactivada' };
+  }
+
+  // Sin guard: se llama DESPUÉS del login por contraseña pero ANTES de
+  // tener un access token real — el tempToken (purpose: 'two-factor-pending')
+  // es lo que autoriza este paso, no un Bearer normal.
+  @Post('2fa/login')
+  @HttpCode(HttpStatus.OK)
+  async confirmarLogin2FA(@Body() dto: ConfirmarLogin2FADto) {
+    return this.confirmarLogin2FAUC.execute({ tempToken: dto.tempToken, codigo: dto.codigo });
   }
 }
