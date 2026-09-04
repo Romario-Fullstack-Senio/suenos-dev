@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
@@ -12,10 +12,10 @@ import { Button } from '@/components/ui/Button';
 import { MailWarning } from 'lucide-react';
 
 export function PerfilForm() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [reenviando, setReenviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<PerfilFormData>({
     resolver: zodResolver(perfilSchema),
     defaultValues: {
       nombre: user?.nombre || '',
@@ -23,12 +23,24 @@ export function PerfilForm() {
     },
   });
 
+  // `user` llega async (AuthContext lo carga de localStorage en un
+  // useEffect) — en el primer render todavía es null, así que
+  // defaultValues arranca vacío y react-hook-form no lo vuelve a leer
+  // solo. Sin este reset() el formulario quedaba en blanco para siempre y
+  // "Guardar Cambios" mandaba un nombre vacío (rechazado por el schema).
+  useEffect(() => {
+    if (user) {
+      reset({ nombre: user.nombre, email: user.email });
+    }
+  }, [user, reset]);
+
   const onSubmit = async (data: PerfilFormData) => {
     try {
       await apiPut('/usuarios/me', data);
+      updateUser({ nombre: data.nombre, email: data.email });
       toast.success('Perfil actualizado');
     } catch (error) {
-      toast.error('Error al actualizar perfil');
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar perfil');
     }
   };
 

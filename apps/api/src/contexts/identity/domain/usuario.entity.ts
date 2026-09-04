@@ -209,6 +209,17 @@ export class Usuario extends AggregateRoot<string> {
     this.props.rol = nuevoRol;
   }
 
+  /** El caso de uso ya validó que el nuevo email (si cambió) no esté en
+   * uso por otra cuenta — acá solo la regla de dominio del nombre. */
+  actualizarPerfil(nombre: string, email: Email): void {
+    if (!nombre || nombre.trim().length < 2) {
+      throw new DomainError('El nombre debe tener al menos 2 caracteres');
+    }
+    this.props.nombre = nombre.trim();
+    this.props.email = email;
+    this.touch();
+  }
+
   /** El token en sí lo genera el caso de uso (capa de aplicación); acá solo
    * se asigna y se define su vencimiento. */
   asignarTokenVerificacion(token: string, vigenciaHoras = 24): void {
