@@ -140,3 +140,25 @@ describe('Usuario — verificación en dos pasos (2FA)', () => {
     expect(usuario.consumirCodigoRespaldo('no-existe')).toBe(false);
   });
 });
+
+describe('Usuario — actualizarPerfil', () => {
+  it('actualiza nombre y email', async () => {
+    const usuario = await crearUsuario();
+    usuario.actualizarPerfil('Ana María', Email.create('nueva@test.com'));
+    expect(usuario.nombre).toBe('Ana María');
+    expect(usuario.email.value).toBe('nueva@test.com');
+  });
+
+  it('recorta espacios del nombre', async () => {
+    const usuario = await crearUsuario();
+    usuario.actualizarPerfil('  Ana María  ', Email.create('ana@test.com'));
+    expect(usuario.nombre).toBe('Ana María');
+  });
+
+  it('rechaza un nombre demasiado corto', async () => {
+    const usuario = await crearUsuario();
+    expect(() => usuario.actualizarPerfil('A', Email.create('ana@test.com'))).toThrow(
+      'al menos 2 caracteres',
+    );
+  });
+});

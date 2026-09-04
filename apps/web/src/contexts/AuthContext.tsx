@@ -37,6 +37,10 @@ interface AuthState {
   completeTwoFactorLogin: (tempToken: string, codigo: string) => Promise<void>;
   register: (nombre: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  /** Actualiza el usuario en memoria + localStorage sin pasar por login —
+   * para cuando PerfilForm guarda cambios y hay que reflejarlos ya (el
+   * nombre en el header, etc.) sin forzar un logout/login. */
+  updateUser: (cambios: Partial<User>) => void;
   isAuthenticated: boolean;
   hasRole: (role: string) => boolean;
 }
@@ -102,12 +106,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  const updateUser = (cambios: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const actualizado = { ...prev, ...cambios };
+      localStorage.setItem('user', JSON.stringify(actualizado));
+      return actualizado;
+    });
+  };
+
   const isAuthenticated = !!token && !!user;
   const hasRole = (role: string) => user?.rol === role;
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, completeTwoFactorLogin, register, logout, isAuthenticated, hasRole }}
+      value={{ user, token, isLoading, login, completeTwoFactorLogin, register, logout, updateUser, isAuthenticated, hasRole }}
     >
       {children}
     </AuthContext.Provider>

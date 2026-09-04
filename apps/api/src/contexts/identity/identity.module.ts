@@ -19,6 +19,7 @@ import { Iniciar2FAUseCase } from './application/iniciar-2fa.use-case';
 import { Confirmar2FAUseCase } from './application/confirmar-2fa.use-case';
 import { Desactivar2FAUseCase } from './application/desactivar-2fa.use-case';
 import { ConfirmarLoginDosFactoresUseCase } from './application/confirmar-login-2fa.use-case';
+import { ActualizarPerfilUseCase } from './application/actualizar-perfil.use-case';
 import { UsuarioTypeOrmRepository } from './infrastructure/typeorm/usuario.typeorm-repository';
 import { UsuarioOrmEntity } from './infrastructure/typeorm/usuario.orm-entity';
 import { RefreshTokenTypeOrmRepository } from './infrastructure/typeorm/refresh-token.typeorm-repository';
@@ -88,6 +89,7 @@ const githubStrategyProvider = {
     Confirmar2FAUseCase,
     Desactivar2FAUseCase,
     ConfirmarLoginDosFactoresUseCase,
+    ActualizarPerfilUseCase,
     JwtStrategy,
     googleStrategyProvider,
     githubStrategyProvider,
