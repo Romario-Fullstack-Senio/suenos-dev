@@ -13,6 +13,7 @@ interface AgregarLeccionCommand {
   duracionSegundos: number;
   videoUrl?: string;
   esVistaPrevia?: boolean;
+  diasDesdeInscripcion?: number;
 }
 
 @Injectable()
@@ -37,6 +38,9 @@ export class AgregarLeccionUseCase {
     );
     if (command.videoUrl) {
       leccion.asignarVideo(command.videoUrl);
+    }
+    if (command.diasDesdeInscripcion) {
+      leccion.asignarDiasDesdeInscripcion(command.diasDesdeInscripcion);
     }
     curso.agregarLeccion(command.moduloId, leccion);
     await this.cursoRepo.save(curso);

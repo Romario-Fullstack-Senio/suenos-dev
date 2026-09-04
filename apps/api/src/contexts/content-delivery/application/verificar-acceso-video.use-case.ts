@@ -42,6 +42,21 @@ export class VerificarAccesoVideoUseCase {
     }
 
     const inscripcion = await this.inscripcionRepo.findByCursoYEstudiante(info.cursoId, command.usuarioId);
-    return { permitido: !!inscripcion?.activa, existe: true };
+    if (!inscripcion?.activa) {
+      return { permitido: false, existe: true };
+    }
+
+    // Liberación programada: la lección recién se habilita a los N días
+    // de la fecha de inscripción DE ESTE alumno — no de una fecha de
+    // calendario fija, así que da igual cuándo se haya inscripto.
+    if (info.diasDesdeInscripcion > 0) {
+      const disponibleDesde = new Date(inscripcion.fechaInscripcion);
+      disponibleDesde.setDate(disponibleDesde.getDate() + info.diasDesdeInscripcion);
+      if (new Date() < disponibleDesde) {
+        return { permitido: false, existe: true };
+      }
+    }
+
+    return { permitido: true, existe: true };
   }
 }

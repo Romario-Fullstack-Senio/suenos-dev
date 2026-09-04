@@ -285,6 +285,7 @@ export class CursoController {
           subtitulosUrl: l.subtitulosUrl,
           recursos: l.recursos,
           esVistaPrevia: l.esVistaPrevia,
+          diasDesdeInscripcion: l.diasDesdeInscripcion,
         })),
       })),
     };

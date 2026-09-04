@@ -28,6 +28,9 @@ export class LeccionOrmEntity {
   @Column({ default: false })
   es_vista_previa!: boolean;
 
+  @Column('int', { default: 0 })
+  dias_desde_inscripcion!: number;
+
   // Postgres no crea índice automático en el lado que referencia una FK
   // (solo en el lado referenciado) — sin esto, cada JOIN/lookup por módulo escanea toda la tabla.
   @Index()

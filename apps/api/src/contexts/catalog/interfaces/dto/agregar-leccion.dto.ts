@@ -1,4 +1,4 @@
-import { IsString, IsNumber, MinLength, IsPositive, IsOptional, IsUrl, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsNumber, MinLength, IsPositive, IsOptional, IsUrl, IsBoolean, IsUUID, Min } from 'class-validator';
 
 export class AgregarLeccionDto {
   // Opcional: si el video ya se subió a POST /videos/upload antes de crear
@@ -29,4 +29,10 @@ export class AgregarLeccionDto {
   @IsOptional()
   @IsBoolean()
   esVistaPrevia?: boolean;
+
+  // Liberación programada: 0/undefined = disponible apenas te inscribís.
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  diasDesdeInscripcion?: number;
 }

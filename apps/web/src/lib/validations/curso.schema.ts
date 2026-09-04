@@ -30,6 +30,7 @@ export const agregarLeccionSchema = z.object({
   duracionSegundos: z.number().positive('Debe ser un número positivo'),
   videoUrl: z.string().url().optional(),
   esVistaPrevia: z.boolean().optional(),
+  diasDesdeInscripcion: z.number().min(0, 'No puede ser negativo').optional(),
 });
 
 export type AgregarLeccionFormData = z.infer<typeof agregarLeccionSchema>;

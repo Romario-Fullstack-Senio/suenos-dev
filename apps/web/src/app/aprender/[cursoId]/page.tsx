@@ -6,7 +6,7 @@ import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { FileDown } from 'lucide-react';
+import { FileDown, Lock } from 'lucide-react';
 
 const HLSPlayer = dynamic(() => import('@/components/HLSPlayer'), { ssr: false });
 const QASection = dynamic(() => import('@/components/QASection'), { ssr: false });
@@ -25,6 +25,7 @@ interface Leccion {
   videoUrl?: string;
   subtitulosUrl?: string;
   recursos?: RecursoLeccion[];
+  diasDesdeInscripcion?: number;
 }
 
 interface Modulo {
@@ -55,6 +56,12 @@ interface CursoProgreso {
   progresos: Progreso[];
 }
 
+interface InscripcionRaw {
+  cursoId?: string;
+  props?: { cursoId: string; fechaInscripcion: string };
+  fechaInscripcion?: string;
+}
+
 export default function AprenderPage() {
   const params = useParams();
   const cursoId = params.cursoId as string;
@@ -63,6 +70,7 @@ export default function AprenderPage() {
   const [leccionActual, setLeccionActual] = useState<Leccion | null>(null);
   const [moduloActual, setModuloActual] = useState<Modulo | null>(null);
   const [progreso, setProgreso] = useState<CursoProgreso | null>(null);
+  const [fechaInscripcion, setFechaInscripcion] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Acumula segundos "vistos" mientras la lección está abierta. Antes se
@@ -72,9 +80,13 @@ export default function AprenderPage() {
   // engancharse a HLS.js), pero al menos progresa con el tiempo real.
   const segundosVistosRef = useRef(0);
 
+  // `user` puede tardar en llegar (AuthContext lo carga de localStorage de
+  // forma async) — sin `user` en las dependencias, si el efecto corría
+  // antes de que cargara, el progreso y la fecha de inscripción quedaban
+  // sin pedirse para siempre (nunca había un segundo intento).
   useEffect(() => {
     fetchData();
-  }, [cursoId]);
+  }, [cursoId, user]);
 
   useEffect(() => {
     segundosVistosRef.current = 0;
@@ -94,9 +106,10 @@ export default function AprenderPage() {
 
   async function fetchData() {
     try {
-      const [cursoData, progresoData] = await Promise.all([
+      const [cursoData, progresoData, inscripciones] = await Promise.all([
         apiGet<Curso>(`/cursos/${cursoId}`),
         user ? apiGet<CursoProgreso>(`/progreso/curso/${cursoId}?estudianteId=${user.id}`) : null,
+        user ? apiGet<InscripcionRaw[]>(`/inscripciones/estudiante/${user.id}`).catch(() => []) : Promise.resolve([]),
       ]);
       setCurso(cursoData);
       if (progresoData) {
@@ -111,7 +124,26 @@ export default function AprenderPage() {
             : 0,
         });
       }
-      if (cursoData.modulos?.length > 0 && cursoData.modulos[0].lecciones?.length > 0) {
+
+      const miInscripcion = inscripciones.find(
+        (i) => (i.cursoId || i.props?.cursoId) === cursoId,
+      );
+      const fechaInsc = miInscripcion
+        ? new Date(miInscripcion.fechaInscripcion || miInscripcion.props?.fechaInscripcion || '')
+        : null;
+      setFechaInscripcion(fechaInsc);
+
+      // El instructor/admin viendo su propio contenido no tiene inscripción
+      // (fechaInsc null) — en ese caso todo se trata como disponible, ver
+      // estaDisponible().
+      const primeraDisponible = cursoData.modulos
+        .flatMap((m) => m.lecciones.map((lec) => ({ mod: m, lec })))
+        .find(({ lec }) => estaDisponible(lec, fechaInsc));
+
+      if (primeraDisponible) {
+        setModuloActual(primeraDisponible.mod);
+        setLeccionActual(primeraDisponible.lec);
+      } else if (cursoData.modulos?.length > 0 && cursoData.modulos[0].lecciones?.length > 0) {
         setModuloActual(cursoData.modulos[0]);
         setLeccionActual(cursoData.modulos[0].lecciones[0]);
       }
@@ -120,6 +152,23 @@ export default function AprenderPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Sin fecha de inscripción (instructor/admin previsualizando, o todavía
+  // no cargó) no hay forma de calcular el bloqueo — se trata como
+  // disponible en vez de bloquear a ciegas.
+  function estaDisponible(lec: Leccion, fechaInsc: Date | null): boolean {
+    if (!lec.diasDesdeInscripcion || !fechaInsc) return true;
+    const disponibleDesde = new Date(fechaInsc);
+    disponibleDesde.setDate(disponibleDesde.getDate() + lec.diasDesdeInscripcion);
+    return new Date() >= disponibleDesde;
+  }
+
+  function fechaDisponibilidad(lec: Leccion, fechaInsc: Date | null): Date | null {
+    if (!lec.diasDesdeInscripcion || !fechaInsc) return null;
+    const disponibleDesde = new Date(fechaInsc);
+    disponibleDesde.setDate(disponibleDesde.getDate() + lec.diasDesdeInscripcion);
+    return disponibleDesde;
   }
 
   async function trackProgress(leccion: Leccion, segundos: number) {
@@ -148,6 +197,7 @@ export default function AprenderPage() {
   }
 
   const seleccionarLeccion = (mod: Modulo, lec: Leccion) => {
+    if (!estaDisponible(lec, fechaInscripcion)) return;
     setModuloActual(mod);
     setLeccionActual(lec);
   };
@@ -187,24 +237,37 @@ export default function AprenderPage() {
                 <ul className="space-y-1 ml-3">
                   {mod.lecciones.map((lec) => {
                     const lecProgreso = progreso?.progresos.find(p => p.leccionId === lec.id);
+                    const disponible = estaDisponible(lec, fechaInscripcion);
+                    const desde = fechaDisponibilidad(lec, fechaInscripcion);
                     return (
                       <li key={lec.id}>
                         <button
                           onClick={() => seleccionarLeccion(mod, lec)}
+                          disabled={!disponible}
+                          title={!disponible && desde ? `Disponible el ${desde.toLocaleDateString('es', { day: 'numeric', month: 'short' })}` : undefined}
                           className={`text-left text-sm w-full px-2 py-1 rounded flex items-center gap-2 ${
-                            leccionActual?.id === lec.id
-                              ? 'bg-primary/10 text-primary font-medium'
-                              : 'text-ink-muted hover:bg-cloud-50'
+                            !disponible
+                              ? 'text-ink-soft/60 cursor-not-allowed'
+                              : leccionActual?.id === lec.id
+                                ? 'bg-primary/10 text-primary font-medium'
+                                : 'text-ink-muted hover:bg-cloud-50'
                           }`}
                         >
-                          {lecProgreso?.completada ? (
+                          {!disponible ? (
+                            <Lock className="w-3 h-3 flex-shrink-0" />
+                          ) : lecProgreso?.completada ? (
                             <span className="text-green-500">✓</span>
                           ) : lecProgreso ? (
                             <span className="text-yellow-500">◐</span>
                           ) : (
                             <span className="text-ink-soft">○</span>
                           )}
-                          {lec.orden}. {lec.titulo}
+                          <span className="truncate">{lec.orden}. {lec.titulo}</span>
+                          {!disponible && desde && (
+                            <span className="ml-auto text-[10px] text-ink-soft flex-shrink-0">
+                              {desde.toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+                            </span>
+                          )}
                         </button>
                       </li>
                     );

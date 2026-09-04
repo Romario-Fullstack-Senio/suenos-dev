@@ -153,6 +153,18 @@ export function LeccionForm({ cursoId, moduloId, onLeccionCreated }: LeccionForm
         Vista previa gratuita (se puede ver sin comprar el curso)
       </label>
 
+      <div className="w-48 mb-4">
+        <Input
+          label="Se libera a los (días)"
+          type="number"
+          min={0}
+          placeholder="0 = inmediato"
+          error={errors.diasDesdeInscripcion?.message}
+          {...register('diasDesdeInscripcion', { valueAsNumber: true })}
+        />
+        <p className="text-xs text-ink-soft -mt-3">0 = disponible apenas el alumno se inscribe</p>
+      </div>
+
       <Button type="submit" isLoading={isSubmitting || subiendoVideo} disabled={isSubmitting || subiendoVideo}>
         {subiendoVideo ? 'Subiendo y transcodificando…' : 'Agregar Lección'}
       </Button>
