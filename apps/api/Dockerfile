@@ -76,6 +76,14 @@ COPY --from=builder --chown=suenos:suenos /app/shared-kernel/package.json ./node
 # Strip devDependencies from the final image
 RUN npm prune --omit=dev 2>/dev/null || true
 
+# MinioVideoStorageAdapter creates ./temp-videos (relative to process.cwd(),
+# i.e. /app) at runtime for ffmpeg transcoding scratch space. /app itself is
+# still root-owned (only the paths explicitly COPY --chown'd above aren't),
+# so the non-root `suenos` user got EACCES trying to mkdir it on first boot
+# — pre-create it here, owned by suenos, instead of relying on the app to
+# create it inside a directory it can't write to.
+RUN mkdir -p temp-videos && chown suenos:suenos temp-videos
+
 ENV NODE_ENV=production
 ENV PORT=3001
 
