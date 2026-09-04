@@ -50,6 +50,9 @@ export class UsuarioOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   avatar_url!: string | null;
 
+  @Column({ default: false })
+  cuenta_eliminada!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 }

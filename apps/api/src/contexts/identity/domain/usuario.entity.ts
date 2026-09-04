@@ -23,6 +23,7 @@ interface UsuarioProps {
   twoFactorEnabled: boolean;
   twoFactorBackupCodes: string[] | null;
   avatarUrl: string | null;
+  cuentaEliminada: boolean;
 }
 
 export class Usuario extends AggregateRoot<string> {
@@ -60,6 +61,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorEnabled: false,
       twoFactorBackupCodes: null,
       avatarUrl: null,
+      cuentaEliminada: false,
     });
     usuario.addDomainEvent(
       new UsuarioRegistradoEvent(id, email.value, nombre, AuthProviderTipo.LOCAL, verificacionToken),
@@ -100,6 +102,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorEnabled: false,
       twoFactorBackupCodes: null,
       avatarUrl: params.avatarUrl ?? null,
+      cuentaEliminada: false,
     });
     usuario.addDomainEvent(new UsuarioRegistradoEvent(params.id, params.email.value, params.nombre, params.provider));
     return usuario;
@@ -124,6 +127,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorEnabled?: boolean;
       twoFactorBackupCodes?: string[] | null;
       avatarUrl?: string | null;
+      cuentaEliminada?: boolean;
     },
   ): Usuario {
     const usuario = new Usuario(id, {
@@ -142,6 +146,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorEnabled: props.twoFactorEnabled ?? false,
       twoFactorBackupCodes: props.twoFactorBackupCodes ?? null,
       avatarUrl: props.avatarUrl ?? null,
+      cuentaEliminada: props.cuentaEliminada ?? false,
     });
     Object.defineProperty(usuario, '_createdAt', { value: props.createdAt });
     return usuario;
@@ -209,6 +214,33 @@ export class Usuario extends AggregateRoot<string> {
 
   get avatarUrl(): string | null {
     return this.props.avatarUrl;
+  }
+
+  get cuentaEliminada(): boolean {
+    return this.props.cuentaEliminada;
+  }
+
+  /** Borrado GDPR práctico: anonimiza los datos personales en vez de
+   * borrar la fila — órdenes, certificados, reseñas y tickets siguen
+   * referenciando este usuarioId (retención fiscal de facturas, historial
+   * de moderación, etc.), pero ya no identifican a una persona real. El
+   * email se reemplaza por uno único no reutilizable para liberar el
+   * original, y ninguna credencial (password, OAuth, 2FA) sigue siendo
+   * válida — ver EliminarCuentaUseCase, que además revoca los refresh
+   * tokens y bloquea el login. */
+  eliminarCuenta(): void {
+    this.props.nombre = 'Usuario eliminado';
+    this.props.email = Email.create(`eliminado-${this.id}@suenosdev.invalid`);
+    this.props.password = null;
+    this.props.avatarUrl = null;
+    this.props.providerId = null;
+    this.props.twoFactorSecret = null;
+    this.props.twoFactorEnabled = false;
+    this.props.twoFactorBackupCodes = null;
+    this.props.verificacionToken = null;
+    this.props.resetPasswordToken = null;
+    this.props.cuentaEliminada = true;
+    this.touch();
   }
 
   async verificarPassword(plain: string): Promise<boolean> {

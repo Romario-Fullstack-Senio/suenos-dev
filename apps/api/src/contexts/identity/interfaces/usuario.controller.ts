@@ -1,8 +1,9 @@
-import { Controller, Get, Put, Param, Body, Req, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, Body, Req, Inject, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import type { Request } from 'express';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
 import { ActualizarPerfilUseCase } from '../application/actualizar-perfil.use-case';
 import { ActualizarAvatarUseCase } from '../application/actualizar-avatar.use-case';
+import { EliminarCuentaUseCase } from '../application/eliminar-cuenta.use-case';
 import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -23,6 +24,7 @@ export class UsuarioController {
     private readonly usuarioRepository: UsuarioRepository,
     private readonly actualizarPerfilUC: ActualizarPerfilUseCase,
     private readonly actualizarAvatarUC: ActualizarAvatarUseCase,
+    private readonly eliminarCuentaUC: EliminarCuentaUseCase,
   ) {}
 
   // Rutas "me" ANTES de ":id" — si no, ":id" las captura primero y "me" se
@@ -76,6 +78,14 @@ export class UsuarioController {
     const buffer = Buffer.from(body.file, 'base64');
     const url = await this.actualizarAvatarUC.execute(req.user.id, buffer, body.contentType);
     return { avatarUrl: url };
+  }
+
+  @Delete('me')
+  @Roles(...TODOS_LOS_ROLES)
+  @HttpCode(HttpStatus.OK)
+  async eliminarCuenta(@Body('password') password: string | undefined, @Req() req: AuthenticatedRequest) {
+    await this.eliminarCuentaUC.execute(req.user.id, password);
+    return { message: 'Cuenta eliminada correctamente' };
   }
 
   @Get()
