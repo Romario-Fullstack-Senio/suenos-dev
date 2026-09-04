@@ -22,6 +22,7 @@ interface UsuarioProps {
   twoFactorSecret: string | null;
   twoFactorEnabled: boolean;
   twoFactorBackupCodes: string[] | null;
+  avatarUrl: string | null;
 }
 
 export class Usuario extends AggregateRoot<string> {
@@ -58,6 +59,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorSecret: null,
       twoFactorEnabled: false,
       twoFactorBackupCodes: null,
+      avatarUrl: null,
     });
     usuario.addDomainEvent(
       new UsuarioRegistradoEvent(id, email.value, nombre, AuthProviderTipo.LOCAL, verificacionToken),
@@ -71,6 +73,7 @@ export class Usuario extends AggregateRoot<string> {
     email: Email;
     provider: AuthProviderTipo;
     providerId: string;
+    avatarUrl?: string | null;
   }): Usuario {
     if (!params.nombre || params.nombre.length < 2) {
       throw new DomainError('El nombre debe tener al menos 2 caracteres');
@@ -96,6 +99,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorSecret: null,
       twoFactorEnabled: false,
       twoFactorBackupCodes: null,
+      avatarUrl: params.avatarUrl ?? null,
     });
     usuario.addDomainEvent(new UsuarioRegistradoEvent(params.id, params.email.value, params.nombre, params.provider));
     return usuario;
@@ -119,6 +123,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorSecret?: string | null;
       twoFactorEnabled?: boolean;
       twoFactorBackupCodes?: string[] | null;
+      avatarUrl?: string | null;
     },
   ): Usuario {
     const usuario = new Usuario(id, {
@@ -136,6 +141,7 @@ export class Usuario extends AggregateRoot<string> {
       twoFactorSecret: props.twoFactorSecret ?? null,
       twoFactorEnabled: props.twoFactorEnabled ?? false,
       twoFactorBackupCodes: props.twoFactorBackupCodes ?? null,
+      avatarUrl: props.avatarUrl ?? null,
     });
     Object.defineProperty(usuario, '_createdAt', { value: props.createdAt });
     return usuario;
@@ -201,6 +207,10 @@ export class Usuario extends AggregateRoot<string> {
     return this.props.twoFactorBackupCodes;
   }
 
+  get avatarUrl(): string | null {
+    return this.props.avatarUrl;
+  }
+
   async verificarPassword(plain: string): Promise<boolean> {
     if (!this.props.password) return false;
     return this.props.password.verify(plain);
@@ -237,6 +247,20 @@ export class Usuario extends AggregateRoot<string> {
         );
       }
     }
+    this.touch();
+  }
+
+  actualizarAvatar(url: string | null): void {
+    this.props.avatarUrl = url;
+    this.touch();
+  }
+
+  /** OAuth (Google/GitHub) puede traer una foto de perfil en cada login —
+   * la usamos solo para completar el avatar si el usuario todavía no
+   * subió/eligió uno propio, nunca para pisar una elección manual. */
+  actualizarAvatarDesdeOAuthSiVacio(url: string | null): void {
+    if (!url || this.props.avatarUrl) return;
+    this.props.avatarUrl = url;
     this.touch();
   }
 

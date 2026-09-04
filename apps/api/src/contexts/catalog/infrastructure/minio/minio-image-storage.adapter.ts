@@ -28,9 +28,10 @@ export class MinioImageStorageAdapter implements ImageStorage, OnModuleInit {
         this.logger.log(`Bucket "${this.bucket}" creado en MinIO`);
       }
 
-      // Lectura pública solo para el prefijo covers/ — no todo el bucket, así
+      // Lectura pública solo para covers/ y avatars/ — no todo el bucket, así
       // si más adelante se guarda ahí algo menos público no queda expuesto
-      // por accidente.
+      // por accidente. (Este mismo adapter lo reusa identity/ para avatares
+      // de usuario, ver identity.module.ts — de ahí el prefijo avatars/.)
       const policy = {
         Version: '2012-10-17',
         Statement: [
@@ -38,12 +39,12 @@ export class MinioImageStorageAdapter implements ImageStorage, OnModuleInit {
             Effect: 'Allow',
             Principal: { AWS: ['*'] },
             Action: ['s3:GetObject'],
-            Resource: [`arn:aws:s3:::${this.bucket}/covers/*`],
+            Resource: [`arn:aws:s3:::${this.bucket}/covers/*`, `arn:aws:s3:::${this.bucket}/avatars/*`],
           },
         ],
       };
       await this.client.setBucketPolicy(this.bucket, JSON.stringify(policy));
-      this.logger.log(`Política de lectura pública aplicada a "${this.bucket}/covers/*"`);
+      this.logger.log(`Política de lectura pública aplicada a "${this.bucket}/covers/*" y "${this.bucket}/avatars/*"`);
     } catch (error) {
       this.logger.error(`No se pudo inicializar el bucket de MinIO: ${error}`);
     }

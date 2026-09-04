@@ -20,7 +20,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: (err: Error | null, user?: unknown) => void,
   ): void {
-    const { id, emails, displayName } = profile;
+    const { id, emails, displayName, photos } = profile;
     const email = emails?.[0]?.value;
 
     if (!email) {
@@ -33,6 +33,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       nombre: displayName || email.split('@')[0],
       provider: 'google',
       providerId: id,
+      avatarUrl: photos?.[0]?.value ?? null,
     });
   }
 }

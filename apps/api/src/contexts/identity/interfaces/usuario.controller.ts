@@ -2,6 +2,7 @@ import { Controller, Get, Put, Param, Body, Req, Inject, UseGuards } from '@nest
 import type { Request } from 'express';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
 import { ActualizarPerfilUseCase } from '../application/actualizar-perfil.use-case';
+import { ActualizarAvatarUseCase } from '../application/actualizar-avatar.use-case';
 import { ActualizarPerfilDto } from './dto/actualizar-perfil.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -21,6 +22,7 @@ export class UsuarioController {
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepository: UsuarioRepository,
     private readonly actualizarPerfilUC: ActualizarPerfilUseCase,
+    private readonly actualizarAvatarUC: ActualizarAvatarUseCase,
   ) {}
 
   // Rutas "me" ANTES de ":id" — si no, ":id" las captura primero y "me" se
@@ -42,6 +44,7 @@ export class UsuarioController {
       email: usuario.email.value,
       rol: usuario.rol.value,
       emailVerificado: usuario.emailVerificado,
+      avatarUrl: usuario.avatarUrl,
     };
   }
 
@@ -62,8 +65,17 @@ export class UsuarioController {
         email: actualizado.email.value,
         rol: actualizado.rol.value,
         emailVerificado: actualizado.emailVerificado,
+        avatarUrl: actualizado.avatarUrl,
       },
     };
+  }
+
+  @Put('me/avatar')
+  @Roles(...TODOS_LOS_ROLES)
+  async actualizarAvatar(@Body() body: { file: string; contentType: string }, @Req() req: AuthenticatedRequest) {
+    const buffer = Buffer.from(body.file, 'base64');
+    const url = await this.actualizarAvatarUC.execute(req.user.id, buffer, body.contentType);
+    return { avatarUrl: url };
   }
 
   @Get()

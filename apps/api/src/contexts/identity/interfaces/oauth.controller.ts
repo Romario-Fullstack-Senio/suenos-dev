@@ -28,8 +28,10 @@ export class OAuthController {
         provider: AuthProviderTipo.GOOGLE,
         providerId: req.user.providerId,
         userAgent: req.headers['user-agent'] ?? null,
+        avatarUrl: req.user.avatarUrl ?? null,
       });
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
+      const avatarParam = result.usuario.avatarUrl ? `&avatarUrl=${encodeURIComponent(result.usuario.avatarUrl)}` : '';
+      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}${avatarParam}`);
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }
@@ -52,8 +54,10 @@ export class OAuthController {
         provider: AuthProviderTipo.GITHUB,
         providerId: req.user.providerId,
         userAgent: req.headers['user-agent'] ?? null,
+        avatarUrl: req.user.avatarUrl ?? null,
       });
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
+      const avatarParam = result.usuario.avatarUrl ? `&avatarUrl=${encodeURIComponent(result.usuario.avatarUrl)}` : '';
+      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}${avatarParam}`);
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }

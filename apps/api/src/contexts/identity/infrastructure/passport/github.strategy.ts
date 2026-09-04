@@ -20,7 +20,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     profile: any,
     done: (err: Error | null, user?: unknown) => void,
   ): Promise<void> {
-    const { id, emails, displayName, username } = profile;
+    const { id, emails, displayName, username, photos } = profile;
     let email = emails?.[0]?.value;
 
     // GitHub sometimes doesn't include the email in the profile
@@ -54,6 +54,7 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
       nombre,
       provider: 'github',
       providerId: String(id),
+      avatarUrl: photos?.[0]?.value ?? null,
     });
   }
 }

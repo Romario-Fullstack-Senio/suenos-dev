@@ -20,6 +20,7 @@ function CallbackContent() {
     const token = searchParams.get('token');
     const refreshToken = searchParams.get('refreshToken');
     const sessionToken = searchParams.get('sessionToken');
+    const avatarUrl = searchParams.get('avatarUrl');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -42,6 +43,9 @@ function CallbackContent() {
         nombre: payload.nombre || payload.email.split('@')[0],
         // Cuentas OAuth siempre arrancan verificadas (ver Usuario.registrarDesdeOAuth).
         emailVerificado: true,
+        // No viaja en el JWT (se mantiene liviano) — el backend lo manda
+        // aparte en el redirect, ver OAuthController.
+        avatarUrl: avatarUrl || null,
       };
       yaProcesado.current = true;
       // Actualiza el estado de React (no solo localStorage) y redirige

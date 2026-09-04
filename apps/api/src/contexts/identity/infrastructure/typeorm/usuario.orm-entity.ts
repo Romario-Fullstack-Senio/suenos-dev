@@ -47,6 +47,9 @@ export class UsuarioOrmEntity {
   @Column({ type: 'simple-json', nullable: true })
   two_factor_backup_codes!: string[] | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  avatar_url!: string | null;
+
   @CreateDateColumn()
   created_at!: Date;
 }
