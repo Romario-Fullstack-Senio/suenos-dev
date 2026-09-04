@@ -3,6 +3,12 @@ import { AggregateRoot } from '@suenos-dev/shared-kernel';
 export interface RefreshTokenProps {
   usuarioId: string;
   tokenHash: string;
+  /** Se mantiene igual a través de las rotaciones (ver RefrescarTokenUseCase)
+   * — el token en sí cambia en cada refresh, pero todos los de una misma
+   * sesión de login comparten este id. Es lo que identifica una "sesión
+   * activa" en /perfil, no el id de la fila individual. */
+  familyId: string;
+  userAgent: string | null;
   expira: Date;
   revocado: boolean;
 }
@@ -25,6 +31,14 @@ export class RefreshToken extends AggregateRoot<string> {
     return this.props.tokenHash;
   }
 
+  get familyId(): string {
+    return this.props.familyId;
+  }
+
+  get userAgent(): string | null {
+    return this.props.userAgent;
+  }
+
   get expira(): Date {
     return this.props.expira;
   }
@@ -42,16 +56,33 @@ export class RefreshToken extends AggregateRoot<string> {
     this.touch();
   }
 
-  static crear(id: string, usuarioId: string, tokenHash: string, vigenciaDias = 30): RefreshToken {
+  static crear(
+    id: string,
+    usuarioId: string,
+    tokenHash: string,
+    familyId: string,
+    userAgent: string | null = null,
+    vigenciaDias = 30,
+  ): RefreshToken {
     return new RefreshToken(id, {
       usuarioId,
       tokenHash,
+      familyId,
+      userAgent,
       expira: new Date(Date.now() + vigenciaDias * 24 * 60 * 60 * 1000),
       revocado: false,
     });
   }
 
-  static reconstitute(id: string, props: RefreshTokenProps): RefreshToken {
-    return new RefreshToken(id, props);
+  static reconstitute(id: string, props: RefreshTokenProps, createdAt?: Date): RefreshToken {
+    const token = new RefreshToken(id, props);
+    // Entity's constructor siempre pisa _createdAt con `new Date()` — sin
+    // esto, la lista de "sesiones activas" (que ordena por antigüedad real)
+    // mostraría todas las filas como creadas "ahora mismo" (mismo bug que
+    // ya se había encontrado y arreglado en Orden.restore).
+    if (createdAt) {
+      Object.defineProperty(token, '_createdAt', { value: createdAt });
+    }
+    return token;
   }
 }

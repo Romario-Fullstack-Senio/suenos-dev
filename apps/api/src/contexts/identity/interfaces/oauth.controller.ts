@@ -27,6 +27,7 @@ export class OAuthController {
         nombre: req.user.nombre,
         provider: AuthProviderTipo.GOOGLE,
         providerId: req.user.providerId,
+        userAgent: req.headers['user-agent'] ?? null,
       });
       res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
     } catch (error) {
@@ -50,6 +51,7 @@ export class OAuthController {
         nombre: req.user.nombre,
         provider: AuthProviderTipo.GITHUB,
         providerId: req.user.providerId,
+        userAgent: req.headers['user-agent'] ?? null,
       });
       res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}`);
     } catch (error) {

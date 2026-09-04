@@ -19,7 +19,11 @@ export class EnviarEmailVerificacionHandler {
     private readonly emailSender: EmailSender,
   ) {}
 
+  // Mismo email, dos disparadores: alta de cuenta nueva y cambio de email
+  // desde /perfil (ver Usuario.actualizarPerfil) — el payload es idéntico
+  // en ambos casos, no hace falta un handler separado.
   @OnEvent('usuario.registrado')
+  @OnEvent('usuario.email-actualizado')
   async handle(event: UsuarioRegistradoEvent) {
     // Las cuentas OAuth (Google/GitHub) no traen token — el proveedor ya
     // verificó el email, no hay nada que confirmar por correo.

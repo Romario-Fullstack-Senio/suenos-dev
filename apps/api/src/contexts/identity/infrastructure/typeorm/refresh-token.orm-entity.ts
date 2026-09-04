@@ -13,6 +13,13 @@ export class RefreshTokenOrmEntity {
   @Column({ name: 'token_hash' })
   tokenHash!: string;
 
+  @Index()
+  @Column({ name: 'family_id', type: 'uuid', nullable: true })
+  familyId!: string | null;
+
+  @Column({ name: 'user_agent', type: 'varchar', nullable: true })
+  userAgent!: string | null;
+
   @Column({ type: 'timestamp' })
   expira!: Date;
 

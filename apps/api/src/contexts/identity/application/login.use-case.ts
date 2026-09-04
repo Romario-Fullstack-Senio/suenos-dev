@@ -11,6 +11,7 @@ import { v4 as uuid } from 'uuid';
 interface LoginCommand {
   email: string;
   password: string;
+  userAgent?: string | null;
 }
 
 export interface LoginResult {
@@ -60,10 +61,10 @@ export class LoginUseCase {
       return { requiresTwoFactor: true, tempToken };
     }
 
-    return this.emitirTokens(usuario);
+    return this.emitirTokens(usuario, command.userAgent ?? null);
   }
 
-  async emitirTokens(usuario: Usuario): Promise<LoginResult> {
+  async emitirTokens(usuario: Usuario, userAgent: string | null = null): Promise<LoginResult> {
     const payload = { sub: usuario.id, email: usuario.email.value, rol: usuario.rol.value };
     // Access token de vida corta — el refresh token es el que sostiene la
     // sesión larga y puede revocarse server-side sin tocar el JWT en sí.
@@ -76,7 +77,12 @@ export class LoginUseCase {
     const sessionToken = this.jwtService.sign({ ...payload, purpose: 'session-hint' }, { expiresIn: '30d' });
 
     const refreshTokenPlain = randomBytes(40).toString('hex');
-    const refreshToken = RefreshToken.crear(uuid(), usuario.id, hashToken(refreshTokenPlain));
+    // Un login = una sesión nueva = un familyId nuevo. RefrescarTokenUseCase
+    // lo va a llevar sin cambios en cada rotación — es lo que la pantalla
+    // de "sesiones activas" usa para agrupar todos los refresh tokens
+    // rotados de un mismo login bajo una sola fila.
+    const familyId = uuid();
+    const refreshToken = RefreshToken.crear(uuid(), usuario.id, hashToken(refreshTokenPlain), familyId, userAgent);
     await this.refreshTokenRepo.save(refreshToken);
 
     return {

@@ -13,6 +13,8 @@ export interface ResenaRepository {
   findById(id: string): Promise<Resena | null>;
   findByCursoYEstudiante(cursoId: string, estudianteId: string): Promise<Resena | null>;
   findByCursoId(cursoId: string): Promise<Resena[]>;
+  /** Todas las reseñas de la plataforma, para el panel de moderación del admin. */
+  findAll(): Promise<Resena[]>;
   delete(id: string): Promise<void>;
   /** Promedio y conteo agrupados por curso, para varios cursos a la vez
    * (usado por el listado de cursos, que no quiere hacer N+1 requests). */

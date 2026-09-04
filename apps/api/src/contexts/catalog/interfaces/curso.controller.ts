@@ -214,6 +214,7 @@ export class CursoController {
           duracionSegundos: l.duracionSegundos,
           videoUrl: l.videoUrl,
           subtitulosUrl: l.subtitulosUrl,
+          recursos: l.recursos,
           esVistaPrevia: l.esVistaPrevia,
         })),
       })),

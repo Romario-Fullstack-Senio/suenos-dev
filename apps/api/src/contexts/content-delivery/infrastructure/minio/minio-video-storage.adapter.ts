@@ -88,6 +88,49 @@ export class MinioVideoStorageAdapter implements VideoStorage {
     }
   }
 
+  private static readonly CONTENT_TYPES: Record<string, string> = {
+    '.pdf': 'application/pdf',
+    '.zip': 'application/zip',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.txt': 'text/plain',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+  };
+
+  /** `key` es la leccionId — mismo bucket privado que el video/subtítulos,
+   * ruta separada (`recursos/{key}/{filename}`) para que una lección pueda
+   * tener varios recursos sin pisarse entre sí. */
+  async uploadRecurso(file: Buffer, key: string, filename: string): Promise<string> {
+    const exists = await this.client.bucketExists(this.bucket);
+    if (!exists) {
+      await this.client.makeBucket(this.bucket);
+    }
+    const contentType = MinioVideoStorageAdapter.CONTENT_TYPES[path.extname(filename).toLowerCase()] || 'application/octet-stream';
+    await this.client.putObject(this.bucket, `recursos/${key}/${filename}`, file, file.length, {
+      'Content-Type': contentType,
+    });
+    const apiUrl = (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+    return `${apiUrl}/api/videos/recursos/${key}/${encodeURIComponent(filename)}`;
+  }
+
+  async getRecurso(key: string, filename: string): Promise<VideoObjectStream | null> {
+    try {
+      const stream = await this.client.getObject(this.bucket, `recursos/${key}/${filename}`);
+      const contentType = MinioVideoStorageAdapter.CONTENT_TYPES[path.extname(filename).toLowerCase()] || 'application/octet-stream';
+      return { stream, contentType };
+    } catch {
+      return null;
+    }
+  }
+
+  async deleteRecurso(key: string, filename: string): Promise<void> {
+    await this.client.removeObject(this.bucket, `recursos/${key}/${filename}`);
+  }
+
   /** `key` es la leccionId, igual que el video — mismo bucket privado, ruta
    * separada (`subtitulos/{key}.vtt`) para no pisar los segmentos HLS. */
   async uploadSubtitulos(file: Buffer, key: string): Promise<string> {

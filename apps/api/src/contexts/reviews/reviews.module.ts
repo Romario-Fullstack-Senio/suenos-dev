@@ -10,9 +10,10 @@ import { EliminarResenaUseCase } from './application/eliminar-resena.use-case';
 import { ResenaController } from './interfaces/resena.controller';
 import { EnrollmentModule } from '../enrollment/enrollment.module';
 import { IdentityModule } from '../identity/identity.module';
+import { CatalogModule } from '../catalog/catalog.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ResenaOrmEntity]), EnrollmentModule, IdentityModule],
+  imports: [TypeOrmModule.forFeature([ResenaOrmEntity]), EnrollmentModule, IdentityModule, CatalogModule],
   controllers: [ResenaController],
   providers: [
     { provide: RESENA_REPOSITORY, useClass: ResenaTypeOrmRepository },

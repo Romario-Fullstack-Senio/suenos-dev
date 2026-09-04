@@ -1,5 +1,6 @@
 import { Entity as TypeOrmEntity, PrimaryColumn, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ModuloOrmEntity } from './modulo.orm-entity';
+import { RecursoLeccion } from '../../domain/leccion.entity';
 
 @TypeOrmEntity('lecciones')
 export class LeccionOrmEntity {
@@ -20,6 +21,9 @@ export class LeccionOrmEntity {
 
   @Column('varchar', { name: 'subtitulos_url', nullable: true })
   subtitulos_url!: string | null;
+
+  @Column('simple-json', { default: '[]' })
+  recursos!: RecursoLeccion[];
 
   @Column({ default: false })
   es_vista_previa!: boolean;

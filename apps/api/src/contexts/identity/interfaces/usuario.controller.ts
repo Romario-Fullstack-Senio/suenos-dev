@@ -49,7 +49,21 @@ export class UsuarioController {
   @Roles(...TODOS_LOS_ROLES)
   async actualizarMe(@Body() dto: ActualizarPerfilDto, @Req() req: AuthenticatedRequest) {
     await this.actualizarPerfilUC.execute({ usuarioId: req.user.id, nombre: dto.nombre, email: dto.email });
-    return { message: 'Perfil actualizado correctamente' };
+    // Devolvemos el estado real post-guardado (no lo que mandó el cliente)
+    // — si cambió el email, emailVerificado ahora es false, y el frontend
+    // necesita saberlo para volver a mostrar el banner de "verificá tu
+    // email" sin esperar a un refresh de página.
+    const actualizado = await this.usuarioRepository.findById(req.user.id);
+    return {
+      message: 'Perfil actualizado correctamente',
+      usuario: actualizado && {
+        id: actualizado.id,
+        nombre: actualizado.nombre,
+        email: actualizado.email.value,
+        rol: actualizado.rol.value,
+        emailVerificado: actualizado.emailVerificado,
+      },
+    };
   }
 
   @Get()

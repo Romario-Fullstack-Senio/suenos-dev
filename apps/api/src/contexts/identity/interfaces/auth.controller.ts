@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, Inject, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Req, Inject, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
 import type { Request } from 'express';
 import { RegistrarUsuarioUseCase } from '../application/registrar-usuario.use-case';
@@ -13,6 +13,8 @@ import { Iniciar2FAUseCase } from '../application/iniciar-2fa.use-case';
 import { Confirmar2FAUseCase } from '../application/confirmar-2fa.use-case';
 import { Desactivar2FAUseCase } from '../application/desactivar-2fa.use-case';
 import { ConfirmarLoginDosFactoresUseCase } from '../application/confirmar-login-2fa.use-case';
+import { ListarSesionesUseCase } from '../application/listar-sesiones.use-case';
+import { RevocarSesionUseCase } from '../application/revocar-sesion.use-case';
 import { RegistrarDto } from './dto/registrar.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -41,6 +43,8 @@ export class AuthController {
     private readonly confirmar2FAUC: Confirmar2FAUseCase,
     private readonly desactivar2FAUC: Desactivar2FAUseCase,
     private readonly confirmarLogin2FAUC: ConfirmarLoginDosFactoresUseCase,
+    private readonly listarSesionesUC: ListarSesionesUseCase,
+    private readonly revocarSesionUC: RevocarSesionUseCase,
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepo: UsuarioRepository,
   ) {}
@@ -52,8 +56,8 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() dto: LoginDto) {
-    return this.loginUC.execute(dto);
+  async login(@Body() dto: LoginDto, @Req() req: Request) {
+    return this.loginUC.execute({ ...dto, userAgent: req.headers['user-agent'] ?? null });
   }
 
   @Post('refresh')
@@ -135,7 +139,33 @@ export class AuthController {
   // es lo que autoriza este paso, no un Bearer normal.
   @Post('2fa/login')
   @HttpCode(HttpStatus.OK)
-  async confirmarLogin2FA(@Body() dto: ConfirmarLogin2FADto) {
-    return this.confirmarLogin2FAUC.execute({ tempToken: dto.tempToken, codigo: dto.codigo });
+  async confirmarLogin2FA(@Body() dto: ConfirmarLogin2FADto, @Req() req: Request) {
+    return this.confirmarLogin2FAUC.execute({
+      tempToken: dto.tempToken,
+      codigo: dto.codigo,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
+  }
+
+  // --- Sesiones activas ---
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  async sesiones(@Req() req: AuthenticatedRequest) {
+    const sesiones = await this.listarSesionesUC.execute(req.user.id);
+    return sesiones.map((s) => ({
+      id: s.id,
+      userAgent: s.userAgent,
+      createdAt: s.createdAt,
+      expira: s.expira,
+    }));
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async revocarSesion(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    await this.revocarSesionUC.execute(req.user.id, id);
+    return { message: 'Sesión cerrada' };
   }
 }

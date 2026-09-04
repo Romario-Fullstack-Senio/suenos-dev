@@ -17,6 +17,7 @@ interface LoginConOAuthCommand {
   nombre: string;
   provider: AuthProviderTipo;
   providerId: string;
+  userAgent?: string | null;
 }
 
 export interface LoginConOAuthResult {
@@ -70,7 +71,14 @@ export class LoginConOAuthUseCase {
     const sessionToken = this.jwtService.sign({ ...payload, purpose: 'session-hint' }, { expiresIn: '30d' });
 
     const refreshTokenPlain = randomBytes(40).toString('hex');
-    const refreshToken = RefreshToken.crear(uuid(), usuario.id, hashToken(refreshTokenPlain));
+    const familyId = uuid();
+    const refreshToken = RefreshToken.crear(
+      uuid(),
+      usuario.id,
+      hashToken(refreshTokenPlain),
+      familyId,
+      command.userAgent ?? null,
+    );
     await this.refreshTokenRepo.save(refreshToken);
 
     return {

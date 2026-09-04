@@ -6,9 +6,16 @@ import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { FileDown } from 'lucide-react';
 
 const HLSPlayer = dynamic(() => import('@/components/HLSPlayer'), { ssr: false });
 const QASection = dynamic(() => import('@/components/QASection'), { ssr: false });
+
+interface RecursoLeccion {
+  nombre: string;
+  archivo: string;
+  url: string;
+}
 
 interface Leccion {
   id: string;
@@ -17,6 +24,7 @@ interface Leccion {
   duracionSegundos: number;
   videoUrl?: string;
   subtitulosUrl?: string;
+  recursos?: RecursoLeccion[];
 }
 
 interface Modulo {
@@ -237,6 +245,30 @@ export default function AprenderPage() {
               </Link>
             )}
           </div>
+
+          {!!leccionActual?.recursos?.length && (
+            <div className="mt-6 bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
+              <h2 className="text-lg font-semibold mb-3 text-ink">Recursos de la lección</h2>
+              <ul className="space-y-2">
+                {leccionActual.recursos.map((r) => {
+                  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+                  const href = token ? `${r.url}?token=${token}` : r.url;
+                  return (
+                    <li key={r.archivo}>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                      >
+                        <FileDown className="w-4 h-4" /> {r.nombre}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {leccionActual && (
             <QASection

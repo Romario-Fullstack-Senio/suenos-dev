@@ -8,6 +8,7 @@ import { hashToken } from './token-hash.util';
 interface ConfirmarLoginDosFactoresCommand {
   tempToken: string;
   codigo: string;
+  userAgent?: string | null;
 }
 
 @Injectable()
@@ -48,6 +49,6 @@ export class ConfirmarLoginDosFactoresUseCase {
       await this.usuarioRepo.save(usuario);
     }
 
-    return this.loginUseCase.emitirTokens(usuario);
+    return this.loginUseCase.emitirTokens(usuario, command.userAgent ?? null);
   }
 }
