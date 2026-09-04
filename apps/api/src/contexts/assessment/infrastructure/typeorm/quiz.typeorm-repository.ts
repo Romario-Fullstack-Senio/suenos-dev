@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Quiz } from '../../domain/quiz.entity';
-import { Pregunta } from '../../domain/pregunta.entity';
+import { Pregunta, TipoPregunta } from '../../domain/pregunta.entity';
 import { QuizRepository } from '../../domain/quiz.repository.port';
 import { QuizOrmEntity } from './quiz.orm-entity';
 import { PreguntaOrmEntity } from './pregunta.orm-entity';
@@ -27,7 +27,8 @@ export class QuizTypeOrmRepository implements QuizRepository {
       preguntaOrm.id = p.id;
       preguntaOrm.enunciado = p.enunciado;
       preguntaOrm.opciones = p.opciones;
-      preguntaOrm.respuestaCorrecta = p.respuestaCorrecta;
+      preguntaOrm.tipo = p.tipo;
+      preguntaOrm.respuestasCorrectas = p.respuestasCorrectas;
       preguntaOrm.quiz_id = quiz.id;
       return preguntaOrm;
     });
@@ -59,7 +60,7 @@ export class QuizTypeOrmRepository implements QuizRepository {
 
   private toDomain(ormEntity: QuizOrmEntity): Quiz {
     const preguntas = ormEntity.preguntas.map((p) =>
-      Pregunta.crear(p.id, p.enunciado, p.opciones, p.respuestaCorrecta),
+      Pregunta.crear(p.id, p.enunciado, p.opciones, (p.tipo as TipoPregunta) ?? 'opcion_unica', p.respuestasCorrectas),
     );
 
     const quiz = Quiz.crear(ormEntity.id, ormEntity.titulo, ormEntity.cursoId, ormEntity.puntajeMinimo);

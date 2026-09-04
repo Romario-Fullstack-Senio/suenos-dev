@@ -12,8 +12,11 @@ export class PreguntaOrmEntity {
   @Column('simple-json')
   opciones!: string[];
 
-  @Column()
-  respuestaCorrecta!: number;
+  @Column({ default: 'opcion_unica' })
+  tipo!: string;
+
+  @Column('simple-json', { name: 'respuestas_correctas' })
+  respuestasCorrectas!: number[];
 
   @Index()
   @Column({ name: 'quiz_id' })

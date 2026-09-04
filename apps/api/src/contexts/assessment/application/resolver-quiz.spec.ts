@@ -5,7 +5,7 @@ import { QuizAprobadoEvent } from '../domain/events/quiz-aprobado.event';
 
 function crearQuiz(puntajeMinimo: number): Quiz {
   const quiz = Quiz.crear('quiz-1', 'Quiz de prueba', 'curso-1', puntajeMinimo);
-  quiz.agregarPregunta(Pregunta.crear('p1', '¿2+2?', ['3', '4'], 1));
+  quiz.agregarPregunta(Pregunta.crear('p1', '¿2+2?', ['3', '4'], 'opcion_unica', [1]));
   return quiz;
 }
 
@@ -36,7 +36,7 @@ describe('ResolverQuizUseCase', () => {
   it('guarda el intento en el repositorio (antes nunca se persistía)', async () => {
     mockQuizRepo.findById.mockResolvedValue(crearQuiz(100));
 
-    await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [1] });
+    await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [[1]] });
 
     expect(mockIntentoRepo.save).toHaveBeenCalledTimes(1);
     const intentoGuardado = mockIntentoRepo.save.mock.calls[0][0];
@@ -49,7 +49,7 @@ describe('ResolverQuizUseCase', () => {
     mockUsuarioRepo.findById.mockResolvedValue({ nombre: 'María Fernández' });
     mockCursoRepo.findById.mockResolvedValue({ titulo: 'Curso de NestJS' });
 
-    await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [1] });
+    await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [[1]] });
 
     expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
     const evento = mockEventBus.publish.mock.calls[0][0];
@@ -64,7 +64,7 @@ describe('ResolverQuizUseCase', () => {
   it('cuando reprueba, NO publica ningún evento', async () => {
     mockQuizRepo.findById.mockResolvedValue(crearQuiz(100));
 
-    const { aprobado } = await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [0] });
+    const { aprobado } = await useCase.execute({ quizId: 'quiz-1', estudianteId: 'est-1', respuestas: [[0]] });
 
     expect(aprobado).toBe(false);
     expect(mockEventBus.publish).not.toHaveBeenCalled();

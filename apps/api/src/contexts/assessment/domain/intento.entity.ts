@@ -1,7 +1,7 @@
 export interface IntentoProps {
   estudianteId: string;
   quizId: string;
-  respuestas: number[];
+  respuestas: number[][];
   puntaje: number;
   aprobado: boolean;
 }
@@ -38,7 +38,7 @@ export class Intento {
     return this.props.quizId;
   }
 
-  get respuestas(): number[] {
+  get respuestas(): number[][] {
     return this.props.respuestas;
   }
 
@@ -50,7 +50,7 @@ export class Intento {
     return this.props.aprobado;
   }
 
-  setRespuestas(respuestas: number[]): void {
+  setRespuestas(respuestas: number[][]): void {
     this.props.respuestas = respuestas;
   }
 
