@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { apiGet, apiPost } from '@/lib/api';
 import Link from 'next/link';
+import { CourseCoverImage } from '@/components/CourseCoverImage';
 
 interface Inscripcion {
   id: string;
@@ -45,6 +46,14 @@ interface CursoConProgreso {
   porcentaje: number;
 }
 
+interface CursoResumen {
+  id: string;
+  titulo: string;
+  slug: string;
+  precio: number;
+  imagenUrl?: string;
+}
+
 export default function DashboardPage() {
   return (
     <Suspense fallback={null}>
@@ -61,6 +70,7 @@ function DashboardContent() {
   const [cursos, setCursos] = useState<CursoConProgreso[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [recomendados, setRecomendados] = useState<CursoResumen[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -119,6 +129,13 @@ function DashboardContent() {
     };
     confirmAndFetch();
   }, [user, ordenId]);
+
+  useEffect(() => {
+    if (!user) return;
+    apiGet<CursoResumen[]>('/cursos/recomendados/mios')
+      .then(setRecomendados)
+      .catch(() => {});
+  }, [user]);
 
   if (!user) {
     return <div className="text-center py-16">Debes iniciar sesión</div>;
@@ -185,6 +202,25 @@ function DashboardContent() {
               </Link>
             </div>
           ))}
+        </div>
+      )}
+
+      {recomendados.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-6">Recomendado para vos</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {recomendados.map((curso) => (
+              <Link key={curso.id} href={`/cursos/${curso.slug}`}>
+                <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col">
+                  <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
+                  <div className="p-4 flex flex-col flex-1">
+                    <h3 className="font-semibold text-ink mb-1 line-clamp-2">{curso.titulo}</h3>
+                    <p className="text-accent font-bold mt-auto">${curso.precio} USD</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

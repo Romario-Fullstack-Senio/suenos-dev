@@ -13,19 +13,14 @@ interface CursoResumen {
   imagenUrl?: string;
 }
 
-interface ListadoCursos {
-  cursos: CursoResumen[];
-}
-
-export function RelatedCourses({ cursoId, categoria }: { cursoId: string; categoria?: string }) {
+export function RelatedCourses({ cursoId }: { cursoId: string }) {
   const [relacionados, setRelacionados] = useState<CursoResumen[]>([]);
 
   useEffect(() => {
-    if (!categoria) return;
-    apiGet<ListadoCursos>(`/cursos?categoria=${encodeURIComponent(categoria)}&limit=5`)
-      .then(data => setRelacionados((data.cursos ?? []).filter(c => c.id !== cursoId).slice(0, 4)))
+    apiGet<CursoResumen[]>(`/cursos/${cursoId}/relacionados`)
+      .then(setRelacionados)
       .catch(() => {});
-  }, [cursoId, categoria]);
+  }, [cursoId]);
 
   if (relacionados.length === 0) return null;
 
