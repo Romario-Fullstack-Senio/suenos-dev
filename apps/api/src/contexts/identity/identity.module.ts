@@ -23,6 +23,7 @@ import { ActualizarPerfilUseCase } from './application/actualizar-perfil.use-cas
 import { ListarSesionesUseCase } from './application/listar-sesiones.use-case';
 import { RevocarSesionUseCase } from './application/revocar-sesion.use-case';
 import { ActualizarAvatarUseCase } from './application/actualizar-avatar.use-case';
+import { EliminarCuentaUseCase } from './application/eliminar-cuenta.use-case';
 import { IMAGE_STORAGE } from '../catalog/domain/image-storage.port';
 import { MinioImageStorageAdapter } from '../catalog/infrastructure/minio/minio-image-storage.adapter';
 import { UsuarioTypeOrmRepository } from './infrastructure/typeorm/usuario.typeorm-repository';
@@ -102,6 +103,7 @@ const githubStrategyProvider = {
     ListarSesionesUseCase,
     RevocarSesionUseCase,
     ActualizarAvatarUseCase,
+    EliminarCuentaUseCase,
     JwtStrategy,
     googleStrategyProvider,
     githubStrategyProvider,

@@ -38,7 +38,7 @@ export class LoginUseCase {
 
   async execute(command: LoginCommand): Promise<LoginResult | LoginTwoFactorPendingResult> {
     const usuario = await this.usuarioRepo.findByEmail(command.email);
-    if (!usuario) {
+    if (!usuario || usuario.cuentaEliminada) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
