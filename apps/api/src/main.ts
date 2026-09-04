@@ -36,7 +36,13 @@ async function bootstrap() {
   // (un 404, un 401, un error de validación) tumba el proceso completo.
   app.use(helmet());
   app.useGlobalInterceptors(new SentryInterceptor());
-  app.setGlobalPrefix('api');
+  // 'health' queda FUERA del prefijo /api a propósito: el HEALTHCHECK del
+  // Dockerfile y el paso de verificación de deploy.yml/deploy-preprod.yml
+  // pegan a http://localhost:3001/health (sin /api) — sin este exclude,
+  // esa ruta nunca existió (siempre fue /api/health), así que el container
+  // de la API JAMÁS se reportó "healthy" y cualquier servicio con
+  // depends_on: api condition: service_healthy (el web) nunca arrancaba.
+  app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableCors({
     origin: [process.env.WEB_URL || 'http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
