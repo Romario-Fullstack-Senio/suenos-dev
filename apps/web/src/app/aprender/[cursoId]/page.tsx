@@ -8,6 +8,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const HLSPlayer = dynamic(() => import('@/components/HLSPlayer'), { ssr: false });
+const QASection = dynamic(() => import('@/components/QASection'), { ssr: false });
 
 interface Leccion {
   id: string;
@@ -28,6 +29,7 @@ interface Curso {
   id: string;
   titulo: string;
   descripcion: string;
+  instructorId: string;
   modulos: Modulo[];
 }
 
@@ -234,6 +236,14 @@ export default function AprenderPage() {
               </Link>
             )}
           </div>
+
+          {leccionActual && (
+            <QASection
+              key={leccionActual.id}
+              leccionId={leccionActual.id}
+              puedeModerar={!!user && (user.rol === 'admin' || user.id === curso.instructorId)}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -8,6 +8,8 @@ import { EnviarEmailVerificacionHandler } from './application/enviar-email-verif
 import { EnviarEmailResetPasswordHandler } from './application/enviar-email-reset-password.handler';
 import { EnviarEmailReembolsoHandler } from './application/enviar-email-reembolso.handler';
 import { NotificarCursoNuevoHandler } from './application/notificar-curso-nuevo.handler';
+import { NotificarNuevaPreguntaHandler } from './application/notificar-nueva-pregunta.handler';
+import { NotificarNuevaRespuestaHandler } from './application/notificar-nueva-respuesta.handler';
 import { NotificacionService } from './application/notificacion.service';
 import { NotificacionCursoNuevoProcessor } from './infrastructure/queue/notificacion-curso-nuevo.processor';
 import { NotificacionOrmEntity } from './infrastructure/typesorm/notificacion.orm-entity';
@@ -51,6 +53,8 @@ const QUEUE_NAME = 'curso-nuevo-emails';
     EnviarEmailResetPasswordHandler,
     EnviarEmailReembolsoHandler,
     NotificarCursoNuevoHandler,
+    NotificarNuevaPreguntaHandler,
+    NotificarNuevaRespuestaHandler,
     NotificacionCursoNuevoProcessor,
   ],
   exports: [EmailModule, NOTIFICACION_REPOSITORY, NotificacionService],
