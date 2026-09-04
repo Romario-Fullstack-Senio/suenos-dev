@@ -22,7 +22,13 @@ export class VideoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
   async upload(@Body() body: { file: string; leccionId: string }) {
-    const buffer = Buffer.from(body.file, 'base64');
+    // El frontend manda una data URL completa (readAsDataURL: "data:video/mp4;
+    // base64,AAAA..."), no base64 puro. Sin sacar el prefijo, Buffer.from
+    // decodifica la data URL entera como si todo fuera base64, corrompiendo
+    // los primeros bytes del archivo — ffmpeg fallaba con "moov atom not
+    // found" en CUALQUIER video real subido por esta ruta hasta ahora.
+    const base64 = body.file.includes(',') ? body.file.split(',')[1] : body.file;
+    const buffer = Buffer.from(base64, 'base64');
     const url = await this.subirVideoUseCase.execute(buffer, body.leccionId);
     return { url };
   }
