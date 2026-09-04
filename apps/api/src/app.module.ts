@@ -22,6 +22,7 @@ import { NotificationsModule } from './contexts/notifications/notifications.modu
 import { ReviewsModule } from './contexts/reviews/reviews.module';
 import { QaModule } from './contexts/qa/qa.module';
 import { WishlistModule } from './contexts/wishlist/wishlist.module';
+import { SupportModule } from './contexts/support/support.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { WishlistModule } from './contexts/wishlist/wishlist.module';
     ReviewsModule,
     QaModule,
     WishlistModule,
+    SupportModule,
   ],
   controllers: [AdminController, InstructorController],
   providers: [
