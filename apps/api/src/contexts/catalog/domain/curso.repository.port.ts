@@ -21,6 +21,7 @@ export interface LeccionInfo {
   cursoId: string;
   esVistaPrevia: boolean;
   instructorId: string;
+  diasDesdeInscripcion: number;
 }
 
 export interface CursoRepository {

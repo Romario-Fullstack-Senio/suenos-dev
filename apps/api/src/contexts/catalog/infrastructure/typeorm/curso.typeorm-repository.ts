@@ -36,6 +36,7 @@ export class CursoTypeOrmRepository implements CursoRepository {
         lecOrm.subtitulos_url = l.subtitulosUrl || null;
         lecOrm.recursos = l.recursos;
         lecOrm.es_vista_previa = l.esVistaPrevia;
+        lecOrm.dias_desde_inscripcion = l.diasDesdeInscripcion;
         lecOrm.modulo_id = m.id;
         return lecOrm;
       });
@@ -103,12 +104,18 @@ export class CursoTypeOrmRepository implements CursoRepository {
       .innerJoin(CursoOrmEntity, 'curso', 'curso.id = modulo.curso_id')
       .where('leccion.id = :leccionId', { leccionId })
       .select('leccion.es_vista_previa', 'esVistaPrevia')
+      .addSelect('leccion.dias_desde_inscripcion', 'diasDesdeInscripcion')
       .addSelect('modulo.curso_id', 'cursoId')
       .addSelect('curso.instructor_id', 'instructorId')
       .getRawOne();
 
     if (!row) return null;
-    return { cursoId: row.cursoId, esVistaPrevia: row.esVistaPrevia, instructorId: row.instructorId };
+    return {
+      cursoId: row.cursoId,
+      esVistaPrevia: row.esVistaPrevia,
+      instructorId: row.instructorId,
+      diasDesdeInscripcion: row.diasDesdeInscripcion,
+    };
   }
 
   async findByInstructorId(instructorId: string): Promise<Curso[]> {
@@ -168,6 +175,7 @@ export class CursoTypeOrmRepository implements CursoRepository {
           subtitulosUrl: l.subtitulos_url ?? undefined,
           recursos: l.recursos ?? [],
           esVistaPrevia: l.es_vista_previa,
+          diasDesdeInscripcion: l.dias_desde_inscripcion,
         }),
       );
       return Modulo.reconstitute(m.id, {

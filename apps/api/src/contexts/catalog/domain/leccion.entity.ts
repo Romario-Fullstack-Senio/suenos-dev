@@ -14,6 +14,11 @@ interface LeccionProps {
   subtitulosUrl?: string;
   recursos: RecursoLeccion[];
   esVistaPrevia: boolean;
+  // Liberación programada ("drip"): 0 = disponible apenas te inscribís
+  // (default, comportamiento de siempre). N > 0 = se habilita recién a
+  // los N días de la fecha de inscripción DE CADA ALUMNO — no una fecha
+  // de calendario fija, así que no importa cuándo se inscriba cada quien.
+  diasDesdeInscripcion: number;
 }
 
 export class Leccion extends Entity<string> {
@@ -26,11 +31,11 @@ export class Leccion extends Entity<string> {
 
   static create(id: string, titulo: string, orden: number, duracionSegundos: number, esVistaPrevia = false): Leccion {
     if (!titulo) throw new DomainError('El título de la lección es requerido');
-    return new Leccion(id, { titulo, orden, duracionSegundos, esVistaPrevia, recursos: [] });
+    return new Leccion(id, { titulo, orden, duracionSegundos, esVistaPrevia, recursos: [], diasDesdeInscripcion: 0 });
   }
 
   static reconstitute(id: string, props: LeccionProps): Leccion {
-    return new Leccion(id, { ...props, recursos: props.recursos ?? [] });
+    return new Leccion(id, { ...props, recursos: props.recursos ?? [], diasDesdeInscripcion: props.diasDesdeInscripcion ?? 0 });
   }
 
   get titulo(): string { return this.props.titulo; }
@@ -42,6 +47,7 @@ export class Leccion extends Entity<string> {
   /** Curso gratis "de muestra" — accesible sin haber comprado el curso, para
    * reducir la fricción de compra (el clásico "ver una clase gratis"). */
   get esVistaPrevia(): boolean { return this.props.esVistaPrevia; }
+  get diasDesdeInscripcion(): number { return this.props.diasDesdeInscripcion; }
 
   asignarVideo(url: string): void {
     this.props.videoUrl = url;
@@ -61,5 +67,10 @@ export class Leccion extends Entity<string> {
 
   marcarComoVistaPrevia(esVistaPrevia: boolean): void {
     this.props.esVistaPrevia = esVistaPrevia;
+  }
+
+  asignarDiasDesdeInscripcion(dias: number): void {
+    if (dias < 0) throw new DomainError('Los días no pueden ser negativos');
+    this.props.diasDesdeInscripcion = Math.floor(dias);
   }
 }
