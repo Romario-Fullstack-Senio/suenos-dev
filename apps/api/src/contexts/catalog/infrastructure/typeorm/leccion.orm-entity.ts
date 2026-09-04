@@ -18,6 +18,9 @@ export class LeccionOrmEntity {
   @Column('varchar', { nullable: true })
   video_url!: string | null;
 
+  @Column('varchar', { name: 'subtitulos_url', nullable: true })
+  subtitulos_url!: string | null;
+
   @Column({ default: false })
   es_vista_previa!: boolean;
 

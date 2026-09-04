@@ -29,4 +29,8 @@ export interface VideoStorage {
    * nunca se expone la URL de MinIO directo (el bucket es privado acá,
    * a diferencia de covers/*). */
   getObject(key: string, filename: string): Promise<VideoObjectStream | null>;
+  /** Sube un archivo .vtt de subtítulos para la lección `key`. Mismo bucket
+   * privado que el video, servido por el mismo control de acceso. */
+  uploadSubtitulos(file: Buffer, key: string): Promise<string>;
+  getSubtitulos(key: string): Promise<VideoObjectStream | null>;
 }

@@ -213,6 +213,7 @@ export class CursoController {
           orden: l.orden,
           duracionSegundos: l.duracionSegundos,
           videoUrl: l.videoUrl,
+          subtitulosUrl: l.subtitulosUrl,
           esVistaPrevia: l.esVistaPrevia,
         })),
       })),

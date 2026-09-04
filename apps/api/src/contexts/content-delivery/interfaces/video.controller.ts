@@ -2,6 +2,7 @@ import { Controller, Post, Get, Body, Param, Query, Req, Res, Inject, UseGuards,
 import type { Request, Response } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { SubirVideoUseCase } from '../application/subir-video.use-case';
+import { SubirSubtitulosUseCase } from '../application/subir-subtitulos.use-case';
 import { VerificarAccesoVideoUseCase } from '../application/verificar-acceso-video.use-case';
 import { VIDEO_STORAGE, VideoStorage } from '../domain/progreso-leccion.repository.port';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -12,6 +13,7 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 export class VideoController {
   constructor(
     private readonly subirVideoUseCase: SubirVideoUseCase,
+    private readonly subirSubtitulosUseCase: SubirSubtitulosUseCase,
     private readonly verificarAccesoUseCase: VerificarAccesoVideoUseCase,
     private readonly jwtService: JwtService,
     @Inject(VIDEO_STORAGE)
@@ -31,6 +33,53 @@ export class VideoController {
     const buffer = Buffer.from(base64, 'base64');
     const url = await this.subirVideoUseCase.execute(buffer, body.leccionId);
     return { url };
+  }
+
+  // El .vtt viaja como texto plano (no video) — nada de base64/data URL acá,
+  // FileReader.readAsText en el frontend manda el contenido tal cual.
+  @Post('upload-subtitulos')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('instructor', 'admin')
+  async uploadSubtitulos(@Body() body: { file: string; leccionId: string }) {
+    const buffer = Buffer.from(body.file, 'utf-8');
+    const url = await this.subirSubtitulosUseCase.execute(buffer, body.leccionId);
+    return { url };
+  }
+
+  // Mismo criterio de acceso que el video (vista previa / inscripción /
+  // dueño / admin) — un .vtt de una lección paga no debe ser público.
+  @Get('subtitulos/:leccionId')
+  async serveSubtitulos(
+    @Param('leccionId') leccionId: string,
+    @Query('token') tokenQuery: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const rawToken = this.extraerToken(req, tokenQuery);
+    const usuario = this.verificarToken(rawToken);
+
+    const { permitido, existe } = await this.verificarAccesoUseCase.execute({
+      leccionId,
+      usuarioId: usuario?.id,
+      usuarioRol: usuario?.rol,
+    });
+
+    if (!existe) throw new NotFoundException('Lección no encontrada');
+    if (!permitido) {
+      throw new ForbiddenException('No tenés acceso a este contenido — inscribite en el curso para verlo');
+    }
+
+    const objeto = await this.videoStorage.getSubtitulos(leccionId);
+    if (!objeto) {
+      throw new NotFoundException('Esta lección no tiene subtítulos');
+    }
+
+    res.set({
+      'Content-Type': objeto.contentType,
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
+    });
+    objeto.stream.pipe(res);
   }
 
   // Sin @UseGuards: una vista previa gratuita debe poder verse sin login.

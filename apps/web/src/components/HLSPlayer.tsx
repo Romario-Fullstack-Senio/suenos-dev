@@ -5,16 +5,22 @@ import Hls from 'hls.js';
 
 interface HLSPlayerProps {
   src: string;
+  subtitulosUrl?: string;
 }
 
-export default function HLSPlayer({ src }: HLSPlayerProps) {
+export default function HLSPlayer({ src, subtitulosUrl }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  // <track> no manda headers custom — igual que el fallback de Safari para
+  // el manifest HLS, el token va como query param (VideoController#serveSubtitulos
+  // acepta ambos: header Authorization o ?token=).
+  const subtitulosSrc = subtitulosUrl && token
+    ? `${subtitulosUrl}${subtitulosUrl.includes('?') ? '&' : '?'}token=${token}`
+    : subtitulosUrl;
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
-
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -46,7 +52,11 @@ export default function HLSPlayer({ src }: HLSPlayerProps) {
 
   return (
     <div className="bg-black aspect-video rounded-xl overflow-hidden mb-6">
-      <video ref={videoRef} className="w-full h-full" controls />
+      <video ref={videoRef} className="w-full h-full" controls crossOrigin={subtitulosSrc ? 'anonymous' : undefined}>
+        {subtitulosSrc && (
+          <track kind="subtitles" src={subtitulosSrc} srcLang="es" label="Español" default />
+        )}
+      </video>
     </div>
   );
 }

@@ -16,6 +16,7 @@ interface Leccion {
   orden: number;
   duracionSegundos: number;
   videoUrl?: string;
+  subtitulosUrl?: string;
 }
 
 interface Modulo {
@@ -208,7 +209,7 @@ export default function AprenderPage() {
 
         <div className="lg:col-span-3">
           {leccionActual?.videoUrl ? (
-            <HLSPlayer src={leccionActual.videoUrl} />
+            <HLSPlayer src={leccionActual.videoUrl} subtitulosUrl={leccionActual.subtitulosUrl} />
           ) : (
             <div className="bg-white aspect-video rounded-xl flex items-center justify-center text-white mb-6">
               <p className="text-ink-soft">Video no disponible</p>

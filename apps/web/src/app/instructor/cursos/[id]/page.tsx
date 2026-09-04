@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { apiGet, apiPost, apiPatch, apiPut, apiDelete } from '@/lib/api';
 import { ModuloForm } from '@/components/forms/ModuloForm';
 import { LeccionForm } from '@/components/forms/LeccionForm';
+import { SubtitulosUpload } from '@/components/forms/SubtitulosUpload';
 import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
@@ -16,6 +17,8 @@ interface Leccion {
   id: string;
   titulo: string;
   orden: number;
+  videoUrl?: string;
+  subtitulosUrl?: string;
 }
 
 interface Modulo {
@@ -211,8 +214,19 @@ export default function GestionarCursoPage() {
               <LeccionForm cursoId={cursoId} moduloId={moduloSeleccionado} onLeccionCreated={fetchCurso} />
               {curso.modulos.find(m => m.id === moduloSeleccionado)?.lecciones.map((lec) => (
                 <div key={lec.id} className="bg-cloud-100 rounded-xl p-4 shadow-sm border border-ink/[0.07] mb-3">
-                  <span className="font-medium">{lec.titulo}</span>
-                  <span className="text-ink-soft text-sm ml-2">#{lec.orden}</span>
+                  <div>
+                    <span className="font-medium">{lec.titulo}</span>
+                    <span className="text-ink-soft text-sm ml-2">#{lec.orden}</span>
+                  </div>
+                  {lec.videoUrl && (
+                    <div className="mt-2">
+                      <SubtitulosUpload
+                        leccionId={lec.id}
+                        tieneSubtitulos={!!lec.subtitulosUrl}
+                        onUploaded={fetchCurso}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </>
