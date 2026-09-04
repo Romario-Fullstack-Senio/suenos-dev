@@ -69,4 +69,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 
 EXPOSE 3000
 USER suenos
-CMD ["node", "apps/web/server.js"]
+# In a monorepo, Next's standalone output puts server.js at the STANDALONE
+# ROOT (i.e. /app/server.js after the COPY above) even though the page/route
+# code lives nested under apps/web/ — confirmed by inspecting the built
+# image directly (find /app -iname server.js). "apps/web/server.js" never
+# existed; the web container crash-looped on every boot until now.
+CMD ["node", "server.js"]
