@@ -89,7 +89,13 @@ services:
   # API (NestJS)
   # ──────────────────────────────────────────────
   api:
-    image: ghcr.io/Romario-Fullstack-Senio/suenos-dev-api:${API_TAG:-latest}
+    # GHCR exige el nombre del repo en minúsculas — docker/metadata-action ya
+    # lo publica así (build-and-push.yml), pero acá había quedado con el
+    # casing real del repo ("Romario-Fullstack-Senio"), y Docker rechaza
+    # cualquier referencia de imagen con mayúsculas ("invalid reference
+    # format"): todo `docker compose pull` con este archivo fallaba siempre,
+    # tanto en preprod como en producción.
+    image: ghcr.io/romario-fullstack-senio/suenos-dev-api:${API_TAG:-latest}
     restart: unless-stopped
     mem_limit: 512m
     cpus: 1.0
@@ -175,7 +181,7 @@ services:
   # Web (Next.js)
   # ──────────────────────────────────────────────
   web:
-    image: ghcr.io/Romario-Fullstack-Senio/suenos-dev-web:${WEB_TAG:-latest}
+    image: ghcr.io/romario-fullstack-senio/suenos-dev-web:${WEB_TAG:-latest}
     restart: unless-stopped
     mem_limit: 384m
     cpus: 0.5

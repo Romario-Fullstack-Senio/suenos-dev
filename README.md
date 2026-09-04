@@ -403,7 +403,7 @@ Publicar curso → CursoPublicado event → NotificarCursoNuevoHandler
 
 - **API:** Multi-stage build (build → production)
 - **Web:** Multi-stage build (build → standalone Next.js)
-- **GHCR:** `ghcr.io/Romario-Fullstack-Senior/suenos-dev-{api,web}`
+- **GHCR:** `ghcr.io/romario-fullstack-senio/suenos-dev-{api,web}` (minúsculas — GHCR lo exige)
 
 ### Deploy Producción
 
