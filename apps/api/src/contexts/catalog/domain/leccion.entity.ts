@@ -5,6 +5,7 @@ interface LeccionProps {
   orden: number;
   duracionSegundos: number;
   videoUrl?: string;
+  subtitulosUrl?: string;
   esVistaPrevia: boolean;
 }
 
@@ -29,12 +30,17 @@ export class Leccion extends Entity<string> {
   get orden(): number { return this.props.orden; }
   get duracionSegundos(): number { return this.props.duracionSegundos; }
   get videoUrl(): string | undefined { return this.props.videoUrl; }
+  get subtitulosUrl(): string | undefined { return this.props.subtitulosUrl; }
   /** Curso gratis "de muestra" — accesible sin haber comprado el curso, para
    * reducir la fricción de compra (el clásico "ver una clase gratis"). */
   get esVistaPrevia(): boolean { return this.props.esVistaPrevia; }
 
   asignarVideo(url: string): void {
     this.props.videoUrl = url;
+  }
+
+  asignarSubtitulos(url: string): void {
+    this.props.subtitulosUrl = url;
   }
 
   marcarComoVistaPrevia(esVistaPrevia: boolean): void {

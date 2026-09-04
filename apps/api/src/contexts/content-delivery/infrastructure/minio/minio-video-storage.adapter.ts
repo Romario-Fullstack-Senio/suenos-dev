@@ -88,6 +88,29 @@ export class MinioVideoStorageAdapter implements VideoStorage {
     }
   }
 
+  /** `key` es la leccionId, igual que el video — mismo bucket privado, ruta
+   * separada (`subtitulos/{key}.vtt`) para no pisar los segmentos HLS. */
+  async uploadSubtitulos(file: Buffer, key: string): Promise<string> {
+    const exists = await this.client.bucketExists(this.bucket);
+    if (!exists) {
+      await this.client.makeBucket(this.bucket);
+    }
+    await this.client.putObject(this.bucket, `subtitulos/${key}.vtt`, file, file.length, {
+      'Content-Type': 'text/vtt',
+    });
+    const apiUrl = (process.env.API_URL || 'http://localhost:3001').replace(/\/$/, '');
+    return `${apiUrl}/api/videos/subtitulos/${key}`;
+  }
+
+  async getSubtitulos(key: string): Promise<VideoObjectStream | null> {
+    try {
+      const stream = await this.client.getObject(this.bucket, `subtitulos/${key}.vtt`);
+      return { stream, contentType: 'text/vtt' };
+    } catch {
+      return null;
+    }
+  }
+
   private async existeEnMinio(key: string, filename: string): Promise<boolean> {
     try {
       await this.client.statObject(this.bucket, `videos/${key}/${filename}`);

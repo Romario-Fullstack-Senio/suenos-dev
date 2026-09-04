@@ -5,6 +5,7 @@ import { ProgresoLeccionTypeormRepository } from './infrastructure/typeorm/progr
 import { MinioVideoStorageAdapter } from './infrastructure/minio/minio-video-storage.adapter';
 import { RegistrarProgresoUseCase } from './application/registrar-progreso.use-case';
 import { SubirVideoUseCase } from './application/subir-video.use-case';
+import { SubirSubtitulosUseCase } from './application/subir-subtitulos.use-case';
 import { VerificarAccesoVideoUseCase } from './application/verificar-acceso-video.use-case';
 import { VideoController } from './interfaces/video.controller';
 import { ProgresoController } from './interfaces/progreso.controller';
@@ -35,6 +36,7 @@ import { IdentityModule } from '../identity/identity.module';
     },
     RegistrarProgresoUseCase,
     SubirVideoUseCase,
+    SubirSubtitulosUseCase,
     VerificarAccesoVideoUseCase,
   ],
   // VerificarAccesoVideoUseCase también lo reusa QaModule — mismo criterio

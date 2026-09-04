@@ -33,6 +33,7 @@ export class CursoTypeOrmRepository implements CursoRepository {
         lecOrm.orden = l.orden;
         lecOrm.duracion_segundos = l.duracionSegundos;
         lecOrm.video_url = l.videoUrl || null;
+        lecOrm.subtitulos_url = l.subtitulosUrl || null;
         lecOrm.es_vista_previa = l.esVistaPrevia;
         lecOrm.modulo_id = m.id;
         return lecOrm;
@@ -163,6 +164,7 @@ export class CursoTypeOrmRepository implements CursoRepository {
           orden: l.orden,
           duracionSegundos: l.duracion_segundos,
           videoUrl: l.video_url ?? undefined,
+          subtitulosUrl: l.subtitulos_url ?? undefined,
           esVistaPrevia: l.es_vista_previa,
         }),
       );
