@@ -23,6 +23,7 @@ import { ReviewsModule } from './contexts/reviews/reviews.module';
 import { QaModule } from './contexts/qa/qa.module';
 import { WishlistModule } from './contexts/wishlist/wishlist.module';
 import { SupportModule } from './contexts/support/support.module';
+import { BundlesModule } from './contexts/bundles/bundles.module';
 
 @Module({
   imports: [
@@ -86,6 +87,7 @@ import { SupportModule } from './contexts/support/support.module';
     QaModule,
     WishlistModule,
     SupportModule,
+    BundlesModule,
   ],
   controllers: [AdminController, InstructorController],
   providers: [

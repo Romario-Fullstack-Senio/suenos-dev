@@ -6,6 +6,7 @@ import { ORDEN_REPOSITORY, OrdenRepository } from '../domain/orden.repository.po
 import { STRIPE_PAYMENT_INTENT, StripePaymentIntent } from '../domain/stripe-payment-intent.port';
 import { CUPON_REPOSITORY, CuponRepository } from '../domain/cupon.repository.port';
 import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
+import { PAQUETE_REPOSITORY, PaqueteRepository } from '../../bundles/domain/paquete.repository.port';
 
 export interface CrearOrdenItemInput {
   cursoId: string;
@@ -29,6 +30,10 @@ export interface CrearOrdenCommand {
   // resolver de forma genérica acá. El botón "Comprar ahora" de un curso
   // individual sigue soportando cupón exactamente igual que antes.
   cuponCodigo?: string;
+  // Si viene, `items` tiene que traer EXACTAMENTE los cursos del paquete
+  // (ver Paquete.coincideCon) — ahí se aplica el descuento del paquete a
+  // cada ítem en vez de resolver el precio de lista de cada curso.
+  paqueteId?: string;
 }
 
 @Injectable()
@@ -42,6 +47,8 @@ export class CrearOrdenUseCase {
     private readonly cuponRepository: CuponRepository,
     @Inject(CURSO_REPOSITORY)
     private readonly cursoRepository: CursoRepository,
+    @Inject(PAQUETE_REPOSITORY)
+    private readonly paqueteRepository: PaqueteRepository,
   ) {}
 
   async execute(
@@ -63,6 +70,10 @@ export class CrearOrdenUseCase {
     );
     let descuento = 0;
 
+    if (command.cuponCodigo && command.paqueteId) {
+      throw new DomainError('No se puede combinar un cupón con la compra de un paquete');
+    }
+
     if (command.cuponCodigo) {
       if (items.length > 1) {
         throw new DomainError('Los cupones solo se pueden aplicar comprando un curso a la vez');
@@ -83,7 +94,28 @@ export class CrearOrdenUseCase {
       await this.cuponRepository.save(cupon);
     }
 
-    const precioFinal = items.reduce((sum, i) => sum + i.precioFinal, 0);
+    if (command.paqueteId) {
+      const paquete = await this.paqueteRepository.findById(command.paqueteId);
+      if (!paquete || !paquete.activo) {
+        throw new NotFoundDomainError('Paquete no encontrado');
+      }
+      if (!paquete.coincideCon(items.map((i) => i.cursoId))) {
+        throw new DomainError('El carrito no coincide con los cursos del paquete');
+      }
+      const factor = 1 - paquete.descuentoPorcentaje / 100;
+      for (const item of items) {
+        const precioConDescuento = Math.round(item.precio * factor * 100) / 100;
+        descuento += item.precio - precioConDescuento;
+        item.precioFinal = precioConDescuento;
+      }
+      descuento = Math.round(descuento * 100) / 100;
+    }
+
+    // Redondeo final: sumar varios precios ya redondeados a 2 decimales
+    // puede arrastrar error de punto flotante (ej. 22.49 + 37.49 =
+    // 59.980000000000004) — sin este último round el clientSecret de
+    // Stripe y la respuesta al frontend mostrarían ese ruido.
+    const precioFinal = Math.round(items.reduce((sum, i) => sum + i.precioFinal, 0) * 100) / 100;
 
     const { clientSecret, paymentIntentId } = await this.stripePaymentIntent.createPaymentIntent({
       amount: precioFinal,

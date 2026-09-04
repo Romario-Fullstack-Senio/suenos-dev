@@ -21,6 +21,7 @@ describe('CrearOrdenUseCase', () => {
   let mockPaymentIntent: { createPaymentIntent: jest.Mock };
   let mockCuponRepo: { findByCodigo: jest.Mock; save: jest.Mock };
   let mockCursoRepo: { findById: jest.Mock };
+  let mockPaqueteRepo: { findById: jest.Mock };
 
   const command = {
     estudianteId: 'estudiante-1',
@@ -36,11 +37,13 @@ describe('CrearOrdenUseCase', () => {
     };
     mockCuponRepo = { findByCodigo: jest.fn(), save: jest.fn().mockResolvedValue(undefined) };
     mockCursoRepo = { findById: jest.fn((id: string) => Promise.resolve(cursoFake(id))) };
+    mockPaqueteRepo = { findById: jest.fn().mockResolvedValue(null) };
     useCase = new CrearOrdenUseCase(
       mockOrdenRepo as any,
       mockPaymentIntent as any,
       mockCuponRepo as any,
       mockCursoRepo as any,
+      mockPaqueteRepo as any,
     );
   });
 
@@ -105,6 +108,46 @@ describe('CrearOrdenUseCase', () => {
     mockCuponRepo.findByCodigo.mockResolvedValue(null);
 
     await expect(useCase.execute({ ...command, cuponCodigo: 'NOEXISTE' })).rejects.toThrow('Cupón no encontrado');
+    expect(mockOrdenRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('aplica el descuento del paquete a cada ítem cuando el carrito coincide exactamente', async () => {
+    const paquete = {
+      activo: true,
+      descuentoPorcentaje: 20,
+      coincideCon: (ids: string[]) => ids.sort().join(',') === ['curso-1', 'curso-2'].join(','),
+    };
+    mockPaqueteRepo.findById.mockResolvedValue(paquete);
+
+    const result = await useCase.execute({
+      ...command,
+      items: [
+        { cursoId: 'curso-1', cursoNombre: 'Curso de React', precio: 100 },
+        { cursoId: 'curso-2', cursoNombre: 'Curso de NestJS', precio: 50 },
+      ],
+      paqueteId: 'paquete-1',
+    });
+
+    // 150 de lista, 20% off = 120
+    expect(result.precioFinal).toBe(120);
+    expect(result.descuento).toBe(30);
+    expect(mockPaymentIntent.createPaymentIntent).toHaveBeenCalledWith(expect.objectContaining({ amount: 120 }));
+  });
+
+  it('rechaza el paquete si el carrito no coincide exactamente con sus cursos', async () => {
+    const paquete = { activo: true, descuentoPorcentaje: 20, coincideCon: () => false };
+    mockPaqueteRepo.findById.mockResolvedValue(paquete);
+
+    await expect(
+      useCase.execute({ ...command, paqueteId: 'paquete-1' }),
+    ).rejects.toThrow('El carrito no coincide con los cursos del paquete');
+    expect(mockOrdenRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('rechaza combinar cupón y paquete en la misma orden', async () => {
+    await expect(
+      useCase.execute({ ...command, cuponCodigo: 'DIEZ', paqueteId: 'paquete-1' }),
+    ).rejects.toThrow('No se puede combinar un cupón con la compra de un paquete');
     expect(mockOrdenRepo.save).not.toHaveBeenCalled();
   });
 
