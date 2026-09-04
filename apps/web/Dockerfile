@@ -14,7 +14,7 @@ COPY apps/web/package.json ./apps/web/
 RUN npm ci
 
 # ============================================================
-# Stage 2: Build Next.js (standalone output)
+# Stage 2: Build Next.js
 # ============================================================
 FROM node:20-alpine AS builder
 
@@ -30,12 +30,11 @@ COPY package.json ./
 COPY apps/web/ ./apps/web/
 
 # apps/web/public doesn't currently exist in the repo. COPY has no shell,
-# so `2>/dev/null || true` on the runner-stage COPY below never actually
-# suppressed a missing-source error (it broke every build) — ensure the
-# directory is always present instead, even if empty.
+# so `2>/dev/null || true` on a runner-stage COPY never actually suppresses
+# a missing-source error (it broke every build) — ensure the directory is
+# always present instead, even if empty.
 RUN mkdir -p apps/web/public
 
-# Next.js standalone build — output goes to .next/standalone/
 # withSentryConfig in next.config.mjs is a no-op when SENTRY_AUTH_TOKEN is unset
 ENV SENTRY_AUTH_TOKEN=""
 RUN npm run build --workspace=apps/web
@@ -50,15 +49,20 @@ RUN addgroup --system --gid 1001 suenos \
 
 WORKDIR /app
 
-# standalone output contains server.js + a pruned node_modules copy
-COPY --from=builder --chown=suenos:suenos /app/apps/web/.next/standalone ./
-
-# Static assets
-COPY --from=builder --chown=suenos:suenos /app/apps/web/.next/static ./apps/web/.next/static
-
-# Public directory (images, icons) — the builder stage guarantees this
-# exists (mkdir -p), even if empty, since COPY has no shell to fall back on.
+# NOT next's `output: 'standalone'` copy (see next.config.mjs for why it's
+# not used) — ship the full pruned node_modules instead, same reliable
+# pattern as apps/api/Dockerfile, and run with `next start`.
+COPY --from=builder --chown=suenos:suenos /app/node_modules ./node_modules
+COPY --from=builder --chown=suenos:suenos /app/apps/web/node_modules ./apps/web/node_modules
+COPY --from=builder --chown=suenos:suenos /app/apps/web/package.json ./apps/web/package.json
+COPY --from=builder --chown=suenos:suenos /app/apps/web/next.config.mjs ./apps/web/next.config.mjs
+COPY --from=builder --chown=suenos:suenos /app/apps/web/.next ./apps/web/.next
 COPY --from=builder --chown=suenos:suenos /app/apps/web/public ./apps/web/public
+
+# Strip devDependencies (npm prune reads apps/web/package.json here, same
+# as the API image — see apps/api/Dockerfile for the "prune uses the wrong
+# package.json" bug that taught us to always double check this).
+RUN cd apps/web && npm prune --omit=dev 2>/dev/null || true
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -69,9 +73,10 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 
 EXPOSE 3000
 USER suenos
-# In a monorepo, Next's standalone output puts server.js at the STANDALONE
-# ROOT (i.e. /app/server.js after the COPY above) even though the page/route
-# code lives nested under apps/web/ — confirmed by inspecting the built
-# image directly (find /app -iname server.js). "apps/web/server.js" never
-# existed; the web container crash-looped on every boot until now.
-CMD ["node", "server.js"]
+WORKDIR /app/apps/web
+# `next` itself hoists to the ROOT node_modules (not nested under
+# apps/web/node_modules), so there's no apps/web/node_modules/.bin/next to
+# call directly — `npm start` (runs the "start": "next start" script from
+# apps/web/package.json) lets npm resolve the hoisted binary correctly via
+# its own PATH setup, same as it would locally.
+CMD ["npm", "start"]
