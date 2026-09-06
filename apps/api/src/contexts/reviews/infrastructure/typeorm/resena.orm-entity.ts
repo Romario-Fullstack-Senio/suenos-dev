@@ -28,4 +28,15 @@ export class ResenaOrmEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
+
+  // IDs de usuarios que reportaron esta reseña — no un contador simple,
+  // para que un mismo usuario no pueda inflarlo reportando varias veces.
+  // Nullable (no default JSON) porque simple-json no acepta un default de
+  // columna simple entre motores — null se trata como "sin reportes" al
+  // reconstituir el dominio, igual que two_factor_backup_codes.
+  @Column({ name: 'reportado_por', type: 'simple-json', nullable: true })
+  reportadoPor!: string[] | null;
+
+  @Column({ default: false })
+  oculta!: boolean;
 }

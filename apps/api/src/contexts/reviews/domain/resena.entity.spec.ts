@@ -39,4 +39,49 @@ describe('Resena', () => {
     expect(resena.calificacion).toBe(5);
     expect(resena.comentario).toBe('Ahora me encantó');
   });
+
+  describe('moderación por reportes', () => {
+    function crear() {
+      return Resena.crear('r1', { cursoId: 'c1', estudianteId: 'autor-1', estudianteNombre: 'Ana', calificacion: 3 });
+    }
+
+    it('reportar() suma un reporte sin ocultar todavía', () => {
+      const resena = crear();
+      resena.reportar('u1');
+      expect(resena.totalReportes).toBe(1);
+      expect(resena.oculta).toBe(false);
+    });
+
+    it('se oculta sola al llegar al umbral de reportes', () => {
+      const resena = crear();
+      resena.reportar('u1');
+      resena.reportar('u2');
+      resena.reportar('u3');
+      expect(resena.totalReportes).toBe(3);
+      expect(resena.oculta).toBe(true);
+    });
+
+    it('un mismo usuario no puede reportar dos veces', () => {
+      const resena = crear();
+      resena.reportar('u1');
+      expect(() => resena.reportar('u1')).toThrow('Ya reportaste esta reseña');
+      expect(resena.totalReportes).toBe(1);
+    });
+
+    it('el autor no puede reportar su propia reseña', () => {
+      const resena = crear();
+      expect(() => resena.reportar('autor-1')).toThrow('No podés reportar tu propia reseña');
+    });
+
+    it('restaurar() la vuelve a mostrar y limpia los reportes', () => {
+      const resena = crear();
+      resena.reportar('u1');
+      resena.reportar('u2');
+      resena.reportar('u3');
+      expect(resena.oculta).toBe(true);
+      resena.restaurar();
+      expect(resena.oculta).toBe(false);
+      expect(resena.totalReportes).toBe(0);
+    });
+  });
 });

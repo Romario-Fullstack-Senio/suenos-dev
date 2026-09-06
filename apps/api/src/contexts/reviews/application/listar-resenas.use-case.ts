@@ -9,7 +9,11 @@ export class ListarResenasUseCase {
   ) {}
 
   async execute(cursoId: string) {
-    const resenas = await this.resenaRepo.findByCursoId(cursoId);
+    const todas = await this.resenaRepo.findByCursoId(cursoId);
+    // Ocultas por reportes no se muestran en el listado público — el
+    // estudiante que reportó no tiene por qué seguir viéndola, y el resto
+    // tampoco hasta que un admin la revise (ver ResenaController#restaurar).
+    const resenas = todas.filter(r => !r.oculta);
     const total = resenas.length;
     const promedio = total === 0 ? 0 : Math.round((resenas.reduce((sum, r) => sum + r.calificacion, 0) / total) * 10) / 10;
 

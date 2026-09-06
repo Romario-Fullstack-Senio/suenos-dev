@@ -9,6 +9,9 @@ import { ResponderPreguntaUseCase } from './application/responder-pregunta.use-c
 import { ListarPreguntasUseCase } from './application/listar-preguntas.use-case';
 import { EliminarPreguntaUseCase } from './application/eliminar-pregunta.use-case';
 import { MarcarResueltaUseCase } from './application/marcar-resuelta.use-case';
+import { ReportarPreguntaUseCase } from './application/reportar-pregunta.use-case';
+import { RestaurarPreguntaUseCase } from './application/restaurar-pregunta.use-case';
+import { ListarPreguntasReportadasUseCase } from './application/listar-preguntas-reportadas.use-case';
 import { PreguntaController } from './interfaces/pregunta.controller';
 import { CatalogModule } from '../catalog/catalog.module';
 import { IdentityModule } from '../identity/identity.module';
@@ -29,6 +32,9 @@ import { ContentDeliveryModule } from '../content-delivery/content-delivery.modu
     ListarPreguntasUseCase,
     EliminarPreguntaUseCase,
     MarcarResueltaUseCase,
+    ReportarPreguntaUseCase,
+    RestaurarPreguntaUseCase,
+    ListarPreguntasReportadasUseCase,
   ],
   exports: [PREGUNTA_REPOSITORY],
 })

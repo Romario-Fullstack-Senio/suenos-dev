@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { MessageCircle, CheckCircle2, Trash2, Send } from 'lucide-react';
+import { MessageCircle, CheckCircle2, Trash2, Send, Flag } from 'lucide-react';
 
 interface Respuesta {
   id: string;
@@ -53,6 +53,10 @@ export default function QASection({ leccionId, puedeModerar }: { leccionId: stri
   const [respondiendoId, setRespondiendoId] = useState<string | null>(null);
   const [textoRespuesta, setTextoRespuesta] = useState('');
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
+  // Preguntas que este usuario ya reportó en esta sesión — solo para
+  // deshabilitar el botón sin esperar un refetch; el backend es la fuente
+  // real de verdad (rechaza un segundo reporte del mismo usuario igual).
+  const [reportadas, setReportadas] = useState<Set<string>>(new Set());
 
   const fetchPreguntas = useCallback(async () => {
     try {
@@ -120,6 +124,18 @@ export default function QASection({ leccionId, puedeModerar }: { leccionId: stri
       setPreguntas((prev) => prev.map((p) => (p.id === id ? { ...p, resuelta: true } : p)));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'No se pudo actualizar');
+    }
+  }
+
+  async function reportarPregunta(id: string) {
+    try {
+      const res = await apiPost<{ message: string }>(`/preguntas/${id}/reportar`, {});
+      toast.success(res.message);
+      // Si el reporte cruzó el umbral, el backend ya la ocultó — la sacamos
+      // de la vista sin esperar un refetch completo.
+      setReportadas((prev) => new Set(prev).add(id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo reportar');
     }
   }
 
@@ -207,6 +223,15 @@ export default function QASection({ leccionId, puedeModerar }: { leccionId: stri
                         className="inline-flex items-center gap-1 text-xs font-medium text-red-500 hover:underline"
                       >
                         <Trash2 className="w-3 h-3" /> Eliminar
+                      </button>
+                    )}
+                    {user && user.id !== p.autorId && !puedeModerar && (
+                      <button
+                        onClick={() => reportarPregunta(p.id)}
+                        disabled={reportadas.has(p.id)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-ink-soft hover:text-red-500 hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                      >
+                        <Flag className="w-3 h-3" /> {reportadas.has(p.id) ? 'Reportada' : 'Reportar'}
                       </button>
                     )}
                   </div>

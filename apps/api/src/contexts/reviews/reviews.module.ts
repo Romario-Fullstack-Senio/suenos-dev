@@ -7,6 +7,8 @@ import { CrearOActualizarResenaUseCase } from './application/crear-o-actualizar-
 import { ListarResenasUseCase } from './application/listar-resenas.use-case';
 import { ResumenResenasUseCase } from './application/resumen-resenas.use-case';
 import { EliminarResenaUseCase } from './application/eliminar-resena.use-case';
+import { ReportarResenaUseCase } from './application/reportar-resena.use-case';
+import { RestaurarResenaUseCase } from './application/restaurar-resena.use-case';
 import { ResenaController } from './interfaces/resena.controller';
 import { EnrollmentModule } from '../enrollment/enrollment.module';
 import { IdentityModule } from '../identity/identity.module';
@@ -21,6 +23,8 @@ import { CatalogModule } from '../catalog/catalog.module';
     ListarResenasUseCase,
     ResumenResenasUseCase,
     EliminarResenaUseCase,
+    ReportarResenaUseCase,
+    RestaurarResenaUseCase,
   ],
   exports: [RESENA_REPOSITORY],
 })
