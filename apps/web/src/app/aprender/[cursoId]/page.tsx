@@ -72,13 +72,12 @@ export default function AprenderPage() {
   const [progreso, setProgreso] = useState<CursoProgreso | null>(null);
   const [fechaInscripcion, setFechaInscripcion] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
-  const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // Acumula segundos "vistos" mientras la lección está abierta. Antes se
-  // mandaban siempre los mismos 30/60 en cada tick — la lección quedaba
-  // clavada en 50% para siempre y nunca llegaba al 90% para marcarse
-  // completada. No lee el tiempo real del reproductor (eso requeriría
-  // engancharse a HLS.js), pero al menos progresa con el tiempo real.
-  const segundosVistosRef = useRef(0);
+  // Último `segundosVistos` reportado al backend para la lección actual —
+  // evita mandar un POST en cada tick de "timeupdate" (dispara ~4 veces por
+  // segundo) y evita retroceder el progreso si el estudiante hace seek hacia
+  // atrás (el backend guarda el porcentaje tal cual se lo mandemos).
+  const ultimoReportadoRef = useRef(0);
+  const ultimoEnvioRef = useRef(0);
 
   // `user` puede tardar en llegar (AuthContext lo carga de localStorage de
   // forma async) — sin `user` en las dependencias, si el efecto corría
@@ -89,20 +88,9 @@ export default function AprenderPage() {
   }, [cursoId, user]);
 
   useEffect(() => {
-    segundosVistosRef.current = 0;
-    if (leccionActual && user) {
-      progressTimerRef.current = setInterval(() => {
-        segundosVistosRef.current += 30;
-        trackProgress(leccionActual, segundosVistosRef.current);
-      }, 30000);
-
-      return () => {
-        if (progressTimerRef.current) {
-          clearInterval(progressTimerRef.current);
-        }
-      };
-    }
-  }, [leccionActual, user]);
+    ultimoReportadoRef.current = 0;
+    ultimoEnvioRef.current = 0;
+  }, [leccionActual]);
 
   async function fetchData() {
     try {
@@ -171,14 +159,14 @@ export default function AprenderPage() {
     return disponibleDesde;
   }
 
-  async function trackProgress(leccion: Leccion, segundos: number) {
+  async function trackProgress(leccion: Leccion, segundos: number, duracionTotal: number) {
     if (!user) return;
     try {
       await apiPost('/progreso?estudianteId=' + user.id, {
         leccionId: leccion.id,
         cursoId,
         segundosVistos: segundos,
-        duracionTotal: leccion.duracionSegundos || 60,
+        duracionTotal: duracionTotal || leccion.duracionSegundos || 60,
       });
       const data = await apiGet<CursoProgreso>(`/progreso/curso/${cursoId}?estudianteId=${user.id}`);
       const totalLecciones = curso?.modulos.reduce(
@@ -194,6 +182,36 @@ export default function AprenderPage() {
     } catch (error) {
       console.error('Error tracking progress:', error);
     }
+  }
+
+  // Se llama en cada "timeupdate" del video (con la posición real de
+  // reproducción, no un contador simulado). Throttled a ~10s para no
+  // saturar la API, pero reporta de inmediato si el estudiante ya cruzó el
+  // umbral del 90% (para que se vea "completada" sin esperar el próximo
+  // tick) o si retrocedió el progreso reportado.
+  function handleVideoProgress(currentTime: number, duration: number) {
+    if (!leccionActual || !user) return;
+    const segundos = Math.floor(currentTime);
+    const ahora = Date.now();
+    const cruzoUmbral = duration > 0 && segundos / duration >= 0.9 && ultimoReportadoRef.current / duration < 0.9;
+    if (!cruzoUmbral && ahora - ultimoEnvioRef.current < 10000) return;
+    if (segundos <= ultimoReportadoRef.current && !cruzoUmbral) return;
+
+    ultimoReportadoRef.current = segundos;
+    ultimoEnvioRef.current = ahora;
+    trackProgress(leccionActual, segundos, Math.floor(duration));
+  }
+
+  // El "ended" del <video> dispara SIEMPRE al terminar, sin depender del
+  // muestreo de timeupdate — así la lección se marca completada al
+  // instante en vez de esperar el próximo tick (que podía no llegar nunca
+  // si el video duraba menos que el intervalo de reporte).
+  function handleVideoEnded() {
+    if (!leccionActual || !user) return;
+    const duracionTotal = leccionActual.duracionSegundos || 60;
+    ultimoReportadoRef.current = duracionTotal;
+    ultimoEnvioRef.current = Date.now();
+    trackProgress(leccionActual, duracionTotal, duracionTotal);
   }
 
   const seleccionarLeccion = (mod: Modulo, lec: Leccion) => {
@@ -280,7 +298,13 @@ export default function AprenderPage() {
 
         <div className="lg:col-span-3">
           {leccionActual?.videoUrl ? (
-            <HLSPlayer src={leccionActual.videoUrl} subtitulosUrl={leccionActual.subtitulosUrl} />
+            <HLSPlayer
+              key={leccionActual.id}
+              src={leccionActual.videoUrl}
+              subtitulosUrl={leccionActual.subtitulosUrl}
+              onProgress={handleVideoProgress}
+              onEnded={handleVideoEnded}
+            />
           ) : (
             <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center text-white mb-6">
               <p className="text-ink-soft">Video no disponible</p>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiGet, apiPut } from '@/lib/api';
+import { apiGet, apiPatch } from '@/lib/api';
 import Link from 'next/link';
 import { Bell, CheckCheck, ExternalLink } from 'lucide-react';
 
@@ -66,21 +66,25 @@ export function NotificationBell() {
 
   async function marcarLeida(id: string) {
     try {
-      await apiPut(`/notificaciones/${id}/leer`, {});
+      await apiPatch(`/notificaciones/${id}/leer`, {});
       setNotificaciones((prev) =>
         prev.map((n) => (n.id === id ? { ...n, leida: true } : n))
       );
       setNoLeidas((prev) => Math.max(0, prev - 1));
-    } catch {}
+    } catch (error) {
+      console.error('Error al marcar notificación como leída:', error);
+    }
   }
 
   async function marcarTodasLeidas() {
     if (!user) return;
     try {
-      await apiPut(`/notificaciones/usuario/${user.id}/leer-todas`, {});
+      await apiPatch(`/notificaciones/usuario/${user.id}/leer-todas`, {});
       setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
       setNoLeidas(0);
-    } catch {}
+    } catch (error) {
+      console.error('Error al marcar todas las notificaciones como leídas:', error);
+    }
   }
 
   if (!user) return null;
