@@ -7,3 +7,9 @@ dist/
 .DS_Store
 coverage/
 infra/traefik/acme.json
+
+# Playwright (E2E — ver e2e/ y playwright.config.ts)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
