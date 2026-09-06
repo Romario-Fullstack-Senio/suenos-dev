@@ -20,7 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: 'Sueños Dev - Plataforma de E-Learning',
-    template: '%s | Sueños Dev',
+    // Marca primero: en una pestaña angosta el título se corta por la
+    // derecha, así que con "Sueños Dev" al final (formato viejo) nunca
+    // llegaba a verse. Con la marca adelante queda visible aunque el resto
+    // se trunque.
+    template: 'Sueños Dev — %s',
   },
   description: 'Aprende desarrollo web con cursos practicos y certificados verificables.',
   openGraph: {
