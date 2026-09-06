@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Delete, Param, Body, Req, Inject, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
 import type { Request } from 'express';
 import { RegistrarUsuarioUseCase } from '../application/registrar-usuario.use-case';
@@ -49,13 +50,21 @@ export class AuthController {
     private readonly usuarioRepo: UsuarioRepository,
   ) {}
 
+  // El throttle global (ver ThrottlerModule.forRoot en app.module.ts) es
+  // 100 req/60s — pensado para tráfico normal de API, no para el abuso
+  // dirigido que reciben específicamente estos endpoints (credential
+  // stuffing contra login, fuerza bruta de TOTP contra 2fa, spam de envío
+  // de emails contra forgot-password/resend-verification). Cada uno de
+  // abajo pisa el límite global con uno bastante más estricto.
   @Post('registro')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async registro(@Body() dto: RegistrarDto) {
     return this.registrarUC.execute(dto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(@Body() dto: LoginDto, @Req() req: Request) {
     return this.loginUC.execute({ ...dto, userAgent: req.headers['user-agent'] ?? null });
   }
@@ -73,8 +82,12 @@ export class AuthController {
     return { message: 'Sesión cerrada correctamente' };
   }
 
+  // 3/5min: dispara un envío de email real por request — sin esto, alguien
+  // puede usar el endpoint para bombardear una bandeja de entrada ajena o
+  // agotar la cuota del proveedor de email.
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 300000 } })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     await this.solicitarResetUC.execute(dto.email);
     // Respuesta genérica siempre, exista o no la cuenta — no confirmamos ni
@@ -84,6 +97,7 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 900000 } })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.resetPasswordUC.execute(dto.token, dto.password);
     return { message: 'Contraseña actualizada correctamente' };
@@ -91,6 +105,7 @@ export class AuthController {
 
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
     await this.verificarEmailUC.execute(dto.token);
     return { message: 'Email verificado correctamente' };
@@ -98,6 +113,7 @@ export class AuthController {
 
   @Post('resend-verification')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 300000 } })
   async resendVerification(@Body() dto: ForgotPasswordDto) {
     await this.reenviarVerificacionUC.execute(dto.email);
     return { message: 'Si el email existe y no está verificado, vas a recibir un nuevo enlace' };
@@ -119,9 +135,12 @@ export class AuthController {
     return this.iniciar2FAUC.execute(req.user.id);
   }
 
+  // Un código TOTP es de 6 dígitos (10^6 combinaciones) — sin un límite
+  // bajo acá, es fuerza-bruteable en minutos contra un endpoint sin captcha.
   @Post('2fa/confirm')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   async confirmar2FA(@Body() dto: Confirmar2FADto, @Req() req: AuthenticatedRequest) {
     return this.confirmar2FAUC.execute(req.user.id, dto.codigo);
   }
@@ -139,6 +158,7 @@ export class AuthController {
   // es lo que autoriza este paso, no un Bearer normal.
   @Post('2fa/login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   async confirmarLogin2FA(@Body() dto: ConfirmarLogin2FADto, @Req() req: Request) {
     return this.confirmarLogin2FAUC.execute({
       tempToken: dto.tempToken,
