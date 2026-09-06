@@ -41,6 +41,11 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
     return orms.map(o => this.toDomain(o));
   }
 
+  async findByEstudianteId(estudianteId: string): Promise<Resena[]> {
+    const orms = await this.repo.find({ where: { estudianteId }, order: { createdAt: 'DESC' } });
+    return orms.map(o => this.toDomain(o));
+  }
+
   async findAll(): Promise<Resena[]> {
     const orms = await this.repo.find({ order: { createdAt: 'DESC' } });
     return orms.map(o => this.toDomain(o));

@@ -11,6 +11,7 @@ import { CommonModule } from './common/common.module';
 import { DomainExceptionFilter } from './common/domain-exception.filter';
 import { AdminController } from './common/admin.controller';
 import { InstructorController } from './common/instructor.controller';
+import { ExportarDatosController } from './common/exportar-datos.controller';
 import { IdentityModule } from './contexts/identity/identity.module';
 import { CatalogModule } from './contexts/catalog/catalog.module';
 import { ContentDeliveryModule } from './contexts/content-delivery/content-delivery.module';
@@ -89,7 +90,7 @@ import { BundlesModule } from './contexts/bundles/bundles.module';
     SupportModule,
     BundlesModule,
   ],
-  controllers: [AdminController, InstructorController],
+  controllers: [AdminController, InstructorController, ExportarDatosController],
   providers: [
     {
       provide: APP_GUARD,

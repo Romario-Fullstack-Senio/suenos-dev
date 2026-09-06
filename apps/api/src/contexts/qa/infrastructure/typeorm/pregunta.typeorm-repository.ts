@@ -53,6 +53,15 @@ export class PreguntaTypeOrmRepository implements PreguntaRepository {
     return orms.map((o) => this.toDomain(o));
   }
 
+  async findByAutorId(autorId: string): Promise<Pregunta[]> {
+    const orms = await this.repo.find({
+      where: { autorId },
+      relations: ['respuestas'],
+      order: { createdAt: 'DESC' },
+    });
+    return orms.map((o) => this.toDomain(o));
+  }
+
   async delete(id: string): Promise<void> {
     // ON DELETE CASCADE en pregunta_id (ver respuesta.orm-entity.ts) borra
     // las respuestas de la pregunta automáticamente.

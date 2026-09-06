@@ -28,5 +28,6 @@ import { IdentityModule } from '../identity/identity.module';
     ObtenerTicketUseCase,
     CambiarEstadoTicketUseCase,
   ],
+  exports: [TICKET_REPOSITORY],
 })
 export class SupportModule {}

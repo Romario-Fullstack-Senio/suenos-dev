@@ -30,5 +30,6 @@ import { ContentDeliveryModule } from '../content-delivery/content-delivery.modu
     EliminarPreguntaUseCase,
     MarcarResueltaUseCase,
   ],
+  exports: [PREGUNTA_REPOSITORY],
 })
 export class QaModule {}
