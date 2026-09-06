@@ -61,7 +61,11 @@ export class Certificado extends AggregateRoot<string> {
   }
 
   getVerifyUrl(): string {
-    const API_URL = process.env.API_URL || 'http://localhost:3000';
+    // Default alineado con .env.example (API_URL=http://localhost:3001) —
+    // el puerto de la propia API, no el del front (3000). Con el default
+    // viejo, sin API_URL seteada, este link (y el QR del PDF) apuntaban al
+    // servidor de Next.js, que no tiene esta ruta, y daban 404.
+    const API_URL = process.env.API_URL || 'http://localhost:3001';
     return `${API_URL}/api/certificados/${this.id}/verificar`;
   }
 }
