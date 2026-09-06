@@ -28,6 +28,16 @@ export class GenerarCertificadoHandler {
 
   @OnEvent('QuizAprobado')
   async handle(event: QuizAprobadoEvent): Promise<void> {
+    // Sin este chequeo, cada vez que el estudiante rendía el quiz de nuevo
+    // (reintento tras ya haber aprobado, o un curso sin límite de intentos)
+    // se emitía un certificado nuevo — la lista de "Mis certificados"
+    // terminaba con varias filas duplicadas para el mismo curso.
+    const existente = await this.certificadoRepository.findByCursoYEstudiante(
+      event.cursoId,
+      event.estudianteId,
+    );
+    if (existente) return;
+
     const id = randomUUID();
     const certificado = Certificado.emitir(
       id,

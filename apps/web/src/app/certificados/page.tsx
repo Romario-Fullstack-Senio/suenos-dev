@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiGet } from '@/lib/api';
+import { apiGet, API_URL } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 
@@ -76,7 +76,7 @@ export default function CertificadosPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(`/api/certificados/${cert.id}/pdf`, '_blank')}
+                      onClick={() => window.open(`${API_URL}/certificados/${cert.id}/pdf`, '_blank')}
                     >
                       Descargar PDF
                     </Button>
