@@ -77,6 +77,7 @@ export function Header() {
               {hasRole('estudiante') && <NavLink href="/dashboard">Mis Cursos</NavLink>}
               {hasRole('estudiante') && <NavLink href="/favoritos">Favoritos</NavLink>}
               {hasRole('estudiante') && <NavLink href="/certificados">Certificados</NavLink>}
+              {hasRole('estudiante') && <NavLink href="/logros">Logros</NavLink>}
               {hasRole('instructor') && <NavLink href="/instructor">Instructor</NavLink>}
               {hasRole('admin') && <NavLink href="/admin">Admin</NavLink>}
               <NavLink href="/soporte">Soporte</NavLink>
