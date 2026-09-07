@@ -116,7 +116,11 @@ jobs:
         run: nohup npm run dev:web > web.log 2>&1 &
 
       - name: Wait for API and Web
-        run: npx wait-on http://localhost:3001/api/health http://localhost:3000 --timeout 120000
+        # /health (sin /api) — el prefijo global se excluye deliberadamente
+        # para esta ruta en main.ts, para los healthchecks de Docker. Un
+        # wait-on contra /api/health nunca resuelve (404 para siempre) y
+        # este step colgaría hasta el timeout.
+        run: npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 120000
 
       - name: Run E2E — auth & catalog (no requieren Stripe)
         run: npx playwright test e2e/auth.spec.ts e2e/catalog.spec.ts
