@@ -26,6 +26,7 @@ import { WishlistModule } from './contexts/wishlist/wishlist.module';
 import { SupportModule } from './contexts/support/support.module';
 import { BundlesModule } from './contexts/bundles/bundles.module';
 import { GamificationModule } from './contexts/gamification/gamification.module';
+import { ForumModule } from './contexts/forum/forum.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { GamificationModule } from './contexts/gamification/gamification.module'
     SupportModule,
     BundlesModule,
     GamificationModule,
+    ForumModule,
   ],
   controllers: [AdminController, InstructorController, ExportarDatosController],
   providers: [
