@@ -12,6 +12,7 @@ interface RegistrarUsuarioCommand {
   nombre: string;
   email: string;
   password: string;
+  referidoPor?: string;
 }
 
 @Injectable()
@@ -28,11 +29,19 @@ export class RegistrarUsuarioUseCase {
       throw new ConflictDomainError('Ya existe un usuario con ese email');
     }
 
+    // Un ?ref= inválido (usuario borrado, id inventado) no debe romper el
+    // registro — simplemente no se atribuye el referido, en silencio.
+    let referidoPor: string | null = null;
+    if (command.referidoPor) {
+      const referente = await this.usuarioRepo.findById(command.referidoPor);
+      if (referente) referidoPor = referente.id;
+    }
+
     const id = uuid();
     const email = Email.create(command.email);
     const password = await Password.create(command.password);
     const verificacionToken = randomBytes(32).toString('hex');
-    const usuario = Usuario.create(id, command.nombre, email, password, undefined, verificacionToken);
+    const usuario = Usuario.create(id, command.nombre, email, password, undefined, verificacionToken, referidoPor);
 
     await this.usuarioRepo.save(usuario);
 

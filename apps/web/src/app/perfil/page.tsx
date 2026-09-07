@@ -6,6 +6,7 @@ import { SesionesActivas } from '@/components/forms/SesionesActivas';
 import { EliminarCuenta } from '@/components/forms/EliminarCuenta';
 import { PreferenciasNotificacion } from '@/components/forms/PreferenciasNotificacion';
 import { ExportarDatos } from '@/components/forms/ExportarDatos';
+import { ProgramaAfiliados } from '@/components/forms/ProgramaAfiliados';
 
 export default function PerfilPage() {
   return (
@@ -15,6 +16,7 @@ export default function PerfilPage() {
         <PreferenciasNotificacion />
         <TwoFactorSettings />
         <SesionesActivas />
+        <ProgramaAfiliados />
         <ExportarDatos />
         <EliminarCuenta />
       </div>

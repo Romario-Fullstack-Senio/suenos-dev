@@ -27,6 +27,7 @@ import { SupportModule } from './contexts/support/support.module';
 import { BundlesModule } from './contexts/bundles/bundles.module';
 import { GamificationModule } from './contexts/gamification/gamification.module';
 import { ForumModule } from './contexts/forum/forum.module';
+import { AffiliatesModule } from './contexts/affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { ForumModule } from './contexts/forum/forum.module';
     BundlesModule,
     GamificationModule,
     ForumModule,
+    AffiliatesModule,
   ],
   controllers: [AdminController, InstructorController, ExportarDatosController],
   providers: [

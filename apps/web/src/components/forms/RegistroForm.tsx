@@ -17,7 +17,16 @@ export function RegistroForm() {
 
   const onSubmit = async (data: RegistroFormData) => {
     try {
-      await registerUser(data.nombre, data.email, data.password);
+      // Precargado por ReferralCapture si llegó por un link ?ref=<usuarioId>
+      // en cualquier página anterior — no solo en /auth/registro.
+      const referidoPor = (() => {
+        try {
+          return localStorage.getItem('referido_por') || undefined;
+        } catch {
+          return undefined;
+        }
+      })();
+      await registerUser(data.nombre, data.email, data.password, referidoPor);
       toast.success('Registro exitoso. Ahora puedes iniciar sesión.');
     } catch (error) {
       toast.error('Error al registrar usuario');

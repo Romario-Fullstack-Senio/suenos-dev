@@ -36,6 +36,7 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       avatar_url: usuario.avatarUrl,
       cuenta_eliminada: usuario.cuentaEliminada,
       notificar_curso_nuevo: usuario.notificarCursoNuevo,
+      referido_por: usuario.referidoPor,
     });
     await this.repo.save(orm);
   }
@@ -95,6 +96,7 @@ export class UsuarioTypeOrmRepository implements UsuarioRepository {
       avatarUrl: orm.avatar_url,
       cuentaEliminada: orm.cuenta_eliminada,
       notificarCursoNuevo: orm.notificar_curso_nuevo,
+      referidoPor: orm.referido_por,
     });
   }
 }

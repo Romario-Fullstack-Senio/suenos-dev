@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -9,6 +10,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Sky } from '@/components/layout/Sky';
 import { CookieConsent } from '@/components/CookieConsent';
 import { TitleLock } from '@/components/TitleLock';
+import { ReferralCapture } from '@/components/ReferralCapture';
 
 // Aplica la clase .dark a <html> ANTES del primer paint (localStorage no es
 // accesible durante el render en servidor), para que no haya un flash de
@@ -64,6 +66,9 @@ export default function RootLayout({
       <body className="relative min-h-screen overflow-x-hidden bg-cloud-50 text-ink">
         <ThemeProvider>
           <TitleLock />
+          <Suspense fallback={null}>
+            <ReferralCapture />
+          </Suspense>
           <Sky />
           <AuthProvider>
             <CartProvider>

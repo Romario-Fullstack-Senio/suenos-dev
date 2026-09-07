@@ -25,6 +25,10 @@ interface UsuarioProps {
   avatarUrl: string | null;
   cuentaEliminada: boolean;
   notificarCursoNuevo: boolean;
+  /** usuarioId de quien lo refirió — se asigna una sola vez, al registrarse
+   * (primer contacto, no "último cupón que usó"), y nunca cambia después.
+   * Ver affiliates/ para cómo se usa (comisiones). */
+  referidoPor: string | null;
 }
 
 export class Usuario extends AggregateRoot<string> {
@@ -42,6 +46,7 @@ export class Usuario extends AggregateRoot<string> {
     password: Password,
     rol?: Rol,
     verificacionToken?: string,
+    referidoPor?: string | null,
   ): Usuario {
     if (!nombre || nombre.length < 2) {
       throw new DomainError('El nombre debe tener al menos 2 caracteres');
@@ -64,6 +69,7 @@ export class Usuario extends AggregateRoot<string> {
       avatarUrl: null,
       cuentaEliminada: false,
       notificarCursoNuevo: true,
+      referidoPor: referidoPor ?? null,
     });
     usuario.addDomainEvent(
       new UsuarioRegistradoEvent(id, email.value, nombre, AuthProviderTipo.LOCAL, verificacionToken),
@@ -106,6 +112,9 @@ export class Usuario extends AggregateRoot<string> {
       avatarUrl: params.avatarUrl ?? null,
       cuentaEliminada: false,
       notificarCursoNuevo: true,
+      // El flujo OAuth no pasa por un formulario propio donde capturar un
+      // ?ref= — solo el registro local atribuye referidos por ahora.
+      referidoPor: null,
     });
     usuario.addDomainEvent(new UsuarioRegistradoEvent(params.id, params.email.value, params.nombre, params.provider));
     return usuario;
@@ -132,6 +141,7 @@ export class Usuario extends AggregateRoot<string> {
       avatarUrl?: string | null;
       cuentaEliminada?: boolean;
       notificarCursoNuevo?: boolean;
+      referidoPor?: string | null;
     },
   ): Usuario {
     const usuario = new Usuario(id, {
@@ -152,6 +162,7 @@ export class Usuario extends AggregateRoot<string> {
       avatarUrl: props.avatarUrl ?? null,
       cuentaEliminada: props.cuentaEliminada ?? false,
       notificarCursoNuevo: props.notificarCursoNuevo ?? true,
+      referidoPor: props.referidoPor ?? null,
     });
     Object.defineProperty(usuario, '_createdAt', { value: props.createdAt });
     return usuario;
@@ -227,6 +238,10 @@ export class Usuario extends AggregateRoot<string> {
 
   get notificarCursoNuevo(): boolean {
     return this.props.notificarCursoNuevo;
+  }
+
+  get referidoPor(): string | null {
+    return this.props.referidoPor;
   }
 
   actualizarPreferenciaCursoNuevo(valor: boolean): void {
