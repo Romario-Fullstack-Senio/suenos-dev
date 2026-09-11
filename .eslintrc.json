@@ -20,6 +20,19 @@
   ],
   "overrides": [
     {
+      // tests/load-test.js no corre en Node sino dentro del runtime de k6,
+      // que inyecta sus propios globales (__ENV con las variables de
+      // entorno, __VU, __ITER). Sin declararlos acá, `eslint .` marcaba
+      // "__ENV is not defined" como ERROR y tumbaba el job de lint de
+      // build-and-push.yml — y con él la publicación de imagen y el deploy.
+      "files": ["tests/load-test.js"],
+      "globals": {
+        "__ENV": "readonly",
+        "__VU": "readonly",
+        "__ITER": "readonly"
+      }
+    },
+    {
       "files": ["**/*.ts", "**/*.tsx"],
       "parser": "@typescript-eslint/parser",
       "plugins": ["@typescript-eslint"],
