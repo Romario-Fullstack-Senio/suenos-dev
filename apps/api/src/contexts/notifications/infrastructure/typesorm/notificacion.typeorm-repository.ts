@@ -51,6 +51,10 @@ export class NotificacionTypeOrmRepository implements NotificacionRepository {
     );
   }
 
+  async deleteByCursoId(cursoId: string): Promise<void> {
+    await this.ormRepo.delete({ cursoId });
+  }
+
   private toDomain(entity: NotificacionOrmEntity): Notificacion {
     return Notificacion.reconstitute(entity.id, {
       usuarioId: entity.usuarioId,

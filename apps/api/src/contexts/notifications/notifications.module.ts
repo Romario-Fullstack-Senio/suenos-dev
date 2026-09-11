@@ -8,6 +8,7 @@ import { EnviarEmailVerificacionHandler } from './application/enviar-email-verif
 import { EnviarEmailResetPasswordHandler } from './application/enviar-email-reset-password.handler';
 import { EnviarEmailReembolsoHandler } from './application/enviar-email-reembolso.handler';
 import { NotificarCursoNuevoHandler } from './application/notificar-curso-nuevo.handler';
+import { NotificarCursoEliminadoHandler } from './application/notificar-curso-eliminado.handler';
 import { NotificarNuevaPreguntaHandler } from './application/notificar-nueva-pregunta.handler';
 import { NotificarNuevaRespuestaHandler } from './application/notificar-nueva-respuesta.handler';
 import { NotificarTicketCreadoHandler } from './application/notificar-ticket-creado.handler';
@@ -55,6 +56,7 @@ const QUEUE_NAME = 'curso-nuevo-emails';
     EnviarEmailResetPasswordHandler,
     EnviarEmailReembolsoHandler,
     NotificarCursoNuevoHandler,
+    NotificarCursoEliminadoHandler,
     NotificarNuevaPreguntaHandler,
     NotificarNuevaRespuestaHandler,
     NotificarTicketCreadoHandler,

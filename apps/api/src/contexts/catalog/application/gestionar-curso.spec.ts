@@ -84,10 +84,12 @@ describe('CambiarEstadoCursoUseCase', () => {
 describe('EliminarCursoUseCase', () => {
   let useCase: EliminarCursoUseCase;
   let mockRepo: { findById: jest.Mock; delete: jest.Mock };
+  let mockEventBus: { publish: jest.Mock };
 
   beforeEach(() => {
     mockRepo = { findById: jest.fn(), delete: jest.fn().mockResolvedValue(undefined) };
-    useCase = new EliminarCursoUseCase(mockRepo as any);
+    mockEventBus = { publish: jest.fn().mockResolvedValue(undefined) };
+    useCase = new EliminarCursoUseCase(mockRepo as any, mockEventBus as any);
   });
 
   it('el instructor dueño puede eliminar su curso', async () => {
@@ -96,6 +98,16 @@ describe('EliminarCursoUseCase', () => {
     await useCase.execute({ cursoId: 'curso-1', callerId: 'instructor-1', callerRol: 'instructor' });
 
     expect(mockRepo.delete).toHaveBeenCalledWith('curso-1');
+  });
+
+  it('publica CursoEliminado para que se limpien las notificaciones huérfanas', async () => {
+    mockRepo.findById.mockResolvedValue(crearCurso('instructor-1'));
+
+    await useCase.execute({ cursoId: 'curso-1', callerId: 'instructor-1', callerRol: 'instructor' });
+
+    expect(mockEventBus.publish).toHaveBeenCalledWith(
+      expect.objectContaining({ eventName: 'CursoEliminado', aggregateId: 'curso-1' }),
+    );
   });
 
   it('otro instructor no puede eliminar un curso ajeno', async () => {
