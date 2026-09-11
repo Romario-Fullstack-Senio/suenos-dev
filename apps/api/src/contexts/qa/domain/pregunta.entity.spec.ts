@@ -58,6 +58,39 @@ describe('Pregunta', () => {
     pregunta.marcarResuelta(false);
     expect(pregunta.resuelta).toBe(false);
   });
+
+  describe('moderación por reportes', () => {
+    it('se oculta sola al llegar al umbral de reportes', () => {
+      const pregunta = crearPregunta();
+      pregunta.reportar('u1');
+      pregunta.reportar('u2');
+      expect(pregunta.oculta).toBe(false);
+      pregunta.reportar('u3');
+      expect(pregunta.totalReportes).toBe(3);
+      expect(pregunta.oculta).toBe(true);
+    });
+
+    it('un mismo usuario no puede reportar dos veces', () => {
+      const pregunta = crearPregunta();
+      pregunta.reportar('u1');
+      expect(() => pregunta.reportar('u1')).toThrow('Ya reportaste esta pregunta');
+    });
+
+    it('el autor no puede reportar su propia pregunta', () => {
+      const pregunta = crearPregunta();
+      expect(() => pregunta.reportar('alumno-1')).toThrow('No podés reportar tu propia pregunta');
+    });
+
+    it('restaurar() la vuelve a mostrar y limpia los reportes', () => {
+      const pregunta = crearPregunta();
+      pregunta.reportar('u1');
+      pregunta.reportar('u2');
+      pregunta.reportar('u3');
+      pregunta.restaurar();
+      expect(pregunta.oculta).toBe(false);
+      expect(pregunta.totalReportes).toBe(0);
+    });
+  });
 });
 
 describe('Respuesta', () => {

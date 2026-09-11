@@ -13,6 +13,9 @@ export interface ResenaRepository {
   findById(id: string): Promise<Resena | null>;
   findByCursoYEstudiante(cursoId: string, estudianteId: string): Promise<Resena | null>;
   findByCursoId(cursoId: string): Promise<Resena[]>;
+  /** Todas las reseñas escritas por un estudiante — usado por la
+   * exportación de datos (GDPR) del propio usuario. */
+  findByEstudianteId(estudianteId: string): Promise<Resena[]>;
   /** Todas las reseñas de la plataforma, para el panel de moderación del admin. */
   findAll(): Promise<Resena[]>;
   delete(id: string): Promise<void>;

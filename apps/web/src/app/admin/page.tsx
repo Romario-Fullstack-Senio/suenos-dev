@@ -68,9 +68,17 @@ export default function AdminDashboardPage() {
           <h3 className="font-semibold text-lg mb-2">Moderar Reseñas</h3>
           <p className="text-ink-muted text-sm">Ocultar reseñas abusivas o falsas</p>
         </Link>
+        <Link href="/admin/preguntas" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
+          <h3 className="font-semibold text-lg mb-2">Preguntas reportadas</h3>
+          <p className="text-ink-muted text-sm">Moderar Q&amp;A reportado por estudiantes</p>
+        </Link>
         <Link href="/admin/soporte" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Soporte</h3>
           <p className="text-ink-muted text-sm">Responder tickets de usuarios</p>
+        </Link>
+        <Link href="/admin/afiliados" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
+          <h3 className="font-semibold text-lg mb-2">Afiliados</h3>
+          <p className="text-ink-muted text-sm">Ver y pagar comisiones por referidos</p>
         </Link>
         <Link href="/admin/paquetes" className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] hover:shadow-md transition">
           <h3 className="font-semibold text-lg mb-2">Paquetes</h3>

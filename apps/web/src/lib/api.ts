@@ -1,4 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Exportado porque algunas descargas (PDF de certificado, recursos de
+// lección) se abren con window.open()/<a href> en vez de fetch — necesitan
+// la URL absoluta del backend, no una ruta relativa (que resolvería contra
+// el propio servidor de Next.js en :3000 y daría 404).
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

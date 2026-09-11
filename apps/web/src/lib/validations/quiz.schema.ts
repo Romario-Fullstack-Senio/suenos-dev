@@ -20,9 +20,9 @@ export type CrearQuizFormData = z.infer<typeof crearQuizSchema>;
 export type PreguntaFormData = z.infer<typeof preguntaSchema>;
 export type TipoPregunta = z.infer<typeof tipoPreguntaSchema>;
 
+// Sin estudianteId: la API lo toma del JWT, no del payload.
 export const resolverQuizSchema = z.object({
   quizId: z.string().uuid(),
-  estudianteId: z.string().uuid(),
   respuestas: z.array(z.array(z.number().min(0))),
 });
 

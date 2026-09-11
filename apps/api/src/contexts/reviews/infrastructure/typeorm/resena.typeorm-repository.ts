@@ -20,6 +20,8 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
       estudianteNombre: resena.estudianteNombre,
       calificacion: resena.calificacion,
       comentario: resena.comentario,
+      reportadoPor: resena.reportadoPor,
+      oculta: resena.oculta,
     });
     await this.repo.save(orm);
   }
@@ -41,6 +43,11 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
     return orms.map(o => this.toDomain(o));
   }
 
+  async findByEstudianteId(estudianteId: string): Promise<Resena[]> {
+    const orms = await this.repo.find({ where: { estudianteId }, order: { createdAt: 'DESC' } });
+    return orms.map(o => this.toDomain(o));
+  }
+
   async findAll(): Promise<Resena[]> {
     const orms = await this.repo.find({ order: { createdAt: 'DESC' } });
     return orms.map(o => this.toDomain(o));
@@ -58,6 +65,7 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
       .addSelect('AVG(resena.calificacion)', 'promedio')
       .addSelect('COUNT(*)', 'total')
       .where('resena.curso_id IN (:...cursoIds)', { cursoIds })
+      .andWhere('resena.oculta = false')
       .groupBy('resena.curso_id')
       .getRawMany();
 
@@ -77,6 +85,8 @@ export class ResenaTypeOrmRepository implements ResenaRepository {
       comentario: orm.comentario,
       createdAt: orm.createdAt,
       updatedAt: orm.updatedAt,
+      reportadoPor: orm.reportadoPor ?? [],
+      oculta: orm.oculta,
     });
   }
 }

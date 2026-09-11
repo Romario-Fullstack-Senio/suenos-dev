@@ -56,6 +56,9 @@ export class UsuarioOrmEntity {
   @Column({ default: true })
   notificar_curso_nuevo!: boolean;
 
+  @Column({ type: 'varchar', nullable: true })
+  referido_por!: string | null;
+
   @CreateDateColumn()
   created_at!: Date;
 }

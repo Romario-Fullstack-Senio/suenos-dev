@@ -1,5 +1,6 @@
 import { AggregateRoot } from '@suenos-dev/shared-kernel';
 import { PorcentajeVisto } from './porcentaje-visto.value-object';
+import { LeccionCompletadaEvent } from './events/leccion-completada.event';
 
 export interface ProgresoLeccionProps {
   estudianteId: string;
@@ -79,11 +80,9 @@ export class ProgresoLeccion extends AggregateRoot<string> {
 
     if (nuevoPorcentaje >= 90 && !this.props.completada) {
       this.props.completada = true;
-      this.addDomainEvent({
-        eventName: 'LeccionCompletada',
-        occurredOn: new Date(),
-        aggregateId: this.id,
-      });
+      this.addDomainEvent(
+        new LeccionCompletadaEvent(this.id, this.props.estudianteId, this.props.leccionId, this.props.cursoId),
+      );
     }
   }
 }

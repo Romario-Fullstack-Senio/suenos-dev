@@ -2,16 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { PlayCircle, ChevronDown, Users, Award, Clock, User, ShoppingCart, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
 import { ReviewsSection } from '@/components/ReviewsSection';
-import { LessonPreviewModal } from '@/components/LessonPreviewModal';
 import { RelatedCourses } from '@/components/RelatedCourses';
 import { WishlistButton } from '@/components/WishlistButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { apiGet } from '@/lib/api';
+
+// LessonPreviewModal carga HLSPlayer -> hls.js (~175kB minificado), y esta
+// página solo lo necesita si el usuario hace click en "Vista previa" de una
+// lección. Como import estático, ese peso viajaba en el First Load JS de
+// TODA visita a /cursos/[slug] aunque nadie abriera el modal. ssr: false
+// porque HLSPlayer usa el DOM (crea el elemento <video> y adjunta hls.js).
+const LessonPreviewModal = dynamic(
+  () => import('@/components/LessonPreviewModal').then((m) => m.LessonPreviewModal),
+  { ssr: false },
+);
 
 export interface Leccion {
   id: string;

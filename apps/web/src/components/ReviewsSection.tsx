@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Star } from 'lucide-react';
+import { Star, Flag } from 'lucide-react';
 import { apiGet, apiPost } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -43,6 +43,10 @@ export function ReviewsSection({ cursoId }: { cursoId: string }) {
   const [comentario, setComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mostrarForm, setMostrarForm] = useState(false);
+  // Igual criterio que QASection: solo para deshabilitar el botón sin
+  // esperar un refetch — el backend rechaza igual un segundo reporte o
+  // reportar la propia reseña.
+  const [reportadas, setReportadas] = useState<Set<string>>(new Set());
 
   const cargar = useCallback(async () => {
     try {
@@ -76,6 +80,16 @@ export function ReviewsSection({ cursoId }: { cursoId: string }) {
       toast.error(error instanceof Error ? error.message : 'Error al enviar la reseña');
     } finally {
       setEnviando(false);
+    }
+  };
+
+  const reportar = async (id: string) => {
+    try {
+      const res = await apiPost<{ message: string }>(`/resenas/${id}/reportar`, {});
+      toast.success(res.message);
+      setReportadas((prev) => new Set(prev).add(id));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'No se pudo reportar');
     }
   };
 
@@ -144,9 +158,21 @@ export function ReviewsSection({ cursoId }: { cursoId: string }) {
                 <Estrellas valor={r.calificacion} size={14} />
               </div>
               {r.comentario && <p className="text-ink-muted text-sm">{r.comentario}</p>}
-              <p className="text-ink-soft text-xs mt-2">
-                {new Date(r.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-ink-soft text-xs">
+                  {new Date(r.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => reportar(r.id)}
+                    disabled={reportadas.has(r.id)}
+                    className="inline-flex items-center gap-1 text-xs text-ink-soft hover:text-red-500 hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                  >
+                    <Flag className="w-3 h-3" /> {reportadas.has(r.id) ? 'Reportada' : 'Reportar'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

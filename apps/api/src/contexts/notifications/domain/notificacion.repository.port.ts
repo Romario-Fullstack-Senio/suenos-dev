@@ -8,4 +8,8 @@ export interface NotificacionRepository {
   countNoLeidas(usuarioId: string): Promise<number>;
   marcarComoLeida(id: string): Promise<void>;
   marcarTodasLeidas(usuarioId: string): Promise<void>;
+  /** Usado cuando se borra un curso (ver CursoEliminado) — sin esto, las
+   * notificaciones "curso nuevo"/"pregunta nueva" que ya apuntaban a ese
+   * curso quedan huérfanas: tocarlas manda a un cursoId inexistente. */
+  deleteByCursoId(cursoId: string): Promise<void>;
 }

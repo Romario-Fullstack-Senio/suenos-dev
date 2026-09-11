@@ -87,8 +87,11 @@ export class CrearOrdenUseCase {
       if (!resultado.valido) {
         throw new DomainError(resultado.motivo ?? 'Cupón no válido');
       }
+      // precioFinal igual se redondea acá (no solo confiar en que
+      // calcularDescuento ya venga redondeado) — restar dos números con
+      // 2 decimales puede seguir dejando resto flotante (49.99 - 4.99).
       descuento = cupon.calcularDescuento(item.precio);
-      item.precioFinal = Math.max(item.precio - descuento, 0);
+      item.precioFinal = Math.max(Math.round((item.precio - descuento) * 100) / 100, 0);
 
       cupon.registrarUso();
       await this.cuponRepository.save(cupon);

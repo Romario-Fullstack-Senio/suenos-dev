@@ -38,8 +38,11 @@ export class OrdenController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async crear(@Body() command: CrearOrdenCommand) {
-    return this.crearOrden.execute(command);
+  async crear(@Body() command: CrearOrdenCommand, @Req() req: AuthenticatedRequest) {
+    // estudianteId se pisa con el del JWT: si se respeta el del body,
+    // cualquier usuario logueado puede crear órdenes (y, tras el webhook,
+    // inscripciones) a nombre de otra persona.
+    return this.crearOrden.execute({ ...command, estudianteId: req.user.id });
   }
 
   @Get('mias')

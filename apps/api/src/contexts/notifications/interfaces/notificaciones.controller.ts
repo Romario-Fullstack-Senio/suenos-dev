@@ -1,16 +1,22 @@
 import { Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../identity/infrastructure/jwt/jwt-auth.guard';
+import { OwnershipGuard } from '../../../common/guards/ownership.guard';
+import { RequireOwnership } from '../../../common/decorators/ownership.decorator';
 import { NotificacionService } from '../application/notificacion.service';
 
+// OwnershipGuard sobre :userId — sin él, cualquier usuario logueado podía
+// leer las notificaciones de otro (con su contenido) y marcárselas como
+// leídas con solo cambiar el id de la URL.
 @ApiTags('Notificaciones')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, OwnershipGuard)
 @Controller('notificaciones')
 export class NotificacionesController {
   constructor(private readonly notificacionService: NotificacionService) {}
 
   @Get('usuario/:userId')
+  @RequireOwnership({ paramName: 'userId' })
   @ApiOperation({ summary: 'Obtener notificaciones de un usuario' })
   async findByUsuario(
     @Param('userId') userId: string,
@@ -32,6 +38,7 @@ export class NotificacionesController {
   }
 
   @Get('usuario/:userId/no-leidas')
+  @RequireOwnership({ paramName: 'userId' })
   @ApiOperation({ summary: 'Contar notificaciones no leídas' })
   async countNoLeidas(@Param('userId') userId: string) {
     const count = await this.notificacionService.countNoLeidas(userId);
@@ -46,6 +53,7 @@ export class NotificacionesController {
   }
 
   @Patch('usuario/:userId/leer-todas')
+  @RequireOwnership({ paramName: 'userId' })
   @ApiOperation({ summary: 'Marcar todas como leídas' })
   async marcarTodasLeidas(@Param('userId') userId: string) {
     await this.notificacionService.marcarTodasLeidas(userId);

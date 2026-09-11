@@ -39,4 +39,11 @@ export class PreguntaOrmEntity {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
+
+  // Ver el comentario del mismo par de columnas en ResenaOrmEntity.
+  @Column({ name: 'reportado_por', type: 'simple-json', nullable: true })
+  reportadoPor!: string[] | null;
+
+  @Column({ default: false })
+  oculta!: boolean;
 }

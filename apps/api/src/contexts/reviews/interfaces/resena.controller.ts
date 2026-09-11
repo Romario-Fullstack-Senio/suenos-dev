@@ -4,6 +4,8 @@ import { CrearOActualizarResenaUseCase } from '../application/crear-o-actualizar
 import { ListarResenasUseCase } from '../application/listar-resenas.use-case';
 import { ResumenResenasUseCase } from '../application/resumen-resenas.use-case';
 import { EliminarResenaUseCase } from '../application/eliminar-resena.use-case';
+import { ReportarResenaUseCase } from '../application/reportar-resena.use-case';
+import { RestaurarResenaUseCase } from '../application/restaurar-resena.use-case';
 import { RESENA_REPOSITORY, ResenaRepository } from '../domain/resena.repository.port';
 import { CrearResenaDto } from './dto/crear-resena.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
@@ -22,6 +24,8 @@ export class ResenaController {
     private readonly listarUC: ListarResenasUseCase,
     private readonly resumenUC: ResumenResenasUseCase,
     private readonly eliminarUC: EliminarResenaUseCase,
+    private readonly reportarUC: ReportarResenaUseCase,
+    private readonly restaurarUC: RestaurarResenaUseCase,
     @Inject(RESENA_REPOSITORY)
     private readonly resenaRepository: ResenaRepository,
     @Inject(CURSO_REPOSITORY)
@@ -47,6 +51,8 @@ export class ResenaController {
       calificacion: r.calificacion,
       comentario: r.comentario,
       createdAt: r.createdAt,
+      totalReportes: r.totalReportes,
+      oculta: r.oculta,
     }));
   }
 
@@ -82,5 +88,26 @@ export class ResenaController {
   async eliminar(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     await this.eliminarUC.execute({ resenaId: id, callerId: req.user.id, callerRol: req.user.rol });
     return { message: 'Reseña eliminada correctamente' };
+  }
+
+  @Post('resenas/:id/reportar')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async reportar(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const { oculta } = await this.reportarUC.execute({ resenaId: id, usuarioId: req.user.id });
+    return {
+      message: oculta
+        ? 'Reseña reportada — se ocultó automáticamente por la cantidad de reportes'
+        : 'Reseña reportada, gracias por avisarnos',
+    };
+  }
+
+  @Post('resenas/:id/restaurar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param('id') id: string) {
+    await this.restaurarUC.execute(id);
+    return { message: 'Reseña restaurada' };
   }
 }

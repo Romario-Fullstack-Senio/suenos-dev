@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { CursoDetalleClient, Curso } from '@/components/CursoDetalleClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-async function fetchCurso(slug: string): Promise<Curso | null> {
+async function fetchCursoPorSlug(slug: string): Promise<Curso | null> {
   try {
     const res = await fetch(`${API_URL}/cursos/slug/${slug}`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
@@ -14,6 +15,34 @@ async function fetchCurso(slug: string): Promise<Curso | null> {
   } catch {
     return null;
   }
+}
+
+async function fetchCursoPorId(id: string): Promise<Curso | null> {
+  try {
+    const res = await fetch(`${API_URL}/cursos/${id}`, { next: { revalidate: 60 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // findOne() del controller no tira 404: devuelve {message: '...'} (sin
+    // "id") cuando no encuentra el curso.
+    if (!data || !('id' in data) || !('slug' in data)) return null;
+    return data as Curso;
+  } catch {
+    return null;
+  }
+}
+
+// El link de "curso nuevo" en las notificaciones (NotificationBell) manda al
+// cursoId (uuid), no al slug — esta ruta solo entiende slugs. Antes de este
+// fallback, tocar esa notificación daba 404 siempre. En vez de duplicar la
+// lógica en el frontend, si el segmento de la URL es un uuid se resuelve acá
+// contra /cursos/:id y se redirige a la URL canónica con el slug real.
+async function fetchCurso(slugOId: string): Promise<Curso | null> {
+  const porSlug = await fetchCursoPorSlug(slugOId);
+  if (porSlug) return porSlug;
+  if (UUID_RE.test(slugOId)) {
+    return fetchCursoPorId(slugOId);
+  }
+  return null;
 }
 
 async function fetchResumenResenas(cursoId: string): Promise<{ promedio: number; total: number } | null> {
@@ -56,6 +85,12 @@ export default async function CursoDetallePage({ params }: { params: { slug: str
   const curso = await fetchCurso(params.slug);
   if (!curso) {
     notFound();
+  }
+  // Se llegó acá por el cursoId (uuid) de una notificación, no por el slug
+  // real — redirige a la URL canónica para que el link quede bien la
+  // próxima vez (favoritos, historial del navegador, compartir, etc.).
+  if (params.slug !== curso.slug) {
+    redirect(`/cursos/${curso.slug}`);
   }
 
   const resumenResenas = await fetchResumenResenas(curso.id);

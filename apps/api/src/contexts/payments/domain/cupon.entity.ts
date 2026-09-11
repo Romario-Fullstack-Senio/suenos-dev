@@ -78,8 +78,14 @@ export class Cupon extends AggregateRoot<string> {
 
   /** Descuento en la misma moneda que `precio`, nunca negativo ni mayor al precio. */
   calcularDescuento(precio: number): number {
+    // precio * porcentaje / 100 arrastra resto flotante de JS (ej. 49.99 *
+    // 10 / 100 = 4.9990000000000006) — sin este redondeo, ese monto sin
+    // redondear terminaba viajando tal cual hasta ValidarCuponUseCase (lo
+    // que ve el usuario al aplicar el cupón) y CrearOrdenUseCase (lo que
+    // se le cobra de verdad a Stripe).
     const bruto = this.props.tipo === 'porcentaje' ? (precio * this.props.valor) / 100 : this.props.valor;
-    return Math.min(Math.max(bruto, 0), precio);
+    const redondeado = Math.round(bruto * 100) / 100;
+    return Math.min(Math.max(redondeado, 0), precio);
   }
 
   registrarUso(): void {

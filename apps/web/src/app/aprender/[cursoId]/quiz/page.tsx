@@ -84,9 +84,10 @@ export default function QuizPage() {
       // orden que quiz.preguntas — cada uno con los índices seleccionados.
       const respuestasArray = quiz.preguntas.map((pregunta) => respuestas[pregunta.id] ?? []);
 
+      // Sin estudianteId: la API lo toma del JWT (mandarlo desde el cliente
+      // dejaba aprobar el quiz a nombre de otro usuario).
       const data = await apiPost('/quizzes/resolver', {
         quizId: quiz.id,
-        estudianteId: user.id,
         respuestas: respuestasArray,
       }) as QuizResult;
 

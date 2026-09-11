@@ -37,7 +37,7 @@ interface AuthState {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<LoginOutcome>;
   completeTwoFactorLogin: (tempToken: string, codigo: string) => Promise<void>;
-  register: (nombre: string, email: string, password: string) => Promise<void>;
+  register: (nombre: string, email: string, password: string, referidoPor?: string) => Promise<void>;
   logout: () => void;
   /** Actualiza el usuario en memoria + localStorage sin pasar por login —
    * para cuando PerfilForm guarda cambios y hay que reflejarlos ya (el
@@ -97,8 +97,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     finalizarLogin(result);
   };
 
-  const register = async (nombre: string, email: string, password: string) => {
-    await apiPost('/auth/registro', { nombre, email, password });
+  const register = async (nombre: string, email: string, password: string, referidoPor?: string) => {
+    await apiPost('/auth/registro', { nombre, email, password, referidoPor });
     router.push('/auth/login?registrado=1');
   };
 

@@ -11,6 +11,7 @@ import { CommonModule } from './common/common.module';
 import { DomainExceptionFilter } from './common/domain-exception.filter';
 import { AdminController } from './common/admin.controller';
 import { InstructorController } from './common/instructor.controller';
+import { ExportarDatosController } from './common/exportar-datos.controller';
 import { IdentityModule } from './contexts/identity/identity.module';
 import { CatalogModule } from './contexts/catalog/catalog.module';
 import { ContentDeliveryModule } from './contexts/content-delivery/content-delivery.module';
@@ -24,6 +25,9 @@ import { QaModule } from './contexts/qa/qa.module';
 import { WishlistModule } from './contexts/wishlist/wishlist.module';
 import { SupportModule } from './contexts/support/support.module';
 import { BundlesModule } from './contexts/bundles/bundles.module';
+import { GamificationModule } from './contexts/gamification/gamification.module';
+import { ForumModule } from './contexts/forum/forum.module';
+import { AffiliatesModule } from './contexts/affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -88,8 +92,11 @@ import { BundlesModule } from './contexts/bundles/bundles.module';
     WishlistModule,
     SupportModule,
     BundlesModule,
+    GamificationModule,
+    ForumModule,
+    AffiliatesModule,
   ],
-  controllers: [AdminController, InstructorController],
+  controllers: [AdminController, InstructorController, ExportarDatosController],
   providers: [
     {
       provide: APP_GUARD,

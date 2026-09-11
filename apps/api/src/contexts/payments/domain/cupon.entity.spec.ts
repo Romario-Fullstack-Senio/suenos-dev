@@ -42,6 +42,14 @@ describe('Cupon', () => {
     expect(cupon.calcularDescuento(3)).toBe(3); // nunca más que el precio
   });
 
+  it('redondea el descuento porcentual a 2 decimales (sin resto flotante de JS)', () => {
+    const cupon = Cupon.crear('c1', { codigo: 'DIEZ', tipo: 'porcentaje', valor: 10 });
+    // 49.99 * 10 / 100 da 4.9990000000000006 en punto flotante sin redondear
+    // — el redondeo estándar de eso a 2 decimales es 5 (no 4.99), lo que
+    // importa acá es que sea EXACTAMENTE 5 y no 4.9990000000000006.
+    expect(cupon.calcularDescuento(49.99)).toBe(5);
+  });
+
   it('es inválido si está desactivado', () => {
     const cupon = Cupon.crear('c1', { codigo: 'DIEZ', tipo: 'porcentaje', valor: 10 });
     cupon.desactivar();

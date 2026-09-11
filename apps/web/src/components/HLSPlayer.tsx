@@ -6,9 +6,15 @@ import Hls from 'hls.js';
 interface HLSPlayerProps {
   src: string;
   subtitulosUrl?: string;
+  // Reporta la posición real de reproducción (no un contador simulado) para
+  // que el progreso del estudiante se registre con datos reales.
+  onProgress?: (currentTime: number, duration: number) => void;
+  // Se dispara cuando el video termina — permite marcar la lección como
+  // completada al instante, sin esperar al próximo tick periódico.
+  onEnded?: () => void;
 }
 
-export default function HLSPlayer({ src, subtitulosUrl }: HLSPlayerProps) {
+export default function HLSPlayer({ src, subtitulosUrl, onProgress, onEnded }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   // <track> no manda headers custom — igual que el fallback de Safari para
@@ -48,6 +54,36 @@ export default function HLSPlayer({ src, subtitulosUrl }: HLSPlayerProps) {
         video.play().catch(() => {});
       });
     }
+  }, [src]);
+
+  // Listeners aparte del efecto de arriba (que reconstruye el hls.js) para
+  // no reenganchar el player entero cada vez que el padre re-renderiza y
+  // pasa un onProgress/onEnded nuevo — usamos refs para leer siempre la
+  // versión más reciente de los callbacks sin que sean dependencias.
+  const onProgressRef = useRef(onProgress);
+  const onEndedRef = useRef(onEnded);
+  onProgressRef.current = onProgress;
+  onEndedRef.current = onEnded;
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (video.duration && isFinite(video.duration)) {
+        onProgressRef.current?.(video.currentTime, video.duration);
+      }
+    };
+    const handleEnded = () => {
+      onEndedRef.current?.();
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+    };
   }, [src]);
 
   return (

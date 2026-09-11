@@ -6,10 +6,15 @@ import { ResponderPreguntaUseCase } from '../application/responder-pregunta.use-
 import { ListarPreguntasUseCase } from '../application/listar-preguntas.use-case';
 import { EliminarPreguntaUseCase } from '../application/eliminar-pregunta.use-case';
 import { MarcarResueltaUseCase } from '../application/marcar-resuelta.use-case';
+import { ReportarPreguntaUseCase } from '../application/reportar-pregunta.use-case';
+import { RestaurarPreguntaUseCase } from '../application/restaurar-pregunta.use-case';
+import { ListarPreguntasReportadasUseCase } from '../application/listar-preguntas-reportadas.use-case';
 import { Pregunta } from '../domain/pregunta.entity';
 import { CrearPreguntaDto } from './dto/crear-pregunta.dto';
 import { CrearRespuestaDto } from './dto/crear-respuesta.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user: { id: string; email: string; rol: string };
@@ -26,6 +31,8 @@ function mapPregunta(p: Pregunta) {
     texto: p.texto,
     resuelta: p.resuelta,
     createdAt: p.createdAt,
+    totalReportes: p.totalReportes,
+    oculta: p.oculta,
     respuestas: p.respuestas.map((r) => ({
       id: r.id,
       autorId: r.autorId,
@@ -45,8 +52,21 @@ export class PreguntaController {
     private readonly listarPreguntasUC: ListarPreguntasUseCase,
     private readonly eliminarPreguntaUC: EliminarPreguntaUseCase,
     private readonly marcarResueltaUC: MarcarResueltaUseCase,
+    private readonly reportarUC: ReportarPreguntaUseCase,
+    private readonly restaurarUC: RestaurarPreguntaUseCase,
+    private readonly listarReportadasUC: ListarPreguntasReportadasUseCase,
     private readonly jwtService: JwtService,
   ) {}
+
+  // Panel de moderación del admin — no hay otra ruta GET 'preguntas/:algo'
+  // con la que pueda chocar (el resto de 'preguntas/:id/...' son POST/PATCH/DELETE).
+  @Get('preguntas/reportadas')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async listarReportadas() {
+    const preguntas = await this.listarReportadasUC.execute();
+    return preguntas.map(mapPregunta);
+  }
 
   // Sin @UseGuards: una lección de vista previa gratuita también debe poder
   // mostrar su Q&A sin login (mismo criterio que VideoController.serveHls).
@@ -113,6 +133,27 @@ export class PreguntaController {
       callerRol: req.user.rol,
     });
     return { message: 'Pregunta eliminada correctamente' };
+  }
+
+  @Post('preguntas/:id/reportar')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async reportar(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    const { oculta } = await this.reportarUC.execute({ preguntaId: id, usuarioId: req.user.id });
+    return {
+      message: oculta
+        ? 'Pregunta reportada — se ocultó automáticamente por la cantidad de reportes'
+        : 'Pregunta reportada, gracias por avisarnos',
+    };
+  }
+
+  @Post('preguntas/:id/restaurar')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.OK)
+  async restaurar(@Param('id') id: string) {
+    await this.restaurarUC.execute(id);
+    return { message: 'Pregunta restaurada' };
   }
 
   private verificarTokenOpcional(req: Request): { id: string; rol: string } | null {

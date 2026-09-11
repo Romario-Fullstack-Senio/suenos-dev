@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -8,6 +9,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Sky } from '@/components/layout/Sky';
 import { CookieConsent } from '@/components/CookieConsent';
+import { TitleLock } from '@/components/TitleLock';
+import { ReferralCapture } from '@/components/ReferralCapture';
 
 // Aplica la clase .dark a <html> ANTES del primer paint (localStorage no es
 // accesible durante el render en servidor), para que no haya un flash de
@@ -18,10 +21,14 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: {
-    default: 'Sueños Dev - Plataforma de E-Learning',
-    template: '%s | Sueños Dev',
-  },
+  // El pedido es que la pestaña SIEMPRE diga "Sueños Dev", sin importar la
+  // página — TitleLock (client-side, ver layout más abajo) es lo que
+  // realmente lo garantiza después de la hidratación. Este `title` es solo
+  // lo que se ve en el HTML servido antes de que React hidrate (y lo que
+  // usan buscadores/redes sociales al leer el <head> crudo) — sin
+  // `template`, para no heredar el "%s" de las páginas que definen su
+  // propio título vía generateMetadata.
+  title: 'Sueños Dev',
   description: 'Aprende desarrollo web con cursos practicos y certificados verificables.',
   openGraph: {
     siteName: 'Sueños Dev',
@@ -58,6 +65,10 @@ export default function RootLayout({
       </head>
       <body className="relative min-h-screen overflow-x-hidden bg-cloud-50 text-ink">
         <ThemeProvider>
+          <TitleLock />
+          <Suspense fallback={null}>
+            <ReferralCapture />
+          </Suspense>
           <Sky />
           <AuthProvider>
             <CartProvider>

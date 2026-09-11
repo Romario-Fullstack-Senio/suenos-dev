@@ -24,6 +24,8 @@ export class PreguntaTypeOrmRepository implements PreguntaRepository {
       autorEsInstructor: pregunta.autorEsInstructor,
       texto: pregunta.texto,
       resuelta: pregunta.resuelta,
+      reportadoPor: pregunta.reportadoPor,
+      oculta: pregunta.oculta,
       respuestas: pregunta.respuestas.map((r) => {
         const respOrm = new RespuestaOrmEntity();
         respOrm.id = r.id;
@@ -50,6 +52,20 @@ export class PreguntaTypeOrmRepository implements PreguntaRepository {
       relations: ['respuestas'],
       order: { createdAt: 'DESC' },
     });
+    return orms.map((o) => this.toDomain(o));
+  }
+
+  async findByAutorId(autorId: string): Promise<Pregunta[]> {
+    const orms = await this.repo.find({
+      where: { autorId },
+      relations: ['respuestas'],
+      order: { createdAt: 'DESC' },
+    });
+    return orms.map((o) => this.toDomain(o));
+  }
+
+  async findAll(): Promise<Pregunta[]> {
+    const orms = await this.repo.find({ relations: ['respuestas'], order: { createdAt: 'DESC' } });
     return orms.map((o) => this.toDomain(o));
   }
 
@@ -83,6 +99,8 @@ export class PreguntaTypeOrmRepository implements PreguntaRepository {
       resuelta: orm.resuelta,
       respuestas,
       createdAt: orm.createdAt,
+      reportadoPor: orm.reportadoPor ?? [],
+      oculta: orm.oculta,
     });
   }
 }

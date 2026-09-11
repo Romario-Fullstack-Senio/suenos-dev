@@ -28,6 +28,11 @@ export class ListarPreguntasUseCase {
     if (!permitido) {
       throw new UnauthorizedDomainError('Solo podés ver las preguntas de lecciones a las que tenés acceso');
     }
-    return this.preguntaRepo.findByLeccionId(command.leccionId);
+    const preguntas = await this.preguntaRepo.findByLeccionId(command.leccionId);
+    // Ocultas por reportes no se muestran en el Q&A de la lección — el
+    // admin las sigue viendo en su panel de moderación (findByAutorId /
+    // un listado propio), no acá.
+    if (command.usuarioRol === 'admin') return preguntas;
+    return preguntas.filter((p) => !p.oculta);
   }
 }

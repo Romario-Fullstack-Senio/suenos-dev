@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Post, Param, Inject, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Param, Inject, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import { CrearQuizUseCase, CrearQuizCommand } from '../application/crear-quiz.use-case';
 import { ResolverQuizUseCase, ResolverQuizCommand } from '../application/resolver-quiz.use-case';
 import { ResolverQuizDto } from './dto/resolver-quiz.dto';
@@ -6,6 +7,10 @@ import { QUIZ_REPOSITORY, QuizRepository } from '../domain/quiz.repository.port'
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
+
+interface AuthenticatedRequest extends Request {
+  user: { id: string; email: string; rol: string };
+}
 
 @Controller('quizzes')
 export class QuizController {
@@ -52,10 +57,14 @@ export class QuizController {
 
   @Post('resolver')
   @UseGuards(JwtAuthGuard)
-  async resolver(@Body() dto: ResolverQuizDto) {
+  async resolver(@Body() dto: ResolverQuizDto, @Req() req: AuthenticatedRequest) {
     const command: ResolverQuizCommand = {
       quizId: dto.quizId,
-      estudianteId: dto.estudianteId,
+      // El estudiante sale del JWT, NO del body. Con dto.estudianteId
+      // cualquier usuario logueado podía aprobar el quiz a nombre de otro:
+      // eso dispara QuizAprobado y le emite un certificado (+ puntos de
+      // gamificación) a una persona que nunca rindió.
+      estudianteId: req.user.id,
       respuestas: dto.respuestas,
     };
     const result = await this.resolverQuizUseCase.execute(command);

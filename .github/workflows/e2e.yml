@@ -1,0 +1,152 @@
+# ============================================================
+# CI: Suite E2E (Playwright)
+#
+# Antes no había ningún test end-to-end en CI — el gate de `test` en
+# build-and-push.yml corre los unit tests de apps/api, nada más. Este job
+# levanta el stack completo (Postgres/Redis/MinIO como servicios + API y
+# Web en modo dev, igual que un desarrollador local) y corre e2e/*.spec.ts
+# contra eso.
+#
+# Requiere un secret STRIPE_SECRET_KEY_TEST (una clave de test-mode real
+# de Stripe, sk_test_...) para que purchase-flow.spec.ts pueda completar
+# un pago de verdad — sin ese secret, ese archivo se salta (el resto de
+# la suite sí corre igual). STRIPE_PUBLISHABLE_KEY_TEST (pk_test_..., no
+# es sensible por diseño de Stripe, pero se referencia igual como secret
+# por prolijidad) es necesaria para que el frontend pueda montar Stripe
+# Elements.
+# ============================================================
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: suenos-dev
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+      # La imagen oficial minio/minio no sirve como "service" de GitHub
+      # Actions: necesita `command: server /data`, y `services:` no admite
+      # overridear el command. bitnami/minio sí arranca el server por
+      # default solo con las env vars de credenciales.
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+        ports: ['9000:9000']
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: admin
+      DATABASE_NAME: suenos-dev
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: suenos-dev
+      MINIO_PUBLIC_URL: http://localhost:9000
+      JWT_SECRET: e2e-ci-secret-not-for-prod
+      APP_URL: http://localhost:3000
+      API_URL: http://localhost:3001
+      # Placeholder deliberado — StripeWebhookController lo detecta y
+      # procesa el evento simulado sin verificar firma (ver e2e/README.md).
+      STRIPE_WEBHOOK_SECRET: whsec_test_secret
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY_TEST }}
+      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      E2E_BASE_URL: http://localhost:3000
+      E2E_API_URL: http://localhost:3001/api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared-kernel
+        run: npm run build:shared
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # `nohup ... &` (no un `&` a secas) para que el proceso sobreviva al
+      # final del script del step — cada step de un job corre su propio
+      # shell, y sin nohup algunos runners mandan SIGHUP a los hijos
+      # backgroundeados cuando ese shell termina.
+      - name: Start API (background)
+        run: nohup npm run dev:api > api.log 2>&1 &
+
+      - name: Start Web (background)
+        run: nohup npm run dev:web > web.log 2>&1 &
+
+      - name: Wait for API and Web
+        # /health (sin /api) — el prefijo global se excluye deliberadamente
+        # para esta ruta en main.ts, para los healthchecks de Docker. Un
+        # wait-on contra /api/health nunca resuelve (404 para siempre) y
+        # este step colgaría hasta el timeout.
+        run: npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 120000
+
+      - name: Run E2E — auth & catalog (no requieren Stripe)
+        run: npx playwright test e2e/auth.spec.ts e2e/catalog.spec.ts
+
+      - name: Run E2E — checkout con Stripe
+        if: ${{ env.STRIPE_SECRET_KEY != '' }}
+        run: npx playwright test e2e/purchase-flow.spec.ts
+
+      - name: Skip notice — falta STRIPE_SECRET_KEY_TEST
+        if: ${{ env.STRIPE_SECRET_KEY == '' }}
+        run: echo "::warning::purchase-flow.spec.ts se saltó — falta el secret STRIPE_SECRET_KEY_TEST (ver e2e/README.md)"
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload API/Web logs (para debuggear si algo falló)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs
+          path: |
+            api.log
+            web.log
+          retention-days: 7
