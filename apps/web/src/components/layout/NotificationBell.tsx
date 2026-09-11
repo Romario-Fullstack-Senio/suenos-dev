@@ -159,6 +159,10 @@ export function NotificationBell() {
                       </p>
                     </div>
                     {n.cursoId && (
+                      // n.cursoId es el uuid del curso, no el slug — la tabla
+                      // notificaciones no guarda el slug. /cursos/[slug]/page.tsx
+                      // sabe resolver un uuid acá y redirige a la URL con el
+                      // slug real (si no, esto daba 404 siempre).
                       <Link
                         href={`/cursos/${n.cursoId}`}
                         className="text-primary hover:text-indigo-600 transition-colors flex-shrink-0 mt-0.5"
