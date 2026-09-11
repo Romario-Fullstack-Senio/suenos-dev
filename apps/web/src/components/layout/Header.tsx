@@ -1,8 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart } from 'lucide-react';
+import { Menu, ShoppingCart, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { NotificationBell } from './NotificationBell';
@@ -22,12 +23,21 @@ function CartIcon() {
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+}) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="relative py-1.5 text-[15px] font-semibold text-ink-muted transition hover:text-primary"
     >
       {children}
@@ -57,6 +67,52 @@ function CloudMark() {
 
 export function Header() {
   const { user, isAuthenticated, logout, hasRole } = useAuth();
+  const pathname = usePathname();
+  const [menuAbierto, setMenuAbierto] = useState(false);
+
+  // Cerrar el panel mobile al navegar — sin esto quedaba abierto tapando la
+  // página nueva hasta que el usuario lo tocara de nuevo.
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [pathname]);
+
+  const linksAutenticado = (cerrar?: () => void) => (
+    <>
+      {hasRole('estudiante') && (
+        <NavLink href="/dashboard" onClick={cerrar}>
+          Mis Cursos
+        </NavLink>
+      )}
+      {hasRole('estudiante') && (
+        <NavLink href="/favoritos" onClick={cerrar}>
+          Favoritos
+        </NavLink>
+      )}
+      {hasRole('estudiante') && (
+        <NavLink href="/certificados" onClick={cerrar}>
+          Certificados
+        </NavLink>
+      )}
+      {hasRole('estudiante') && (
+        <NavLink href="/logros" onClick={cerrar}>
+          Logros
+        </NavLink>
+      )}
+      {hasRole('instructor') && (
+        <NavLink href="/instructor" onClick={cerrar}>
+          Instructor
+        </NavLink>
+      )}
+      {hasRole('admin') && (
+        <NavLink href="/admin" onClick={cerrar}>
+          Admin
+        </NavLink>
+      )}
+      <NavLink href="/soporte" onClick={cerrar}>
+        Soporte
+      </NavLink>
+    </>
+  );
 
   return (
     <header className="sticky top-0 z-50 border-b border-ink/[0.07] bg-cloud-50/[0.78] backdrop-blur-md">
@@ -68,26 +124,22 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-6">
+        {/* Nav completa — desde md hacia arriba entran las ~10 entradas sin
+            problema; debajo de eso se recorta contra el borde de la pantalla
+            (probado en 375px: "Mis Cursos" queda cortado y todo lo que sigue
+            —Favoritos, Certificados, carrito, perfil, Salir— directamente
+            inalcanzable, sin scroll ni menú). */}
+        <nav className="hidden items-center gap-6 md:flex">
           <NavLink href="/cursos">Cursos</NavLink>
           <NavLink href="/paquetes">Paquetes</NavLink>
           <NavLink href="/comunidad">Comunidad</NavLink>
 
           {isAuthenticated ? (
             <>
-              {hasRole('estudiante') && <NavLink href="/dashboard">Mis Cursos</NavLink>}
-              {hasRole('estudiante') && <NavLink href="/favoritos">Favoritos</NavLink>}
-              {hasRole('estudiante') && <NavLink href="/certificados">Certificados</NavLink>}
-              {hasRole('estudiante') && <NavLink href="/logros">Logros</NavLink>}
-              {hasRole('instructor') && <NavLink href="/instructor">Instructor</NavLink>}
-              {hasRole('admin') && <NavLink href="/admin">Admin</NavLink>}
-              <NavLink href="/soporte">Soporte</NavLink>
-
+              {linksAutenticado()}
               <span className="h-6 w-px bg-ink/10" />
-
               <CartIcon />
               <NotificationBell />
-
               <Link
                 href="/perfil"
                 className="flex h-[34px] w-[34px] flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-bold text-white"
@@ -101,7 +153,6 @@ export function Header() {
                   user?.nombre?.charAt(0).toUpperCase()
                 )}
               </Link>
-
               <button
                 onClick={logout}
                 className="text-sm font-semibold text-ink-muted transition hover:text-red-500"
@@ -131,7 +182,84 @@ export function Header() {
           <span className="h-6 w-px bg-ink/10" />
           <ThemeToggle />
         </nav>
+
+        {/* Mobile: solo carrito + notificaciones + hamburguesa a la vista; el
+            resto vive en el panel desplegable de abajo. */}
+        <div className="flex items-center gap-4 md:hidden">
+          <CartIcon />
+          {isAuthenticated && <NotificationBell />}
+          <button
+            type="button"
+            onClick={() => setMenuAbierto((v) => !v)}
+            aria-label={menuAbierto ? 'Cerrar menú' : 'Abrir menú'}
+            aria-expanded={menuAbierto}
+            className="text-ink-muted transition hover:text-primary"
+          >
+            {menuAbierto ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
+
+      {menuAbierto && (
+        <nav className="flex flex-col gap-1 border-t border-ink/[0.07] bg-cloud-50 px-4 py-4 md:hidden">
+          <NavLink href="/cursos" onClick={() => setMenuAbierto(false)}>
+            Cursos
+          </NavLink>
+          <NavLink href="/paquetes" onClick={() => setMenuAbierto(false)}>
+            Paquetes
+          </NavLink>
+          <NavLink href="/comunidad" onClick={() => setMenuAbierto(false)}>
+            Comunidad
+          </NavLink>
+
+          {isAuthenticated ? (
+            <>
+              {linksAutenticado(() => setMenuAbierto(false))}
+              <div className="my-2 h-px bg-ink/10" />
+              <Link
+                href="/perfil"
+                onClick={() => setMenuAbierto(false)}
+                className="py-1.5 text-[15px] font-semibold text-ink-muted transition hover:text-primary"
+              >
+                {user?.nombre ?? 'Mi perfil'}
+              </Link>
+              <button
+                onClick={() => {
+                  setMenuAbierto(false);
+                  logout();
+                }}
+                className="py-1.5 text-left text-[15px] font-semibold text-ink-muted transition hover:text-red-500"
+              >
+                Salir
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="my-2 h-px bg-ink/10" />
+              <Link
+                href="/auth/login"
+                onClick={() => setMenuAbierto(false)}
+                className="py-1.5 text-[15px] font-semibold text-ink-muted transition hover:text-primary"
+              >
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/auth/registro"
+                onClick={() => setMenuAbierto(false)}
+                className="mt-1 w-fit rounded-xl bg-primary px-4 py-2 font-semibold text-white transition hover:bg-indigo-600"
+              >
+                Registrarse
+              </Link>
+            </>
+          )}
+
+          <div className="my-2 h-px bg-ink/10" />
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-[15px] font-semibold text-ink-muted">Tema</span>
+            <ThemeToggle />
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
