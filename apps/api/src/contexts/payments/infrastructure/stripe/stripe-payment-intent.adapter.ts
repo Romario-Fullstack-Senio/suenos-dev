@@ -1,23 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import Stripe from 'stripe';
 import {
   StripePaymentIntent,
   CreatePaymentIntentParams,
   PaymentIntentResult,
 } from '../../domain/stripe-payment-intent.port';
+import { getStripe } from './stripe-client';
 
 @Injectable()
 export class StripePaymentIntentAdapter implements StripePaymentIntent {
-  private stripe: Stripe;
-
-  constructor() {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2026-07-29.dahlia',
-    });
-  }
-
+  // Sin cliente en el constructor: getStripe() lo crea en el primer uso real,
+  // así una STRIPE_SECRET_KEY ausente no impide que arranque la API entera.
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntentResult> {
-    const paymentIntent = await this.stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(params.amount * 100),
       currency: params.currency,
       automatic_payment_methods: {
@@ -37,7 +31,7 @@ export class StripePaymentIntentAdapter implements StripePaymentIntent {
   }
 
   async refund(paymentIntentId: string): Promise<{ refundId: string }> {
-    const refund = await this.stripe.refunds.create({ payment_intent: paymentIntentId });
+    const refund = await getStripe().refunds.create({ payment_intent: paymentIntentId });
     return { refundId: refund.id };
   }
 }
