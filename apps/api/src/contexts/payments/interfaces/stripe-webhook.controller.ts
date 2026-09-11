@@ -5,23 +5,22 @@ import { Inject } from '@nestjs/common';
 import { ORDEN_REPOSITORY, OrdenRepository } from '../domain/orden.repository.port';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
 import { EventBus } from '../../../common/event-bus';
+import { getStripe } from '../infrastructure/stripe/stripe-client';
 
 @Controller()
 export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
-  private stripe: Stripe;
 
+  // El cliente de Stripe se pide con getStripe() en el momento de verificar
+  // la firma, no en el constructor: construirlo acá tumbaba el arranque de
+  // toda la API cuando faltaba STRIPE_SECRET_KEY (ver stripe-client.ts).
   constructor(
     @Inject(ORDEN_REPOSITORY)
     private readonly ordenRepository: OrdenRepository,
     @Inject(USUARIO_REPOSITORY)
     private readonly usuarioRepository: UsuarioRepository,
     private readonly eventBus: EventBus,
-  ) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2026-07-29.dahlia',
-    });
-  }
+  ) {}
 
   @Post('stripe/webhook')
   async handleStripeWebhook(
@@ -48,7 +47,7 @@ export class StripeWebhookController {
     let event: Stripe.Event;
 
     try {
-      event = this.stripe.webhooks.constructEvent(
+      event = getStripe().webhooks.constructEvent(
         req.rawBody!,
         sig,
         webhookSecret,
