@@ -5,14 +5,24 @@ test.describe('Catálogo de cursos', () => {
     await page.goto('/cursos');
     await expect(page.getByRole('heading', { name: 'Cursos Disponibles' })).toBeVisible();
 
+    // Esperar el contador de resultados ANTES de tocar nada: el listado se
+    // pinta después del fetch y, si se hace click mientras todavía está
+    // re-renderizando, el click cae en un nodo ya reemplazado y la
+    // navegación nunca ocurre (test flaky: quedaba en /cursos).
+    await expect(page.getByText(/\d+ cursos? encontrados?/i)).toBeVisible({ timeout: 15_000 });
+
     // Un link a /cursos/<slug> (no a /cursos ni /cursos/algo/mas) — cada
     // card de curso en el catálogo enlaza así (ver CursoCard).
     const primerCurso = page.locator('a[href^="/cursos/"]').first();
     await expect(primerCurso).toBeVisible();
     const titulo = await primerCurso.innerText();
+    const href = await primerCurso.getAttribute('href');
 
+    // waitForURL con el href real en vez de un toHaveURL genérico: si el
+    // click se pierde, falla diciendo que no navegó, no que "la URL no
+    // matchea el patrón".
     await primerCurso.click();
-    await expect(page).toHaveURL(/\/cursos\/[^/]+$/);
+    await page.waitForURL(`**${href}`, { timeout: 15_000 });
     // El título del curso listado también aparece en su página de detalle.
     await expect(page.getByText(titulo.split('\n')[0], { exact: false }).first()).toBeVisible();
   });
