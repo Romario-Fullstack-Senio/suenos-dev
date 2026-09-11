@@ -136,6 +136,12 @@ jobs:
         # este step colgaría hasta el timeout.
         run: npx wait-on http://localhost:3001/health http://localhost:3000 --timeout 120000
 
+      # En CI la base arranca vacía (solo migraciones), así que el catálogo
+      # no tiene ni un curso y catalog.spec.ts / purchase-flow.spec.ts se
+      # quedaban sin nada que listar ni comprar.
+      - name: Seed de datos para los tests
+        run: node e2e/seed.mjs
+
       - name: Run E2E — auth & catalog (no requieren Stripe)
         run: npx playwright test e2e/auth.spec.ts e2e/catalog.spec.ts
 
