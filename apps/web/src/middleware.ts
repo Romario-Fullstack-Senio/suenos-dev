@@ -24,7 +24,13 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secre
 
 // Prefijos que requieren sesión. `/instructor` y `/admin` además requieren
 // el rol correspondiente (ver ROLE_PREFIXES).
-const PROTECTED_PREFIXES = ['/dashboard', '/checkout', '/aprender', '/perfil', '/instructor', '/admin', '/favoritos', '/soporte', '/comunidad/nuevo'];
+const PROTECTED_PREFIXES = ['/dashboard', '/checkout', '/aprender', '/perfil', '/instructor', '/admin', '/favoritos', '/soporte', '/comunidad/nuevo', '/logros'];
+
+// Rutas protegidas SOLO en su forma exacta, sin cubrir lo que cuelga debajo.
+// `/certificados` es la lista de MIS certificados (privada), pero
+// `/certificados/[id]` es la verificación pública de un certificado —
+// justamente el link que se comparte en LinkedIn, tiene que abrir sin login.
+const PROTECTED_EXACT = ['/certificados'];
 
 const ROLE_PREFIXES: Record<string, string> = {
   '/admin': 'admin',
@@ -34,9 +40,9 @@ const ROLE_PREFIXES: Record<string, string> = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const protectedPrefix = PROTECTED_PREFIXES.find(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const protectedPrefix =
+    PROTECTED_PREFIXES.find((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) ??
+    PROTECTED_EXACT.find((ruta) => pathname === ruta);
   if (!protectedPrefix) {
     return NextResponse.next();
   }
@@ -76,6 +82,8 @@ function redirectToLogin(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+// `/certificados` va SIN `:path*` a propósito: la verificación pública
+// `/certificados/[id]` no debe pasar por el middleware.
 export const config = {
-  matcher: ['/dashboard/:path*', '/checkout/:path*', '/aprender/:path*', '/perfil/:path*', '/instructor/:path*', '/admin/:path*', '/favoritos/:path*', '/soporte/:path*', '/comunidad/nuevo/:path*', '/comunidad/nuevo'],
+  matcher: ['/dashboard/:path*', '/checkout/:path*', '/aprender/:path*', '/perfil/:path*', '/instructor/:path*', '/admin/:path*', '/favoritos/:path*', '/soporte/:path*', '/comunidad/nuevo/:path*', '/comunidad/nuevo', '/logros/:path*', '/logros', '/certificados'],
 };

@@ -151,7 +151,10 @@ function DashboardContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      {/* En una sola fila el título y el link se apretaban en mobile (a 375px
+          quedaban los dos partidos en dos líneas, uno al lado del otro):
+          apilados abajo de sm y en fila recién desde sm. */}
+      <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <h1 className="text-3xl font-bold">Mis Cursos</h1>
         <Link href="/dashboard/compras" className="text-secondary hover:underline text-sm">
           Ver mis compras y comprobantes →
