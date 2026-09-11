@@ -167,8 +167,9 @@ export function CheckoutForm() {
     setCreandoOrden(true);
     setError('');
     try {
+      // Sin estudianteId: la API lo toma del JWT (mandarlo desde el cliente
+      // dejaba crear órdenes a nombre de otro usuario).
       const result = await apiPost<{ clientSecret: string; ordenId: string }>('/ordenes', {
-        estudianteId: user.id,
         items,
         successUrl: `${window.location.origin}/dashboard`,
         cancelUrl: paqueteId

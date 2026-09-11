@@ -6,6 +6,8 @@ import { CERTIFICADO_REPOSITORY, CertificadoRepository } from '../domain/certifi
 import { LINKEDIN_LINK, LinkedInLink } from '../domain/linkedin-link.port';
 import { PDF_GENERATOR, PdfGenerator } from '../domain/pdf-generator.port';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { OwnershipGuard } from '../../../common/guards/ownership.guard';
+import { RequireOwnership } from '../../../common/decorators/ownership.decorator';
 import { randomUUID } from 'crypto';
 
 @Controller('certificados')
@@ -49,8 +51,13 @@ export class CertificadoController {
     res.send(pdfBuffer);
   }
 
+  // La lista de certificados de un alumno es suya: sin OwnershipGuard,
+  // cualquier usuario logueado podía enumerar los de otro cambiando el id.
+  // (La verificación pública de UN certificado por su id sigue abierta a
+  // propósito — es el punto de /certificados/:id/verificar.)
   @Get('estudiante/:estudianteId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, OwnershipGuard)
+  @RequireOwnership({ paramName: 'estudianteId' })
   async listarPorEstudiante(@Param('estudianteId') estudianteId: string) {
     const certificados = await this.certificadoRepository.findByEstudianteId(estudianteId);
     return certificados.map(c => ({

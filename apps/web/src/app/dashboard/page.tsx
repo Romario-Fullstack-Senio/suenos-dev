@@ -103,7 +103,7 @@ function DashboardContent() {
             const [curso, progreso] = await Promise.all([
               cursoId ? apiGet<Curso>(`/cursos/${cursoId}`).catch(() => undefined) : Promise.resolve(undefined),
               cursoId
-                ? apiGet<CursoProgreso>(`/progreso/curso/${cursoId}?estudianteId=${user.id}`).catch(() => ({ leccionesCompletadas: 0 }))
+                ? apiGet<CursoProgreso>(`/progreso/curso/${cursoId}`).catch(() => ({ leccionesCompletadas: 0 }))
                 : Promise.resolve({ leccionesCompletadas: 0 }),
             ]);
             const totalLecciones = curso?.modulos?.reduce((acc, m) => acc + m.lecciones.length, 0) || 0;

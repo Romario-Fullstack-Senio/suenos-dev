@@ -96,7 +96,7 @@ export default function AprenderPage() {
     try {
       const [cursoData, progresoData, inscripciones] = await Promise.all([
         apiGet<Curso>(`/cursos/${cursoId}`),
-        user ? apiGet<CursoProgreso>(`/progreso/curso/${cursoId}?estudianteId=${user.id}`) : null,
+        user ? apiGet<CursoProgreso>(`/progreso/curso/${cursoId}`) : null,
         user ? apiGet<InscripcionRaw[]>(`/inscripciones/estudiante/${user.id}`).catch(() => []) : Promise.resolve([]),
       ]);
       setCurso(cursoData);
@@ -162,13 +162,15 @@ export default function AprenderPage() {
   async function trackProgress(leccion: Leccion, segundos: number, duracionTotal: number) {
     if (!user) return;
     try {
-      await apiPost('/progreso?estudianteId=' + user.id, {
+      // Sin ?estudianteId: la API lo toma del JWT (mandarlo desde el cliente
+      // dejaba escribir/leer progreso de otro usuario cambiando el param).
+      await apiPost('/progreso', {
         leccionId: leccion.id,
         cursoId,
         segundosVistos: segundos,
         duracionTotal: duracionTotal || leccion.duracionSegundos || 60,
       });
-      const data = await apiGet<CursoProgreso>(`/progreso/curso/${cursoId}?estudianteId=${user.id}`);
+      const data = await apiGet<CursoProgreso>(`/progreso/curso/${cursoId}`);
       const totalLecciones = curso?.modulos.reduce(
         (acc, m) => acc + m.lecciones.length, 0
       ) || 0;
