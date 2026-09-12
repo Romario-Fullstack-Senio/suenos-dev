@@ -249,13 +249,13 @@ export default function AprenderPage() {
         <aside className="lg:col-span-1 bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] max-h-[80vh] overflow-y-auto">
           <h2 className="text-lg font-semibold mb-4">Módulos</h2>
           <div className="space-y-4">
-            {curso.modulos.map((mod) => (
+            {[...curso.modulos].sort((a, b) => a.orden - b.orden).map((mod) => (
               <div key={mod.id}>
                 <h3 className="font-medium text-sm text-ink mb-2">
                   {mod.orden}. {mod.titulo}
                 </h3>
                 <ul className="space-y-1 ml-3">
-                  {mod.lecciones.map((lec) => {
+                  {[...mod.lecciones].sort((a, b) => a.orden - b.orden).map((lec) => {
                     const lecProgreso = progreso?.progresos.find(p => p.leccionId === lec.id);
                     const disponible = estaDisponible(lec, fechaInscripcion);
                     const desde = fechaDisponibilidad(lec, fechaInscripcion);
@@ -301,7 +301,6 @@ export default function AprenderPage() {
         <div className="lg:col-span-3">
           {leccionActual?.videoUrl ? (
             <HLSPlayer
-              key={leccionActual.id}
               src={leccionActual.videoUrl}
               subtitulosUrl={leccionActual.subtitulosUrl}
               onProgress={handleVideoProgress}
