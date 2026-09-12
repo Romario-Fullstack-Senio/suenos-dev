@@ -111,7 +111,7 @@ export function NotificationBell() {
             {noLeidas > 0 && (
               <button
                 onClick={marcarTodasLeidas}
-                className="text-xs text-primary hover:text-indigo-600 transition-colors inline-flex items-center gap-1"
+                className="text-xs text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 Marcar leídas
@@ -165,7 +165,7 @@ export function NotificationBell() {
                       // slug real (si no, esto daba 404 siempre).
                       <Link
                         href={`/cursos/${n.cursoId}`}
-                        className="text-primary hover:text-indigo-600 transition-colors flex-shrink-0 mt-0.5"
+                        className="text-primary hover:text-primary/80 transition-colors flex-shrink-0 mt-0.5"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <ExternalLink className="w-4 h-4" />

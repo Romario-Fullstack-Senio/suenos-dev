@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { apiGet, apiPut } from '@/lib/api';
+import { EstadoCursoBadge } from '@/components/ui/Badge';
+import { SkeletonTable } from '@/components/ui/SkeletonGrid';
+import { formatearPrecio } from '@/lib/format';
 
 interface Curso {
   id: string;
@@ -47,7 +50,7 @@ export default function AdminCursosPage() {
       <h1 className="text-3xl font-bold mb-8">Gestionar Cursos</h1>
 
       {loading ? (
-        <p>Cargando...</p>
+        <SkeletonTable filas={6} columnas={4} />
       ) : (
         <div className="bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07] overflow-hidden">
           <table className="w-full">
@@ -63,11 +66,9 @@ export default function AdminCursosPage() {
               {cursos.map((curso) => (
                 <tr key={curso.id}>
                   <td className="px-6 py-4 font-medium">{curso.titulo}</td>
-                  <td className="px-6 py-4">${curso.precio}</td>
+                  <td className="px-6 py-4">{formatearPrecio(curso.precio)}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'}`}>
-                      {curso.estado}
-                    </span>
+                    <EstadoCursoBadge estado={curso.estado} />
                   </td>
                   <td className="px-6 py-4">
                     <button

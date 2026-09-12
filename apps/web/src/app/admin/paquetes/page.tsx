@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
 import { Package, Trash2, Plus, X } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
+import { formatearPrecio } from '@/lib/format';
 
 interface CursoOpcion {
   id: string;
@@ -141,7 +143,7 @@ export default function AdminPaquetesPage() {
                 <label key={c.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-cloud-50">
                   <input type="checkbox" checked={seleccionados.includes(c.id)} onChange={() => toggleCurso(c.id)} />
                   <span className="flex-1 text-sm text-ink">{c.titulo}</span>
-                  <span className="text-xs text-ink-soft">${c.precio}</span>
+                  <span className="text-xs text-ink-soft">{formatearPrecio(c.precio)}</span>
                 </label>
               ))}
             </div>
@@ -153,7 +155,7 @@ export default function AdminPaquetesPage() {
       )}
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : paquetes.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">Todavía no creaste ningún paquete</p>
@@ -173,7 +175,7 @@ export default function AdminPaquetesPage() {
                   )}
                 </div>
                 <p className="text-xs text-ink-soft mt-1">
-                  {p.cursos.length} cursos · ${p.precioTotal} → ${p.precioFinal} USD
+                  {p.cursos.length} cursos · {formatearPrecio(p.precioTotal)} → {formatearPrecio(p.precioFinal)}
                 </p>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">

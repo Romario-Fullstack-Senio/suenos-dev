@@ -42,7 +42,7 @@ export default function QuizForm({ preguntas, onSubmit }: QuizFormProps) {
       ))}
       <button
         onClick={() => onSubmit(respuestas)}
-        className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition"
+        className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition"
       >
         Enviar Respuestas
       </button>

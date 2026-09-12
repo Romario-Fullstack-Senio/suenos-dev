@@ -25,31 +25,18 @@ const config: Config = {
           200: 'rgb(var(--color-surface) / <alpha-value>)',
           300: 'rgb(var(--color-border) / <alpha-value>)',
         },
-        // Namespace del tema oscuro anterior — sin uso en el código hoy
-        // (confirmado), pero mapeado a las mismas variables por si alguna
-        // página vieja reaparece; no aporta un tema fijo propio.
-        suenos: {
-          midnight: 'rgb(var(--color-bg) / <alpha-value>)',
-          deep: 'rgb(var(--color-bg-elevated) / <alpha-value>)',
-          surface: 'rgb(var(--color-surface) / <alpha-value>)',
-          border: 'rgb(var(--color-border) / <alpha-value>)',
-          violet: 'rgb(var(--color-primary) / <alpha-value>)',
-          'violet-light': 'rgb(var(--color-secondary) / <alpha-value>)',
-          cyan: '#06B6D4',
-          'cyan-light': '#22D3EE',
-          gold: '#F59E0B',
-          'gold-light': '#FBBF24',
-          moon: '#E9E4FF',
-          text: 'rgb(var(--color-ink) / <alpha-value>)',
-          muted: 'rgb(var(--color-ink-muted) / <alpha-value>)',
-          dim: 'rgb(var(--color-ink-soft) / <alpha-value>)',
-        },
+        // Estado: verde/ámbar/rojo salen de variables con valor propio por
+        // tema, igual que el resto de la paleta. Usarlos vía <Badge tono>.
+        success: 'rgb(var(--color-success) / <alpha-value>)',
+        warning: 'rgb(var(--color-warning) / <alpha-value>)',
+        danger: 'rgb(var(--color-danger) / <alpha-value>)',
       },
+      // Atadas a next/font (layout.tsx), que expone las variables CSS.
+      // Antes había un font-display: Space Grotesk y un font-body: Inter que
+      // nunca se importaban: cualquier uso caía en silencio a system-ui.
       fontFamily: {
-        sans: ['Manrope', 'Helvetica', 'Arial', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
-        body: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['var(--font-manrope)', 'Helvetica', 'Arial', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

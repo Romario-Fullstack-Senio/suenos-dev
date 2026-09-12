@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import Link from 'next/link';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface IngresoPorDia {
   fecha: string;
@@ -49,7 +50,7 @@ function GraficoIngresos({ datos }: { datos: IngresoPorDia[] }) {
               width={barWidth - 2}
               height={barHeight}
               rx={2}
-              fill="#6366f1"
+              fill="#d97706"
               fillOpacity={d.monto > 0 ? 0.85 : 0.1}
             >
               <title>{`${d.fecha}: $${d.monto.toFixed(2)}`}</title>
@@ -78,7 +79,7 @@ export default function InstructorAnalyticsPage() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList cantidad={3} />
       </div>
     );
   }

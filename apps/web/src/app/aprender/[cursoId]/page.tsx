@@ -321,7 +321,7 @@ export default function AprenderPage() {
           <div className="flex gap-4 mt-6">
             <Link
               href={`/aprender/${cursoId}/quiz`}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
+              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition"
             >
               Tomar Quiz Final
             </Link>

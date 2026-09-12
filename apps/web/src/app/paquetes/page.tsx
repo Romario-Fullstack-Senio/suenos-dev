@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { apiGet } from '@/lib/api';
 import { Package } from 'lucide-react';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { SkeletonGrid } from '@/components/ui/SkeletonGrid';
+import { formatearPrecio } from '@/lib/format';
 
 interface Paquete {
   id: string;
@@ -34,11 +37,14 @@ export default function PaquetesPage() {
       <p className="text-ink-muted mb-8">Combos de varios cursos con precio especial.</p>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonGrid cantidad={2} columnas={2} />
       ) : paquetes.length === 0 ? (
-        <div className="text-center py-16 card">
-          <p className="text-ink-muted">Todavía no hay paquetes disponibles</p>
-        </div>
+        <EstadoVacio
+          icono={Package}
+          titulo="Todavía no hay paquetes disponibles"
+          texto="Mientras tanto podés ver los cursos sueltos del catálogo."
+          cta={{ href: '/cursos', label: 'Ver cursos' }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {paquetes.map((p) => (
@@ -52,8 +58,8 @@ export default function PaquetesPage() {
               <p className="text-sm text-ink-muted mb-3 line-clamp-2">{p.descripcion}</p>
               <p className="text-xs text-ink-soft mb-3">{p.cursos.length} cursos incluidos</p>
               <div className="flex items-baseline gap-2">
-                <span className="text-ink-soft line-through text-sm">${p.precioTotal} USD</span>
-                <span className="text-2xl font-bold text-secondary">${p.precioFinal} USD</span>
+                <span className="text-ink-soft line-through text-sm">{formatearPrecio(p.precioTotal)}</span>
+                <span className="text-2xl font-extrabold text-ink">{formatearPrecio(p.precioFinal)}</span>
               </div>
             </Link>
           ))}

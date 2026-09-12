@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { apiGet } from '@/lib/api';
 import Link from 'next/link';
 import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
 import { WishlistButton } from '@/components/WishlistButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatearPrecio } from '@/lib/format';
 
 interface Curso {
   id: string;
@@ -34,6 +36,9 @@ const NIVEL_LABEL: Record<string, string> = {
   avanzado: 'Avanzado',
 };
 
+const INPUT_CLASS =
+  'px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40';
+
 function CourseCardSkeleton() {
   return (
     <div className="card overflow-hidden p-0 h-full flex flex-col animate-pulse">
@@ -49,17 +54,50 @@ function CourseCardSkeleton() {
 }
 
 export default function CursosPage() {
+  return (
+    <Suspense fallback={null}>
+      <CatalogoContent />
+    </Suspense>
+  );
+}
+
+function CatalogoContent() {
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+
+  // Los filtros viven en la URL, no en estado local. Antes eran useState: el
+  // breadcrumb del detalle de curso enlaza a /cursos?categoria=X y esta
+  // página ignoraba el query param por completo, además de no poder
+  // compartir una búsqueda ni volver atrás sin perder los filtros.
+  const q = params.get('q') ?? '';
+  const categoria = params.get('categoria') ?? '';
+  const nivel = params.get('nivel') ?? '';
+  const sort = params.get('sort') ?? 'reciente';
+  const page = Math.max(1, Number(params.get('page') ?? '1') || 1);
+
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [nivel, setNivel] = useState('');
-  const [sort, setSort] = useState('reciente');
   const [categorias, setCategorias] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState(q);
+
+  const setParams = useCallback(
+    (cambios: Record<string, string | null>) => {
+      const next = new URLSearchParams(params.toString());
+      for (const [clave, valor] of Object.entries(cambios)) {
+        if (!valor) next.delete(clave);
+        else next.set(clave, valor);
+      }
+      // Cualquier cambio de filtro vuelve a la página 1.
+      if (!('page' in cambios)) next.delete('page');
+      const qs = next.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [params, pathname, router],
+  );
 
   // Categorías para el filtro: se cargan una sola vez, sin filtros, para que
   // no desaparezcan opciones del dropdown al filtrar por categoría/nivel.
@@ -69,43 +107,46 @@ export default function CursosPage() {
       .catch(() => {});
   }, []);
 
-  const fetchCursos = useCallback(async (paginaAPedir: number) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search.trim()) params.set('search', search.trim());
-      if (categoria) params.set('categoria', categoria);
-      if (nivel) params.set('nivel', nivel);
-      if (sort !== 'reciente') params.set('sort', sort);
-      params.set('page', String(paginaAPedir));
-      const data = await apiGet<ListadoCursos>(`/cursos?${params.toString()}`);
-      setCursos(data.cursos);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, categoria, nivel, sort]);
-
-  // Cualquier cambio de filtro vuelve a la página 1. Debounce en el texto
-  // libre para no disparar una request por cada tecla.
+  // Debounce solo del texto libre: escribir no debe empujar una entrada de
+  // historial ni una request por tecla.
   useEffect(() => {
-    setPage(1);
-    const timeout = setTimeout(() => fetchCursos(1), 300);
+    if (searchInput === q) return;
+    const timeout = setTimeout(() => setParams({ q: searchInput.trim() || null }), 300);
     return () => clearTimeout(timeout);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, categoria, nivel, sort]);
+  }, [searchInput, q, setParams]);
 
   useEffect(() => {
-    fetchCursos(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    let cancelado = false;
+    setLoading(true);
+    const busqueda = new URLSearchParams();
+    if (q.trim()) busqueda.set('search', q.trim());
+    if (categoria) busqueda.set('categoria', categoria);
+    if (nivel) busqueda.set('nivel', nivel);
+    if (sort !== 'reciente') busqueda.set('sort', sort);
+    busqueda.set('page', String(page));
+
+    apiGet<ListadoCursos>(`/cursos?${busqueda.toString()}`)
+      .then(data => {
+        if (cancelado) return;
+        setCursos(data.cursos);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
+      })
+      .catch(error => {
+        if (!cancelado) console.error('Error:', error);
+      })
+      .finally(() => {
+        if (!cancelado) setLoading(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [q, categoria, nivel, sort, page]);
 
   const irAPagina = (nueva: number) => {
     if (nueva < 1 || nueva > totalPages) return;
-    setPage(nueva);
+    setParams({ page: nueva === 1 ? null : String(nueva) });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -117,17 +158,19 @@ export default function CursosPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft" />
           <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+            type="search"
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
             placeholder="Buscar cursos por título o descripción..."
-            className="w-full pl-9 pr-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+            aria-label="Buscar cursos"
+            className={`w-full pl-9 pr-3 ${INPUT_CLASS}`}
           />
         </div>
         <select
           value={categoria}
-          onChange={e => setCategoria(e.target.value)}
-          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          onChange={e => setParams({ categoria: e.target.value || null })}
+          aria-label="Filtrar por categoría"
+          className={INPUT_CLASS}
         >
           <option value="">Todas las categorías</option>
           {categorias.map(c => (
@@ -136,8 +179,9 @@ export default function CursosPage() {
         </select>
         <select
           value={nivel}
-          onChange={e => setNivel(e.target.value)}
-          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          onChange={e => setParams({ nivel: e.target.value || null })}
+          aria-label="Filtrar por nivel"
+          className={INPUT_CLASS}
         >
           <option value="">Todos los niveles</option>
           <option value="principiante">Principiante</option>
@@ -146,8 +190,9 @@ export default function CursosPage() {
         </select>
         <select
           value={sort}
-          onChange={e => setSort(e.target.value)}
-          className="px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+          onChange={e => setParams({ sort: e.target.value === 'reciente' ? null : e.target.value })}
+          aria-label="Ordenar"
+          className={INPUT_CLASS}
         >
           <option value="reciente">Más recientes</option>
           <option value="precio_asc">Precio: menor a mayor</option>
@@ -165,53 +210,80 @@ export default function CursosPage() {
         </div>
       ) : cursos.length === 0 ? (
         <div className="text-center py-16 card">
-          <p className="text-ink-muted">No se encontraron cursos con esos filtros</p>
+          <p className="text-ink-muted mb-4">No se encontraron cursos con esos filtros</p>
+          <button
+            type="button"
+            onClick={() => {
+              // setParams SOLO toca el q de la URL. El efecto de debounce sigue
+              // mirando [searchInput, q] y, si searchInput no se resetea acá, 300ms
+              // después ve searchInput !== q y vuelve a mandar el texto viejo como
+              // búsqueda — el botón "limpiaba" la URL y la búsqueda volvía sola.
+              setSearchInput('');
+              setParams({ q: null, categoria: null, nivel: null, sort: null });
+            }}
+            className="text-sm font-semibold text-primary hover:underline"
+          >
+            Limpiar filtros
+          </button>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cursos.map((curso) => (
-              <Link key={curso.id} href={`/cursos/${curso.slug}`}>
-                <div className="card overflow-hidden p-0 cursor-pointer h-full flex flex-col relative">
-                  {isAuthenticated && (
-                    <WishlistButton
-                      cursoId={curso.id}
-                      className="absolute top-3 right-3 z-[1] w-8 h-8 bg-cloud-50/90 backdrop-blur-sm shadow-sm"
-                    />
-                  )}
-                  <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
-                  <div className="p-6 flex flex-col flex-1">
-                    {(curso.categoria || curso.nivel) && (
-                      <div className="flex gap-2 mb-2">
-                        {curso.categoria && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                            {curso.categoria}
-                          </span>
-                        )}
-                        {curso.nivel && (
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                            {NIVEL_LABEL[curso.nivel] ?? curso.nivel}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    <h3 className="font-semibold text-lg mb-1 text-ink">{curso.titulo}</h3>
-                    {curso.instructorNombre && (
-                      <p className="text-ink-soft text-xs mb-2">Por {curso.instructorNombre}</p>
-                    )}
-                    <p className="text-ink-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
-                    <div className="mt-auto flex items-center justify-between">
-                      <p className="text-accent font-bold">${curso.precio} USD</p>
-                      {!!curso.alumnosInscriptos && (
-                        <span className="flex items-center gap-1 text-xs text-ink-soft">
-                          <Users className="w-3.5 h-3.5" />
-                          {curso.alumnosInscriptos}
+              // El botón de favoritos era un <button> dentro del <Link> que
+              // envolvía la tarjeta: HTML inválido, foco de teclado confuso y
+              // el nombre accesible del enlace era el bloque entero. Ahora el
+              // ancla va solo en el título con un ::before que cubre la
+              // tarjeta, y el botón es hermano por encima.
+              <article
+                key={curso.id}
+                className="card card-hover overflow-hidden p-0 h-full flex flex-col relative"
+              >
+                {isAuthenticated && (
+                  <WishlistButton
+                    cursoId={curso.id}
+                    className="absolute top-3 right-3 z-[2] w-8 h-8 bg-cloud-50/90 backdrop-blur-sm shadow-sm"
+                  />
+                )}
+                <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
+                <div className="p-6 flex flex-col flex-1">
+                  {(curso.categoria || curso.nivel) && (
+                    <div className="flex gap-2 mb-2">
+                      {curso.categoria && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {curso.categoria}
+                        </span>
+                      )}
+                      {curso.nivel && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                          {NIVEL_LABEL[curso.nivel] ?? curso.nivel}
                         </span>
                       )}
                     </div>
+                  )}
+                  <h3 className="font-semibold text-lg mb-1">
+                    <Link
+                      href={`/cursos/${curso.slug}`}
+                      className="text-ink hover:text-primary before:absolute before:inset-0 before:content-['']"
+                    >
+                      {curso.titulo}
+                    </Link>
+                  </h3>
+                  {curso.instructorNombre && (
+                    <p className="text-ink-soft text-xs mb-2">Por {curso.instructorNombre}</p>
+                  )}
+                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
+                  <div className="mt-auto flex items-center justify-between">
+                    <p className="font-extrabold text-ink">{formatearPrecio(curso.precio)}</p>
+                    {!!curso.alumnosInscriptos && (
+                      <span className="flex items-center gap-1 text-xs text-ink-soft">
+                        <Users className="w-3.5 h-3.5" />
+                        {curso.alumnosInscriptos}
+                      </span>
+                    )}
                   </div>
                 </div>
-              </Link>
+              </article>
             ))}
           </div>
 

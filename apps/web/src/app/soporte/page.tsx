@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
 import { LifeBuoy, Plus, X } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Ticket {
   id: string;
@@ -132,7 +133,7 @@ export default function SoportePage() {
       )}
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : tickets.length === 0 ? (
         <div className="text-center py-16 card">
           <LifeBuoy className="w-10 h-10 text-ink-soft mx-auto mb-3" />

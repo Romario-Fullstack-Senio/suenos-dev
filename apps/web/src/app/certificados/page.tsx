@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import { apiGet, API_URL } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
+import { Award } from 'lucide-react';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
+import { formatearFecha } from '@/lib/format';
 
 interface Certificado {
   id: string;
@@ -38,8 +42,11 @@ export default function CertificadosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cloud-50 flex items-center justify-center">
-        <p className="text-ink-muted">Cargando certificados...</p>
+      <div className="min-h-screen bg-cloud-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-ink mb-8">Mis Certificados</h1>
+          <SkeletonList cantidad={3} />
+        </div>
       </div>
     );
   }
@@ -50,26 +57,27 @@ export default function CertificadosPage() {
         <h1 className="text-2xl font-bold text-ink mb-8">Mis Certificados</h1>
 
         {certificados.length === 0 ? (
-          <div className="bg-cloud-100 rounded-xl shadow-sm p-8 text-center">
-            <p className="text-ink-muted">
-              Aun no tienes certificados. Completa un curso para obtener uno.
-            </p>
-          </div>
+          <EstadoVacio
+            icono={Award}
+            titulo="Todavía no tenés certificados"
+            texto="Completá un curso para obtener tu primer certificado verificable."
+            cta={{ href: '/dashboard', label: 'Ir a mis cursos' }}
+          />
         ) : (
           <div className="grid gap-4">
             {certificados.map(cert => (
               <div
                 key={cert.id}
-                className="bg-cloud-100 rounded-xl shadow-sm p-6 border-l-4 border-blue-500"
+                className="card"
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-ink">{cert.cursoNombre}</h3>
                     <p className="text-sm text-ink-muted mt-1">
-                      Emitido: {new Date(cert.fechaEmision).toLocaleDateString()}
+                      Emitido: {formatearFecha(cert.fechaEmision)}
                     </p>
-                    <p className="text-xs text-ink-soft mt-2">
-                      Codigo: {cert.codigoVerificacion}
+                    <p className="text-xs text-ink-soft mt-2 font-mono">
+                      Código: {cert.codigoVerificacion}
                     </p>
                   </div>
                   <div className="flex gap-2">

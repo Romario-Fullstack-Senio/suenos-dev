@@ -5,6 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiGet } from '@/lib/api';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { BookOpen } from 'lucide-react';
+import { EstadoCursoBadge } from '@/components/ui/Badge';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { SkeletonGrid } from '@/components/ui/SkeletonGrid';
+import { formatearPrecio } from '@/lib/format';
 
 interface Curso {
   id: string;
@@ -48,7 +53,8 @@ export default function InstructorDashboardPage() {
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <p>Cargando...</p>
+        <div className="h-9 w-80 bg-ink/[0.06] rounded mb-8 animate-pulse" />
+        <SkeletonGrid cantidad={3} />
       </div>
     );
   }
@@ -61,16 +67,16 @@ export default function InstructorDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
             <p className="text-sm text-ink-muted">Mis Cursos</p>
-            <p className="text-3xl font-bold text-blue-600">{stats.totalCursos}</p>
+            <p className="text-3xl font-extrabold text-ink">{stats.totalCursos}</p>
           </div>
           <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
             <p className="text-sm text-ink-muted">Total Inscripciones</p>
-            <p className="text-3xl font-bold text-green-600">{stats.totalInscripciones}</p>
+            <p className="text-3xl font-extrabold text-ink">{stats.totalInscripciones}</p>
           </div>
           <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
             <p className="text-sm text-ink-muted">Ingresos Estimados</p>
-            <p className="text-3xl font-bold text-purple-600">
-              ${stats.ingresosEstimados.toLocaleString()} USD
+            <p className="text-3xl font-extrabold text-ink">
+              {formatearPrecio(stats.ingresosEstimados)}
             </p>
           </div>
         </div>
@@ -89,23 +95,21 @@ export default function InstructorDashboardPage() {
       </div>
 
       {cursos.length === 0 ? (
-        <div className="text-center py-16 bg-cloud-100 rounded-xl border border-ink/[0.07]">
-          <p className="text-ink-muted mb-4">No has creado cursos</p>
-          <Link href="/instructor/cursos/nuevo">
-            <Button>Crear mi primer curso</Button>
-          </Link>
-        </div>
+        <EstadoVacio
+          icono={BookOpen}
+          titulo="Todavía no creaste ningún curso"
+          texto="Publicá tu primer curso para empezar a recibir inscripciones."
+          cta={{ href: '/instructor/cursos/nuevo', label: 'Crear mi primer curso' }}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cursos.map((curso) => (
             <div key={curso.id} className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
               <h3 className="font-semibold mb-2">{curso.titulo}</h3>
-              <p className="text-sm text-ink-muted mb-1">${curso.precio} USD</p>
-              <span className={`text-xs px-2 py-1 rounded ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'}`}>
-                {curso.estado}
-              </span>
+              <p className="text-sm text-ink-muted mb-2">{formatearPrecio(curso.precio)}</p>
+              <EstadoCursoBadge estado={curso.estado} />
               <div className="mt-4 flex gap-2">
-                <Link href={`/instructor/cursos/${curso.id}`} className="text-blue-600 text-sm hover:underline">
+                <Link href={`/instructor/cursos/${curso.id}`} className="text-sm font-semibold hover:underline">
                   Gestionar
                 </Link>
               </div>
