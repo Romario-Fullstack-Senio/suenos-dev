@@ -48,6 +48,14 @@ jobs:
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
           echo "Deploying to PREPROD: $SHORT_SHA"
 
+      # Mismo servidor Tailscale que producción — ver el commit de
+      # deploy.yml. El runner necesita unirse a la tailnet antes de poder
+      # llegar a PREPROD_SERVER_HOST.
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
