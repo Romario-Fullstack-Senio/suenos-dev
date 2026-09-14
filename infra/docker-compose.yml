@@ -32,7 +32,9 @@ services:
       - traefik-public
 
   minio:
-    image: minio/minio
+    # minio/minio desapareció de Docker Hub (404) — MinIO discontinuó ese
+    # repo y ahora solo publica en quay.io. Ver e2e.yml para el mismo cambio.
+    image: quay.io/minio/minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
