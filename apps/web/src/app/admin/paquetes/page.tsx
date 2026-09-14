@@ -167,7 +167,7 @@ export default function AdminPaquetesPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-ink">{p.titulo}</span>
-                  <span className="text-xs font-bold text-white bg-accent px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-bold text-on-brand bg-accent px-1.5 py-0.5 rounded">
                     -{p.descuentoPorcentaje}%
                   </span>
                   {!p.activo && (

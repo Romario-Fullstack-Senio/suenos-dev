@@ -51,7 +51,7 @@ export default function PaquetesPage() {
             <Link key={p.id} href={`/paquetes/${p.id}`} className="card hover:shadow-md transition">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <h2 className="text-lg font-bold text-ink">{p.titulo}</h2>
-                <span className="text-xs font-bold text-white bg-accent px-2 py-1 rounded flex-shrink-0">
+                <span className="text-xs font-bold text-on-brand bg-accent px-2 py-1 rounded flex-shrink-0">
                   -{p.descuentoPorcentaje}%
                 </span>
               </div>

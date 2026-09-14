@@ -35,8 +35,8 @@ function Avatar({ nombre, esInstructor }: { nombre: string; esInstructor: boolea
   const inicial = nombre?.charAt(0)?.toUpperCase() || '?';
   return (
     <div
-      className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold text-white ${
-        esInstructor ? 'bg-gradient-to-br from-primary to-secondary' : 'bg-cloud-300 text-ink'
+      className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${
+        esInstructor ? 'bg-gradient-to-br from-primary to-secondary text-on-brand' : 'bg-cloud-300 text-ink'
       }`}
     >
       {inicial}
@@ -164,7 +164,7 @@ export default function QASection({ leccionId, puedeModerar }: { leccionId: stri
               <button
                 onClick={enviarPregunta}
                 disabled={!nuevaPregunta.trim() || enviandoPregunta}
-                className="inline-flex items-center gap-1.5 bg-primary text-white text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 bg-primary text-on-brand text-sm font-medium px-4 py-1.5 rounded-lg hover:bg-primary/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-3.5 h-3.5" />
                 {enviandoPregunta ? 'Publicando...' : 'Preguntar'}
@@ -249,7 +249,7 @@ export default function QASection({ leccionId, puedeModerar }: { leccionId: stri
                       <button
                         onClick={() => enviarRespuesta(p.id)}
                         disabled={!textoRespuesta.trim() || enviandoRespuesta}
-                        className="bg-primary text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
+                        className="bg-primary text-on-brand text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
                       >
                         Enviar
                       </button>

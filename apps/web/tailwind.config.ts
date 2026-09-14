@@ -14,6 +14,13 @@ const config: Config = {
         primary: 'rgb(var(--color-primary) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary) / <alpha-value>)',
         accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        // Color de TEXTO para pararse arriba de un fondo primary/secondary/
+        // accent (botones, badges) — no confundir con `ink`. En claro esos
+        // fondos son ámbar oscuro y blanco contrasta bien; en oscuro son
+        // dorado/amarillo claro (pensados para leerse como texto sobre el
+        // fondo oscuro) y blanco encima queda ~1.7:1 de contraste, casi
+        // ilegible — ahí este token pasa a un tono oscuro. Ver globals.css.
+        'on-brand': 'rgb(var(--color-on-brand) / <alpha-value>)',
         ink: {
           DEFAULT: 'rgb(var(--color-ink) / <alpha-value>)',
           muted: 'rgb(var(--color-ink-muted) / <alpha-value>)',

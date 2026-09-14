@@ -307,7 +307,7 @@ export default function AprenderPage() {
               onEnded={handleVideoEnded}
             />
           ) : (
-            <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center text-white mb-6">
+            <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center mb-6">
               <p className="text-ink-soft">Video no disponible</p>
             </div>
           )}
@@ -320,7 +320,7 @@ export default function AprenderPage() {
           <div className="flex gap-4 mt-6">
             <Link
               href={`/aprender/${cursoId}/quiz`}
-              className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition"
+              className="bg-primary text-on-brand px-6 py-3 rounded-lg hover:bg-primary/90 transition"
             >
               Tomar Quiz Final
             </Link>

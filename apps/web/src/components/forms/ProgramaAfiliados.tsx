@@ -70,7 +70,7 @@ export function ProgramaAfiliados() {
         />
         <button
           onClick={copiar}
-          className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition"
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary text-on-brand text-sm font-medium rounded-xl hover:bg-primary/90 transition"
         >
           <Copy className="w-4 h-4" /> Copiar
         </button>

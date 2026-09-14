@@ -98,7 +98,7 @@ export function NotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {noLeidas > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-primary text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+          <span className="absolute -top-0.5 -right-0.5 bg-primary text-on-brand text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
             {noLeidas > 99 ? '99+' : noLeidas}
           </span>
         )}

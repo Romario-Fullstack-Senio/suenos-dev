@@ -39,7 +39,7 @@ export function EstadoVacio({
       {cta && (
         <Link
           href={cta.href}
-          className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+          className="inline-block bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
         >
           {cta.label}
         </Link>

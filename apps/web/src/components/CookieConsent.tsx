@@ -41,7 +41,7 @@ export function CookieConsent() {
         <button
           type="button"
           onClick={aceptar}
-          className="bg-primary text-white px-5 py-2 rounded-lg font-semibold text-sm hover:bg-primary/90 transition flex-shrink-0"
+          className="bg-primary text-on-brand px-5 py-2 rounded-lg font-semibold text-sm hover:bg-primary/90 transition flex-shrink-0"
         >
           Entendido
         </button>
