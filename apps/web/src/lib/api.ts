@@ -1,8 +1,34 @@
+declare global {
+  interface Window {
+    __ENV__?: { API_URL?: string };
+  }
+}
+
 // Exportado porque algunas descargas (PDF de certificado, recursos de
 // lección) se abren con window.open()/<a href> en vez de fetch — necesitan
 // la URL absoluta del backend, no una ruta relativa (que resolvería contra
 // el propio servidor de Next.js en :3000 y daría 404).
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+//
+// NEXT_PUBLIC_API_URL NO sirve para esto en este repo: Next.js hornea toda
+// variable NEXT_PUBLIC_* dentro del bundle del navegador al momento del
+// BUILD de la imagen Docker (webpack DefinePlugin), pero build-and-push.yml
+// compila esa imagen UNA sola vez y se despliega tanto a producción como a
+// preprod ("build once, deploy anywhere") — cada uno con su propio dominio
+// de API. Sin esto, el bundle siempre traía horneado el valor por defecto
+// de acá abajo, sin importar el entorno real (bug real, encontrado
+// probando preprod: el navegador pegaba a localhost:3001 en vez del API
+// real).
+//
+// Arreglo: layout.tsx (Server Component, corre en Node dentro del
+// contenedor en cada request) inyecta `window.__ENV__.API_URL` leyendo
+// API_RUNTIME_URL — una var SIN prefijo NEXT_PUBLIC_, que Next.js sí lee en
+// vivo en vez de hornear. En el navegador se prioriza ese valor; en
+// SSR/RSC (sin `window`) se lee la misma var directo de process.env.
+export const API_URL =
+  (typeof window !== 'undefined' && window.__ENV__?.API_URL) ||
+  process.env.API_RUNTIME_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:3001/api';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

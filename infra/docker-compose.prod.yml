@@ -194,7 +194,13 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: "0.0.0.0"
+      # NEXT_PUBLIC_API_URL queda horneado en el bundle del navegador al
+      # momento del BUILD de la imagen (no en runtime) — inútil acá porque
+      # la misma imagen se despliega a prod y preprod. API_RUNTIME_URL (sin
+      # prefijo NEXT_PUBLIC_) es la que layout.tsx lee en vivo en cada
+      # request y expone al navegador via window.__ENV__ — ver lib/api.ts.
       NEXT_PUBLIC_API_URL: ${API_URL}/api
+      API_RUNTIME_URL: ${API_URL}/api
       NEXT_PUBLIC_SITE_URL: ${APP_URL}
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN_WEB:-}

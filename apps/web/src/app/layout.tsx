@@ -36,6 +36,14 @@ const jetbrainsMono = JetBrains_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
+// Ver el comment grande en lib/api.ts: process.env.API_RUNTIME_URL (sin
+// prefijo NEXT_PUBLIC_) se lee EN VIVO acá porque este layout es un Server
+// Component — corre en Node dentro del contenedor en cada request, no se
+// hornea en el build como pasaría con una var NEXT_PUBLIC_*. Esto es lo que
+// permite que la MISMA imagen Docker sirva a producción y a preprod, cada
+// una con su propio API_RUNTIME_URL.
+const runtimeEnvScript = `window.__ENV__=${JSON.stringify({ API_URL: process.env.API_RUNTIME_URL || null })};`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   // El pedido es que la pestaña SIEMPRE diga "Sueños Dev", sin importar la
@@ -79,6 +87,7 @@ export default function RootLayout({
     <html lang="es" className={`${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: runtimeEnvScript }} />
       </head>
       <body className="relative min-h-screen overflow-x-hidden bg-cloud-50 text-ink">
         <ThemeProvider>
