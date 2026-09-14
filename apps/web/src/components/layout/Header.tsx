@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -29,7 +30,7 @@ function CartIcon() {
     <Link href="/carrito" className="relative text-ink-muted transition hover:text-primary" aria-label="Carrito">
       <ShoppingCart className="w-5 h-5" />
       {items.length > 0 && (
-        <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
+        <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-on-brand">
           {items.length}
         </span>
       )}
@@ -57,25 +58,6 @@ function NavLink({
       {children}
       {active && <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded bg-primary" />}
     </Link>
-  );
-}
-
-function CloudMark() {
-  return (
-    <div
-      className="flex h-[38px] w-[38px] items-center justify-center rounded-full"
-      style={{
-        background: 'linear-gradient(140deg,#fbbf24,#d97706)',
-        boxShadow: '0 10px 22px -8px rgba(217,119,6,0.6)',
-      }}
-    >
-      <div className="relative h-[11px] w-5">
-        {/* Marca fija sobre el degradé morado — se mantiene blanca en ambos temas */}
-        <div className="absolute left-1 top-0 h-[11px] w-[11px] rounded-full bg-white" />
-        <div className="absolute left-3 top-[3px] h-2 w-2 rounded-full bg-white" />
-        <div className="absolute bottom-0 left-0 h-[7px] w-5 rounded-full bg-white" />
-      </div>
-    </div>
   );
 }
 
@@ -206,11 +188,27 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-ink/[0.07] bg-cloud-50/[0.78] backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4">
-        <Link href="/" className="flex items-center gap-3">
-          <CloudMark />
-          <span className="text-xl font-extrabold tracking-tight text-ink">
-            Sueños <span className="text-primary">Dev</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          {/* El logo tiene "Sueños" en tinta oscura — invisible sobre el
+              header en modo oscuro. logo-dark.png es el mismo archivo con
+              esa palabra pasada a blanco (el resto del ícono/"Dev" igual),
+              mostrado solo cuando <html> tiene la clase "dark". */}
+          <Image
+            src="/logo.png"
+            alt="Sueños Dev"
+            width={2168}
+            height={725}
+            className="h-11 w-auto dark:hidden"
+            priority
+          />
+          <Image
+            src="/logo-dark.png"
+            alt="Sueños Dev"
+            width={2168}
+            height={725}
+            className="hidden h-11 w-auto dark:block"
+            priority
+          />
         </Link>
 
         {/* Solo navegación de producto en la barra: tres links fijos, más
@@ -271,7 +269,7 @@ export function Header() {
               </Link>
               <Link
                 href="/auth/registro"
-                className="rounded-xl bg-primary px-4 py-2 font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-xl bg-primary px-4 py-2 font-semibold text-on-brand transition hover:bg-primary/90"
                 style={{ boxShadow: '0 14px 28px -14px rgba(217,119,6,0.7)' }}
               >
                 Registrarse
@@ -336,7 +334,7 @@ export function Header() {
               <Link
                 href="/auth/registro"
                 onClick={() => setMenuAbierto(false)}
-                className="mt-1 w-fit rounded-xl bg-primary px-4 py-2 font-semibold text-white transition hover:bg-primary/90"
+                className="mt-1 w-fit rounded-xl bg-primary px-4 py-2 font-semibold text-on-brand transition hover:bg-primary/90"
               >
                 Registrarse
               </Link>
