@@ -10,7 +10,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', isLoading, children, className = '', disabled, ...props }, ref) => {
     const baseStyles = 'rounded-xl font-bold transition disabled:opacity-50 disabled:cursor-not-allowed';
     const variants = {
-      primary: 'bg-primary text-white hover:bg-indigo-600 shadow-[0_18px_34px_-16px_rgba(99,102,241,0.7)]',
+      primary: 'bg-primary text-on-brand hover:bg-primary/90 shadow-[0_18px_34px_-16px_rgba(217,119,6,0.7)]',
       secondary: 'bg-cloud-50 text-ink border border-ink/[0.12] hover:bg-cloud-100',
       danger: 'bg-red-500 text-white hover:bg-red-600',
       ghost: 'bg-transparent text-ink-muted hover:bg-cloud-100 hover:text-ink',

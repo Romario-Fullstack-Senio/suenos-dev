@@ -7,6 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 import { apiGet, apiPost } from '@/lib/api';
 import Link from 'next/link';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
+import { formatearFecha, formatearPrecio } from '@/lib/format';
 
 interface Inscripcion {
   id: string;
@@ -161,7 +162,19 @@ function DashboardContent() {
         </Link>
       </div>
       {loading ? (
-        <p>Cargando...</p>
+        // Antes era el texto "Cargando...": la espera acá es larga (una
+        // request de curso + una de progreso por inscripción), así que se
+        // usa el mismo skeleton de tarjetas que el catálogo.
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-cloud-100 rounded-xl p-6 border border-ink/[0.07] animate-pulse">
+              <div className="h-5 bg-ink/[0.06] rounded w-3/4 mb-3" />
+              <div className="h-4 bg-ink/[0.06] rounded w-1/2 mb-5" />
+              <div className="h-2 bg-ink/[0.06] rounded w-full mb-5" />
+              <div className="h-10 bg-ink/[0.06] rounded-lg w-full" />
+            </div>
+          ))}
+        </div>
       ) : cursos.length === 0 ? (
         <div className="text-center py-16 bg-cloud-100 rounded-xl border border-ink/[0.07]">
           <p className="text-ink-muted mb-4">No tienes cursos inscritos</p>
@@ -177,7 +190,7 @@ function DashboardContent() {
                 {item.curso?.titulo || `Curso ${item.cursoId.slice(0, 8)}...`}
               </h3>
               <p className="text-sm text-ink-muted mb-3">
-                Inscrito: {item.fechaInscripcion ? new Date(item.fechaInscripcion).toLocaleDateString() : 'N/A'}
+                Inscrito: {formatearFecha(item.fechaInscripcion)}
               </p>
 
               {item.totalLecciones > 0 && (
@@ -199,7 +212,7 @@ function DashboardContent() {
 
               <Link
                 href={`/aprender/${item.cursoId}`}
-                className="block text-center bg-primary text-white py-2 rounded-lg hover:bg-indigo-600 transition"
+                className="block text-center bg-primary text-on-brand py-2 rounded-lg hover:bg-primary/90 transition"
               >
                 {item.porcentaje > 0 ? 'Continuar' : 'Empezar'}
               </Link>
@@ -218,7 +231,7 @@ function DashboardContent() {
                   <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
                   <div className="p-4 flex flex-col flex-1">
                     <h3 className="font-semibold text-ink mb-1 line-clamp-2">{curso.titulo}</h3>
-                    <p className="text-accent font-bold mt-auto">${curso.precio} USD</p>
+                    <p className="font-extrabold text-ink mt-auto">{formatearPrecio(curso.precio)}</p>
                   </div>
                 </div>
               </Link>

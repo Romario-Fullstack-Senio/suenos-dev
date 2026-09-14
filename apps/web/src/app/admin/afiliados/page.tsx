@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { apiGet, apiPatch } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { SkeletonTable } from '@/components/ui/SkeletonGrid';
 
 interface Comision {
   id: string;
@@ -66,7 +67,7 @@ export default function AdminAfiliadosPage() {
       </label>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonTable />
       ) : filtradas.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay comisiones{soloPendientes ? ' pendientes' : ''}</p>

@@ -12,6 +12,7 @@ import { WishlistButton } from '@/components/WishlistButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { apiGet } from '@/lib/api';
+import { formatearPrecio } from '@/lib/format';
 
 // LessonPreviewModal carga HLSPlayer -> hls.js (~175kB minificado), y esta
 // página solo lo necesita si el usuario hace click en "Vista previa" de una
@@ -98,7 +99,7 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-8">
       <nav className="text-sm text-ink-soft mb-4 flex items-center gap-2 flex-wrap">
         <Link href="/" className="hover:text-ink transition-colors">Inicio</Link>
         <span>/</span>
@@ -114,6 +115,15 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
         <span>/</span>
         <span className="text-ink truncate max-w-[200px]">{curso.titulo}</span>
       </nav>
+
+      {/* Dos columnas en desktop: precio y CTA viven en un aside sticky.
+          Antes estaban en una caja arriba y desaparecían con el scroll — el
+          usuario evalúa objetivos, módulos y reseñas durante varias
+          pantallas y, cuando se convence, no había botón a la vista. En
+          mobile el aside cae en el flujo justo después de la intro, donde ya
+          estaba. */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_330px] lg:gap-8 lg:items-start">
+      <div className="lg:col-start-1">
 
       <CourseCoverImage
         imagenUrl={curso.imagenUrl}
@@ -152,52 +162,78 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
           </span>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <span className="text-2xl font-bold text-secondary">${curso.precio} USD</span>
-          <span className={`px-3 py-1 rounded-full text-sm ${
-            curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'
-          }`}>
-            {curso.estado}
-          </span>
-        </div>
-
-        {verificandoAcceso ? (
-          <div className="h-12 w-40 bg-ink/[0.06] rounded-lg animate-pulse" />
-        ) : yaInscripto ? (
-          <Link
-            href={`/aprender/${curso.id}`}
-            className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
-          >
-            Ir al curso
-          </Link>
-        ) : (
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={`/checkout?cursoId=${curso.id}`}
-              className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition"
-            >
-              Comprar ahora
-            </Link>
-            {isInCart(curso.id) ? (
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-secondary bg-secondary/10">
-                <Check className="w-4 h-4" /> En el carrito
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  addItem({ cursoId: curso.id, titulo: curso.titulo, precio: curso.precio, imagenUrl: curso.imagenUrl, slug: curso.slug });
-                  toast.success('Agregado al carrito');
-                }}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-ink border border-ink/[0.12] hover:bg-cloud-100 transition"
-              >
-                <ShoppingCart className="w-4 h-4" /> Agregar al carrito
-              </button>
-            )}
-            <WishlistButton cursoId={curso.id} className="w-11 h-11 border border-ink/[0.12] hover:bg-cloud-100" />
-          </div>
-        )}
       </div>
+
+      </div>
+
+      <aside className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-24 mb-8">
+        <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07]">
+          <p className="text-3xl font-extrabold text-ink mb-5">{formatearPrecio(curso.precio)}</p>
+
+          {verificandoAcceso ? (
+            <div className="h-12 w-full bg-ink/[0.06] rounded-lg animate-pulse" />
+          ) : yaInscripto ? (
+            <Link
+              href={`/aprender/${curso.id}`}
+              className="block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+            >
+              Ir al curso
+            </Link>
+          ) : curso.precio === 0 ? (
+            // Gratis: ni "comprar" ni "al carrito" tienen sentido acá — un
+            // solo botón que inscribe directo (el checkout detecta el total
+            // en $0 y completa la orden sin pasar por Stripe).
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/checkout?cursoId=${curso.id}`}
+                className="flex-1 block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+              >
+                Inscribirme gratis
+              </Link>
+              <WishlistButton cursoId={curso.id} className="w-11 h-11 flex-shrink-0 border border-ink/[0.12] hover:bg-cloud-100" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <Link
+                href={`/checkout?cursoId=${curso.id}`}
+                className="block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+              >
+                Comprar ahora
+              </Link>
+              <div className="flex items-center gap-3">
+                {isInCart(curso.id) ? (
+                  <span className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-secondary bg-secondary/10">
+                    <Check className="w-4 h-4" /> En el carrito
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addItem({ cursoId: curso.id, titulo: curso.titulo, precio: curso.precio, imagenUrl: curso.imagenUrl, slug: curso.slug });
+                      toast.success('Agregado al carrito');
+                    }}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-semibold text-ink border border-ink/[0.12] hover:bg-cloud-100 transition"
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Al carrito
+                  </button>
+                )}
+                <WishlistButton cursoId={curso.id} className="w-11 h-11 flex-shrink-0 border border-ink/[0.12] hover:bg-cloud-100" />
+              </div>
+            </div>
+          )}
+
+          <ul className="mt-5 pt-4 border-t border-ink/[0.07] space-y-2 text-sm text-ink-muted">
+            <li>
+              {totalLecciones} {totalLecciones === 1 ? 'lección' : 'lecciones'} en {curso.modulos.length}{' '}
+              {curso.modulos.length === 1 ? 'módulo' : 'módulos'}
+            </li>
+            {totalSegundos > 0 && <li>{formatearDuracion(totalSegundos)} de contenido en video</li>}
+            <li>Certificado verificable al terminar</li>
+          </ul>
+        </div>
+      </aside>
+
+      <div className="lg:col-start-1">
 
       {curso.objetivos && curso.objetivos.length > 0 && (
         <div className="bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] mb-6">
@@ -294,6 +330,9 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
       <ReviewsSection cursoId={curso.id} />
 
       <RelatedCourses cursoId={curso.id} />
+
+      </div>
+      </div>
 
       {vistaPrevia?.videoUrl && (
         <LessonPreviewModal

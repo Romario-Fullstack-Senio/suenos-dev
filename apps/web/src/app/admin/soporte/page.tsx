@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { apiGet } from '@/lib/api';
 import { LifeBuoy } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Ticket {
   id: string;
@@ -79,7 +80,7 @@ export default function AdminSoportePage() {
       </div>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : tickets.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay tickets que coincidan</p>

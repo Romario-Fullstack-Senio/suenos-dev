@@ -8,6 +8,7 @@ import { apiGet, apiPost, apiPatch } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, LifeBuoy } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Mensaje {
   id: string;
@@ -100,7 +101,13 @@ export default function TicketDetallePage() {
     }
   };
 
-  if (loading) return <p className="text-center py-16">Cargando...</p>;
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <SkeletonList cantidad={3} />
+      </div>
+    );
+  }
   if (!ticket) return null;
 
   const esAdmin = hasRole('admin');

@@ -7,6 +7,7 @@ import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Pin, Lock, Flag, Trash2, EyeOff } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Respuesta {
   id: string;
@@ -130,7 +131,13 @@ export default function TemaForoPage() {
     }
   };
 
-  if (loading) return <p className="text-center py-16 text-ink-muted">Cargando...</p>;
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <SkeletonList cantidad={3} />
+      </div>
+    );
+  }
   if (!tema) return <p className="text-center py-16 text-ink-muted">Tema no encontrado</p>;
 
   const puedeEliminar = user && (user.id === tema.autorId || esAdmin);

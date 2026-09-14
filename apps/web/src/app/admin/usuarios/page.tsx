@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { apiGet, apiPut } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { SkeletonTable } from '@/components/ui/SkeletonGrid';
 
 interface Usuario {
   id: string;
@@ -45,7 +46,7 @@ export default function AdminUsuariosPage() {
       <h1 className="text-3xl font-bold mb-8">Gestionar Usuarios</h1>
 
       {loading ? (
-        <p>Cargando...</p>
+        <SkeletonTable />
       ) : (
         <div className="bg-cloud-100 rounded-xl shadow-sm border border-ink/[0.07] overflow-hidden">
           <table className="w-full">

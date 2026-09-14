@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Manrope, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -17,6 +18,22 @@ import { ReferralCapture } from '@/components/ReferralCapture';
 // tema incorrecto al cargar. Debe ser síncrono y correr en <head>.
 const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('suenos-theme');var dark=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark)document.documentElement.classList.add('dark');}catch(e){}})();`;
 
+// Autohospedadas y precargadas por Next: no bloquean el render ni producen
+// el salto de fuente que daba el @import de Google Fonts en globals.css.
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-manrope',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+});
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata: Metadata = {
@@ -29,7 +46,7 @@ export const metadata: Metadata = {
   // `template`, para no heredar el "%s" de las páginas que definen su
   // propio título vía generateMetadata.
   title: 'Sueños Dev',
-  description: 'Aprende desarrollo web con cursos practicos y certificados verificables.',
+  description: 'Aprende desarrollo web con cursos prácticos, videos en streaming y certificados verificables.',
   openGraph: {
     siteName: 'Sueños Dev',
     type: 'website',
@@ -50,7 +67,7 @@ export const metadata: Metadata = {
 // theme_color vive acá (no en `metadata`) desde Next 14 — es lo que pinta
 // la barra de estado del navegador/SO cuando la PWA está instalada.
 export const viewport: Viewport = {
-  themeColor: '#6366f1',
+  themeColor: '#d97706',
 };
 
 export default function RootLayout({
@@ -59,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={`${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

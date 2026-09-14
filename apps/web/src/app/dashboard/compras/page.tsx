@@ -4,7 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
-import { Download, RotateCcw } from 'lucide-react';
+import { Download, RotateCcw, Receipt } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
+import { formatearFecha, formatearPrecio } from '@/lib/format';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -23,11 +27,14 @@ interface Orden {
   createdAt: string;
 }
 
-const ESTADO_STYLE: Record<Orden['estado'], string> = {
-  pendiente: 'bg-amber-100 text-amber-700',
-  completada: 'bg-green-100 text-green-700',
-  fallida: 'bg-red-100 text-red-700',
-  reembolsada: 'bg-ink/[0.08] text-ink-muted',
+// Tonos semánticos (con valor propio por tema) en lugar de los bg-*-100 /
+// text-*-700 fijos de Tailwind, que en tema oscuro quedaban como parches
+// claros sobre fondo oscuro.
+const ESTADO_TONO: Record<Orden['estado'], 'success' | 'warning' | 'danger' | 'neutral'> = {
+  pendiente: 'warning',
+  completada: 'success',
+  fallida: 'danger',
+  reembolsada: 'neutral',
 };
 
 const ESTADO_LABEL: Record<Orden['estado'], string> = {
@@ -102,11 +109,14 @@ export default function MisComprasPage() {
       <h1 className="text-3xl font-bold mb-8 text-ink">Mis Compras</h1>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList cantidad={3} />
       ) : ordenes.length === 0 ? (
-        <div className="text-center py-16 card">
-          <p className="text-ink-muted">Todavía no compraste ningún curso</p>
-        </div>
+        <EstadoVacio
+          icono={Receipt}
+          titulo="Todavía no compraste ningún curso"
+          texto="Cuando completes una compra vas a ver acá el comprobante y el detalle."
+          cta={{ href: '/cursos', label: 'Ver cursos' }}
+        />
       ) : (
         <div className="space-y-4">
           {ordenes.map((orden) => (
@@ -116,14 +126,14 @@ export default function MisComprasPage() {
                   {orden.items.map(i => i.cursoNombre).join(', ')}
                 </p>
                 <p className="text-ink-muted text-sm">
-                  {new Date(orden.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  {' · '}${orden.monto.toFixed(2)} {orden.moneda.toUpperCase()}
+                  {formatearFecha(orden.createdAt)}
+                  {' · '}{formatearPrecio(orden.monto)}
                   {orden.items.length > 1 && ` · ${orden.items.length} cursos`}
                 </p>
               </div>
-              <span className={`text-xs font-semibold px-3 py-1 rounded-full self-start md:self-center ${ESTADO_STYLE[orden.estado]}`}>
+              <Badge tono={ESTADO_TONO[orden.estado]} className="self-start md:self-center">
                 {ESTADO_LABEL[orden.estado]}
-              </span>
+              </Badge>
               <div className="flex gap-2">
                 {orden.estado === 'completada' && (
                   <Button variant="secondary" size="sm" onClick={() => descargarFactura(orden.id)}>

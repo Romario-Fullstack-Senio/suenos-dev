@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Las fuentes se cargan con next/font en layout.tsx (autohospedadas, sin
+   bloquear el render). Antes había acá un @import de Google Fonts: bloquea
+   el primer paint y produce un salto de fuente en cada primera visita. */
 
 @tailwind base;
 @tailwind components;
@@ -20,9 +22,22 @@
   --color-ink: 20 22 43;
   --color-ink-muted: 90 93 120;
   --color-ink-soft: 154 157 178;
-  --color-primary: 99 102 241;
-  --color-secondary: 139 92 246;
-  --color-accent: 245 158 11;
+  /* Identidad de marca: dorado/ámbar en vez del morado original — pedido
+     explícito, cambiado en un solo lugar porque todo el resto de la web
+     consume estos tokens (o sus alias de Tailwind primary/secondary/accent),
+     nunca un hex de morado suelto. */
+  --color-primary: 217 119 6; /* amber-600 */
+  --color-secondary: 161 98 7; /* yellow-700 */
+  --color-accent: 180 83 9; /* amber-700 */
+  /* Pares semánticos: tienen valor propio por tema porque el mismo verde no
+     sirve en los dos. Antes se usaba text-green-400 sobre bg-green-500/15,
+     elegido para el tema oscuro e ilegible en el claro. */
+  --color-success: 21 128 61;
+  --color-warning: 180 83 9;
+  --color-danger: 185 28 28;
+  /* Texto sobre fondo primary/secondary/accent (botones, badges). En claro
+     esos fondos son ámbar oscuro: blanco contrasta bien. */
+  --color-on-brand: 255 255 255;
 }
 
 .dark {
@@ -33,14 +48,21 @@
   --color-ink: 241 245 249;
   --color-ink-muted: 148 163 184;
   --color-ink-soft: 100 116 139;
-  --color-primary: 167 139 250; /* violet-light: más visible sobre fondo oscuro */
-  --color-secondary: 124 58 237;
-  --color-accent: 251 191 36; /* gold-light */
+  --color-primary: 251 191 36; /* amber-400: más visible sobre fondo oscuro */
+  --color-secondary: 250 204 21; /* yellow-400 */
+  --color-accent: 253 224 71; /* yellow-300 */
+  --color-success: 74 222 128;
+  --color-warning: 251 191 36;
+  --color-danger: 248 113 113;
+  /* En oscuro primary/secondary/accent son dorado/amarillo claro (para
+     leerse como texto sobre el fondo oscuro) — blanco encima de eso da
+     ~1.7:1 de contraste. Texto oscuro en su lugar. */
+  --color-on-brand: 23 20 8;
 }
 
 @layer base {
   body {
-    font-family: 'Manrope', Helvetica, Arial, sans-serif;
+    font-family: var(--font-manrope), Helvetica, Arial, sans-serif;
     background: rgb(var(--color-bg));
     color: rgb(var(--color-ink));
   }
@@ -75,12 +97,12 @@
     @apply transition;
   }
   .card-hover:hover {
-    border-color: rgba(99, 102, 241, 0.35);
-    box-shadow: 0 26px 46px -28px rgba(99, 102, 241, 0.35);
+    border-color: rgba(217, 119, 6, 0.35);
+    box-shadow: 0 26px 46px -28px rgba(217, 119, 6, 0.35);
   }
   .btn-primary {
-    @apply inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white transition hover:bg-indigo-600;
-    box-shadow: 0 18px 34px -16px rgba(99, 102, 241, 0.7);
+    @apply inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-on-brand transition hover:bg-primary/90;
+    box-shadow: 0 18px 34px -16px rgba(217, 119, 6, 0.7);
   }
   .btn-ghost {
     @apply inline-flex items-center gap-2 rounded-xl border border-ink/[0.12] bg-cloud-50 px-6 py-3 font-bold text-ink transition hover:bg-cloud-100;

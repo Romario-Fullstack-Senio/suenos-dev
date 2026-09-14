@@ -1,16 +1,16 @@
 const STARS = [
-  { left: '8%', top: '110px', size: 5, color: '#8b5cf6', opacity: 0.5 },
-  { left: '20%', top: '82px', size: 3, color: '#6366f1', opacity: 0.7 },
+  { left: '8%', top: '110px', size: 5, color: '#fbbf24', opacity: 0.5 },
+  { left: '20%', top: '82px', size: 3, color: '#d97706', opacity: 0.7 },
   { left: '31%', top: '196px', size: 4, color: '#f59e0b', opacity: 0.6 },
-  { left: '44%', top: '120px', size: 3, color: '#8b5cf6', opacity: 0.45 },
-  { left: '57%', top: '174px', size: 5, color: '#6366f1', opacity: 0.45 },
-  { left: '68%', top: '96px', size: 3, color: '#8b5cf6', opacity: 0.5 },
-  { left: '78%', top: '262px', size: 4, color: '#6366f1', opacity: 0.5 },
+  { left: '44%', top: '120px', size: 3, color: '#fbbf24', opacity: 0.45 },
+  { left: '57%', top: '174px', size: 5, color: '#d97706', opacity: 0.45 },
+  { left: '68%', top: '96px', size: 3, color: '#fbbf24', opacity: 0.5 },
+  { left: '78%', top: '262px', size: 4, color: '#d97706', opacity: 0.5 },
   { left: '88%', top: '340px', size: 3, color: '#f59e0b', opacity: 0.5 },
-  { left: '13%', top: '420px', size: 4, color: '#6366f1', opacity: 0.35 },
-  { left: '49%', top: '620px', size: 4, color: '#8b5cf6', opacity: 0.35 },
+  { left: '13%', top: '420px', size: 4, color: '#d97706', opacity: 0.35 },
+  { left: '49%', top: '620px', size: 4, color: '#fbbf24', opacity: 0.35 },
   { left: '72%', top: '560px', size: 3, color: '#f59e0b', opacity: 0.4 },
-  { left: '4%', top: '660px', size: 3, color: '#6366f1', opacity: 0.3 },
+  { left: '4%', top: '660px', size: 3, color: '#d97706', opacity: 0.3 },
 ];
 
 function Cloud({ className, width }: { className: string; width: number }) {
@@ -22,7 +22,7 @@ function Cloud({ className, width }: { className: string; width: number }) {
       // nocturno — se atenúan y oscurecen para leerse como nubes de noche en
       // vez de manchas blancas, con una transición suave al cambiar de tema.
       className={`${className} transition-[opacity,filter] duration-500 dark:opacity-[0.14] dark:brightness-[0.35]`}
-      style={{ width, height: puffA, filter: 'drop-shadow(0 26px 40px rgba(99,102,241,0.16))' }}
+      style={{ width, height: puffA, filter: 'drop-shadow(0 26px 40px rgba(217,119,6,0.16))' }}
     >
       <div
         className="absolute rounded-full bg-white"
@@ -56,11 +56,11 @@ export function Sky() {
       {/* auroras suaves */}
       <div
         className="absolute -left-[8%] -top-[14%] h-[620px] w-[620px] rounded-full"
-        style={{ background: 'radial-gradient(circle,rgba(99,102,241,0.16),rgba(99,102,241,0) 70%)' }}
+        style={{ background: 'radial-gradient(circle,rgba(217,119,6,0.16),rgba(217,119,6,0) 70%)' }}
       />
       <div
         className="absolute -right-[12%] top-[18%] h-[660px] w-[660px] rounded-full"
-        style={{ background: 'radial-gradient(circle,rgba(139,92,246,0.13),rgba(139,92,246,0) 70%)' }}
+        style={{ background: 'radial-gradient(circle,rgba(161,98,7,0.13),rgba(161,98,7,0) 70%)' }}
       />
       <div
         className="absolute -bottom-[26%] left-[24%] h-[520px] w-[700px] rounded-full"

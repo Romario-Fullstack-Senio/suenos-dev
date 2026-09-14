@@ -13,6 +13,8 @@ import { TextArea } from '@/components/ui/TextArea';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
+import { EstadoCursoBadge } from '@/components/ui/Badge';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface RecursoLeccion {
   nombre: string;
@@ -131,7 +133,13 @@ export default function GestionarCursoPage() {
     }
   };
 
-  if (loading) return <p className="text-center py-16">Cargando...</p>;
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <SkeletonList cantidad={3} />
+      </div>
+    );
+  }
   if (!curso) return <p className="text-center py-16">Curso no encontrado</p>;
 
   return (
@@ -165,9 +173,7 @@ export default function GestionarCursoPage() {
                   <Pencil className="w-4 h-4" />
                 </button>
               </div>
-              <span className={`text-xs px-2 py-1 rounded mt-2 inline-block ${curso.estado === 'publicado' ? 'bg-green-500/15 text-green-400' : 'bg-accent/15 text-accent'}`}>
-                {curso.estado}
-              </span>
+              <EstadoCursoBadge estado={curso.estado} className="mt-2" />
             </>
           )}
         </div>

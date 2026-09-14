@@ -6,6 +6,9 @@ import { apiGet, apiPost, apiDelete } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { SkeletonTable } from '@/components/ui/SkeletonGrid';
+import { Badge } from '@/components/ui/Badge';
+import { formatearPrecio } from '@/lib/format';
 
 interface Cupon {
   id: string;
@@ -149,7 +152,7 @@ export default function AdminCuponesPage() {
       </form>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonTable />
       ) : cupones.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay cupones creados todavía</p>
@@ -172,7 +175,7 @@ export default function AdminCuponesPage() {
                 <tr key={cupon.id}>
                   <td className="px-6 py-4 font-semibold text-ink">{cupon.codigo}</td>
                   <td className="px-6 py-4 text-ink-muted">
-                    {cupon.tipo === 'porcentaje' ? `${cupon.valor}%` : `$${cupon.valor} USD`}
+                    {cupon.tipo === 'porcentaje' ? `${cupon.valor}%` : formatearPrecio(cupon.valor)}
                   </td>
                   <td className="px-6 py-4 text-ink-muted text-sm">
                     {cupon.cursoId ? `Curso ${cupon.cursoId.slice(0, 8)}…` : 'Todos los cursos'}
@@ -181,9 +184,9 @@ export default function AdminCuponesPage() {
                     {cupon.usosActuales}{cupon.usosMaximos ? ` / ${cupon.usosMaximos}` : ''}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cupon.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <Badge tono={cupon.activo ? 'success' : 'danger'}>
                       {cupon.activo ? 'Activo' : 'Inactivo'}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-6 py-4">
                     {cupon.activo && (

@@ -20,7 +20,7 @@ export function CourseCoverImage({ imagenUrl, titulo, className = '' }: CourseCo
 
   return (
     <div className={`flex items-center justify-center bg-gradient-to-br from-primary to-secondary ${className}`}>
-      <span className="text-white/40 font-extrabold text-4xl select-none">
+      <span className="text-on-brand/40 font-extrabold text-4xl select-none">
         {titulo.charAt(0).toUpperCase()}
       </span>
     </div>

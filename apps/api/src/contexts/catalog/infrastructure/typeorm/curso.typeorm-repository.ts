@@ -164,6 +164,17 @@ export class CursoTypeOrmRepository implements CursoRepository {
     return { cursos: orms.map(o => this.toDomain(o)), total };
   }
 
+  async obtenerFechasCreacion(ids: string[]): Promise<Map<string, Date>> {
+    if (ids.length === 0) return new Map();
+    const filas = await this.repo
+      .createQueryBuilder('curso')
+      .select('curso.id', 'id')
+      .addSelect('curso.created_at', 'createdAt')
+      .where('curso.id IN (:...ids)', { ids })
+      .getRawMany<{ id: string; createdAt: Date }>();
+    return new Map(filas.map(f => [f.id, f.createdAt]));
+  }
+
   private toDomain(orm: CursoOrmEntity): Curso {
     const modulos = (orm.modulos || []).map(m => {
       const lecciones = (m.lecciones || []).map(l =>

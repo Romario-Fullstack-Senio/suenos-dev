@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { apiGet, apiDelete, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Flag, EyeOff } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Pregunta {
   id: string;
@@ -74,7 +75,7 @@ export default function AdminPreguntasReportadasPage() {
       <p className="text-sm text-ink-muted mb-6">Preguntas de Q&amp;A con al menos un reporte de un estudiante.</p>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : preguntas.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay preguntas reportadas</p>

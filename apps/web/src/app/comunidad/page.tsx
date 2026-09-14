@@ -6,6 +6,7 @@ import { apiGet } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { MessageSquare, Pin, Lock } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 const CATEGORIAS: { value: string; label: string }[] = [
   { value: '', label: 'Todas las categorías' },
@@ -75,7 +76,7 @@ export default function ComunidadPage() {
       </select>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : temas.length === 0 ? (
         <div className="text-center py-16 card">
           <MessageSquare className="w-8 h-8 text-ink-soft mx-auto mb-2" />

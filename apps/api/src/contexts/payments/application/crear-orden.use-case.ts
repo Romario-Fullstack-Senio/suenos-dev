@@ -7,6 +7,8 @@ import { STRIPE_PAYMENT_INTENT, StripePaymentIntent } from '../domain/stripe-pay
 import { CUPON_REPOSITORY, CuponRepository } from '../domain/cupon.repository.port';
 import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
 import { PAQUETE_REPOSITORY, PaqueteRepository } from '../../bundles/domain/paquete.repository.port';
+import { USUARIO_REPOSITORY, UsuarioRepository } from '../../identity/domain/usuario.repository.port';
+import { EventBus } from '../../../common/event-bus';
 
 export interface CrearOrdenItemInput {
   cursoId: string;
@@ -49,11 +51,14 @@ export class CrearOrdenUseCase {
     private readonly cursoRepository: CursoRepository,
     @Inject(PAQUETE_REPOSITORY)
     private readonly paqueteRepository: PaqueteRepository,
+    @Inject(USUARIO_REPOSITORY)
+    private readonly usuarioRepository: UsuarioRepository,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(
     command: CrearOrdenCommand,
-  ): Promise<{ ordenId: string; clientSecret: string; precioFinal: number; descuento: number }> {
+  ): Promise<{ ordenId: string; clientSecret: string | null; precioFinal: number; descuento: number; gratis: boolean }> {
     if (!command.items || command.items.length === 0) {
       throw new DomainError('La orden necesita al menos un curso');
     }
@@ -120,6 +125,40 @@ export class CrearOrdenUseCase {
     // Stripe y la respuesta al frontend mostrarían ese ruido.
     const precioFinal = Math.round(items.reduce((sum, i) => sum + i.precioFinal, 0) * 100) / 100;
 
+    // Un curso gratis (o un cupón/paquete que lo deja en $0) nunca llega a
+    // Stripe: su API rechaza un PaymentIntent de monto 0 (mínimo 50 centavos
+    // en USD), así que ni siquiera tendría sentido intentarlo. En vez de
+    // eso, la orden se completa acá mismo — mismo camino que
+    // OrdenController#confirmar tras un pago real — y el frontend nunca
+    // llega a mostrar el formulario de Stripe.
+    if (precioFinal === 0) {
+      const ordenId = randomUUID();
+      const orden = Orden.crear(
+        ordenId,
+        command.estudianteId,
+        items.map((i) => ({ id: i.id, cursoId: i.cursoId, cursoNombre: i.cursoNombre, precio: i.precioFinal })),
+        'usd',
+        `gratis_${ordenId}`,
+      );
+
+      let alumnoEmail = '';
+      let alumnoNombre = '';
+      const usuario = await this.usuarioRepository.findById(command.estudianteId);
+      if (usuario) {
+        alumnoEmail = usuario.email.value || String(usuario.email);
+        alumnoNombre = usuario.nombre;
+      }
+
+      orden.completar({ email: alumnoEmail, nombre: alumnoNombre });
+      await this.ordenRepository.save(orden);
+
+      for (const event of orden.pullDomainEvents()) {
+        await this.eventBus.publish(event);
+      }
+
+      return { ordenId, clientSecret: null, precioFinal, descuento, gratis: true };
+    }
+
     const { clientSecret, paymentIntentId } = await this.stripePaymentIntent.createPaymentIntent({
       amount: precioFinal,
       currency: 'usd',
@@ -140,6 +179,6 @@ export class CrearOrdenUseCase {
     );
     await this.ordenRepository.save(orden);
 
-    return { ordenId, clientSecret, precioFinal, descuento };
+    return { ordenId, clientSecret, precioFinal, descuento, gratis: false };
   }
 }

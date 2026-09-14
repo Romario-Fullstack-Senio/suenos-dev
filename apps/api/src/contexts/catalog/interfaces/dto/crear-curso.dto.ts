@@ -1,4 +1,4 @@
-import { IsString, MinLength, IsNumber, IsPositive, IsOptional, IsUrl, IsIn, IsArray } from 'class-validator';
+import { IsString, MinLength, IsNumber, Min, IsOptional, IsUrl, IsIn, IsArray } from 'class-validator';
 import { NIVELES_CURSO, NivelCurso } from '../../domain/curso.entity';
 
 export class CrearCursoDto {
@@ -9,8 +9,10 @@ export class CrearCursoDto {
   @IsString()
   descripcion!: string;
 
+  // Min(0), no IsPositive: el dominio (Precio.create) permite 0 a propósito
+  // — un curso gratis es un precio válido, solo se rechazan los negativos.
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   precio!: number;
 
   @IsString()

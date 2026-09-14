@@ -43,6 +43,14 @@ export default function HLSPlayer({ src, subtitulosUrl, onProgress, onEnded }: H
         video.play().catch(() => {});
       });
       return () => {
+        // Pausar y desacoplar el <video> ANTES de destruir hls.js: si se
+        // llama a destroy() mientras el video todavía tiene una descarga o
+        // un play() en curso, el navegador aborta ese fetch y lo reporta
+        // como una promesa rechazada sin capturar (AbortError: "The
+        // fetching process for the media resource was aborted..."), que
+        // en dev Next.js muestra como error fatal aunque es inofensivo.
+        video.pause();
+        hls.detachMedia();
         hls.destroy();
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {

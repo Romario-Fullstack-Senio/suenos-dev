@@ -76,7 +76,7 @@ export function AvatarUpload() {
         ) : (
           <div
             className="flex h-full w-full items-center justify-center text-xl font-bold text-white"
-            style={{ background: 'linear-gradient(140deg,#8b5cf6,#6366f1)' }}
+            style={{ background: 'linear-gradient(140deg,#fbbf24,#d97706)' }}
           >
             {inicial}
           </div>

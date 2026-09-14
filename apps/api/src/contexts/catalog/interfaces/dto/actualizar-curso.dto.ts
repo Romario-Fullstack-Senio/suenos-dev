@@ -1,4 +1,4 @@
-import { IsString, MinLength, IsNumber, IsPositive, IsOptional, IsUrl, IsIn, IsArray } from 'class-validator';
+import { IsString, MinLength, IsNumber, Min, IsOptional, IsUrl, IsIn, IsArray } from 'class-validator';
 import { NIVELES_CURSO, NivelCurso } from '../../domain/curso.entity';
 
 export class ActualizarCursoDto {
@@ -11,9 +11,10 @@ export class ActualizarCursoDto {
   @IsString()
   descripcion?: string;
 
+  // Min(0), no IsPositive — ver comentario en CrearCursoDto.
   @IsOptional()
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   precio?: number;
 
   @IsOptional()

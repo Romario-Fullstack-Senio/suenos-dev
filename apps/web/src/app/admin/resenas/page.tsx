@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { apiGet, apiDelete, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Star, Flag, EyeOff } from 'lucide-react';
+import { SkeletonList } from '@/components/ui/SkeletonGrid';
 
 interface Resena {
   id: string;
@@ -95,7 +96,7 @@ export default function AdminResenasPage() {
       </label>
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonList />
       ) : filtradas.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay reseñas que coincidan</p>

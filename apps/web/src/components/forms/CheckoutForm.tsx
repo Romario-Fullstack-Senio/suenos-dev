@@ -8,7 +8,9 @@ import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { Tag, X } from 'lucide-react';
+import { Tag, X, ShoppingCart } from 'lucide-react';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { formatearPrecio } from '@/lib/format';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
@@ -169,7 +171,7 @@ export function CheckoutForm() {
     try {
       // Sin estudianteId: la API lo toma del JWT (mandarlo desde el cliente
       // dejaba crear órdenes a nombre de otro usuario).
-      const result = await apiPost<{ clientSecret: string; ordenId: string }>('/ordenes', {
+      const result = await apiPost<{ clientSecret: string | null; ordenId: string; gratis: boolean }>('/ordenes', {
         items,
         successUrl: `${window.location.origin}/dashboard`,
         cancelUrl: paqueteId
@@ -180,7 +182,16 @@ export function CheckoutForm() {
         cuponCodigo: cuponAplicado?.codigo,
         paqueteId: paqueteId ?? undefined,
       });
-      setClientSecret(result.clientSecret);
+      if (result.gratis) {
+        // Total en $0 (curso gratis, o un cupón/paquete que lo deja así): la
+        // API ya completó la orden y creó la inscripción, no hay nada que
+        // pagarle a Stripe. Mismo destino que usa el pago real al volver
+        // (return_url), así el dashboard confirma (idempotente) y limpia el
+        // carrito con el mismo código de siempre.
+        window.location.href = `${window.location.origin}/dashboard?ordenId=${result.ordenId}`;
+        return;
+      }
+      setClientSecret(result.clientSecret as string);
       setOrdenId(result.ordenId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al inicializar el pago');
@@ -202,17 +213,27 @@ export function CheckoutForm() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-ink-muted">Cargando checkout...</p>
+      <div className="max-w-2xl mx-auto px-4 py-16">
+        <div className="h-9 w-48 bg-ink/[0.06] rounded mb-8 animate-pulse" />
+        <div className="card space-y-4 animate-pulse">
+          <div className="h-5 w-2/3 bg-ink/[0.06] rounded" />
+          <div className="h-8 w-40 bg-ink/[0.06] rounded ml-auto" />
+          <div className="h-12 w-full bg-ink/[0.06] rounded-lg" />
+        </div>
       </div>
     );
   }
 
   if (esCarrito && items.length === 0 && !clientSecret) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <p className="text-ink-muted mb-4">Tu carrito está vacío</p>
-        <Button onClick={() => window.location.href = '/cursos'}>Ver cursos</Button>
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <EstadoVacio
+          icono={ShoppingCart}
+          titulo="Tu carrito está vacío"
+          texto="Agregá un curso antes de pasar por el checkout."
+          cta={{ href: '/cursos', label: 'Ver cursos' }}
+          variante="plano"
+        />
       </div>
     );
   }
@@ -233,17 +254,17 @@ export function CheckoutForm() {
           {items.map((item) => (
             <div key={item.cursoId} className="flex items-center justify-between gap-3">
               <p className="font-medium truncate">{item.cursoNombre}</p>
-              <p className="text-ink-muted flex-shrink-0">${item.precio} USD</p>
+              <p className="text-ink-muted flex-shrink-0">{formatearPrecio(item.precio)}</p>
             </div>
           ))}
           <div className="flex items-baseline justify-end gap-2 pt-2">
             {hayDescuento ? (
               <>
-                <p className="text-lg text-ink-soft line-through">${totalBase} USD</p>
-                <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>
+                <p className="text-lg text-ink-soft line-through">{formatearPrecio(totalBase)}</p>
+                <p className="text-2xl font-extrabold text-ink">{formatearPrecio(precioMostrado)}</p>
               </>
             ) : (
-              <p className="text-2xl font-bold text-secondary">${precioMostrado.toFixed(2)} USD</p>
+              <p className="text-2xl font-extrabold text-ink">{formatearPrecio(precioMostrado)}</p>
             )}
           </div>
         </div>
@@ -289,7 +310,7 @@ export function CheckoutForm() {
           </Elements>
         ) : (
           <Button className="w-full" onClick={irAPagar} isLoading={creandoOrden} disabled={creandoOrden || items.length === 0}>
-            Continuar al pago
+            {precioMostrado === 0 ? 'Inscribirme gratis' : 'Continuar al pago'}
           </Button>
         )}
 

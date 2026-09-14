@@ -249,13 +249,13 @@ export default function AprenderPage() {
         <aside className="lg:col-span-1 bg-cloud-100 rounded-xl p-6 shadow-sm border border-ink/[0.07] max-h-[80vh] overflow-y-auto">
           <h2 className="text-lg font-semibold mb-4">Módulos</h2>
           <div className="space-y-4">
-            {curso.modulos.map((mod) => (
+            {[...curso.modulos].sort((a, b) => a.orden - b.orden).map((mod) => (
               <div key={mod.id}>
                 <h3 className="font-medium text-sm text-ink mb-2">
                   {mod.orden}. {mod.titulo}
                 </h3>
                 <ul className="space-y-1 ml-3">
-                  {mod.lecciones.map((lec) => {
+                  {[...mod.lecciones].sort((a, b) => a.orden - b.orden).map((lec) => {
                     const lecProgreso = progreso?.progresos.find(p => p.leccionId === lec.id);
                     const disponible = estaDisponible(lec, fechaInscripcion);
                     const desde = fechaDisponibilidad(lec, fechaInscripcion);
@@ -301,14 +301,13 @@ export default function AprenderPage() {
         <div className="lg:col-span-3">
           {leccionActual?.videoUrl ? (
             <HLSPlayer
-              key={leccionActual.id}
               src={leccionActual.videoUrl}
               subtitulosUrl={leccionActual.subtitulosUrl}
               onProgress={handleVideoProgress}
               onEnded={handleVideoEnded}
             />
           ) : (
-            <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center text-white mb-6">
+            <div className="bg-cloud-50 aspect-video rounded-xl flex items-center justify-center mb-6">
               <p className="text-ink-soft">Video no disponible</p>
             </div>
           )}
@@ -321,7 +320,7 @@ export default function AprenderPage() {
           <div className="flex gap-4 mt-6">
             <Link
               href={`/aprender/${cursoId}/quiz`}
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition"
+              className="bg-primary text-on-brand px-6 py-3 rounded-lg hover:bg-primary/90 transition"
             >
               Tomar Quiz Final
             </Link>

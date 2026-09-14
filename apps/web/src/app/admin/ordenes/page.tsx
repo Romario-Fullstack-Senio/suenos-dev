@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { apiGet, apiPost } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
+import { SkeletonTable } from '@/components/ui/SkeletonGrid';
+import { Badge } from '@/components/ui/Badge';
+import { formatearPrecio } from '@/lib/format';
 
 interface OrdenItem {
   cursoId: string;
@@ -22,11 +25,11 @@ interface Orden {
   createdAt: string;
 }
 
-const ESTADO_STYLE: Record<Orden['estado'], string> = {
-  pendiente: 'bg-amber-100 text-amber-700',
-  completada: 'bg-green-100 text-green-700',
-  fallida: 'bg-red-100 text-red-700',
-  reembolsada: 'bg-ink/[0.08] text-ink-muted',
+const ESTADO_TONO: Record<Orden['estado'], 'warning' | 'success' | 'danger' | 'neutral'> = {
+  pendiente: 'warning',
+  completada: 'success',
+  fallida: 'danger',
+  reembolsada: 'neutral',
 };
 
 export default function AdminOrdenesPage() {
@@ -84,7 +87,7 @@ export default function AdminOrdenesPage() {
       />
 
       {loading ? (
-        <p className="text-ink-muted">Cargando...</p>
+        <SkeletonTable />
       ) : filtradas.length === 0 ? (
         <div className="text-center py-16 card">
           <p className="text-ink-muted">No hay órdenes que coincidan</p>
@@ -112,14 +115,14 @@ export default function AdminOrdenesPage() {
                   <td className="px-6 py-4 text-ink-muted">
                     {orden.items.map(i => i.cursoNombre).join(', ')}
                   </td>
-                  <td className="px-6 py-4 text-ink-muted">${orden.monto.toFixed(2)} {orden.moneda.toUpperCase()}</td>
+                  <td className="px-6 py-4 text-ink-muted">{formatearPrecio(orden.monto)}</td>
                   <td className="px-6 py-4 text-ink-muted text-sm">
                     {new Date(orden.createdAt).toLocaleDateString('es-ES')}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${ESTADO_STYLE[orden.estado]}`}>
+                    <Badge tono={ESTADO_TONO[orden.estado]}>
                       {orden.estado}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-6 py-4">
                     {orden.estado === 'completada' && (

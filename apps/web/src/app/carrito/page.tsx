@@ -7,6 +7,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { CourseCoverImage } from '@/components/CourseCoverImage';
 import { Button } from '@/components/ui/Button';
+import { EstadoVacio } from '@/components/ui/EstadoVacio';
+import { formatearPrecio } from '@/lib/format';
 
 export default function CarritoPage() {
   const { items, removeItem, total } = useCart();
@@ -23,13 +25,14 @@ export default function CarritoPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <ShoppingCart className="w-12 h-12 text-ink-soft mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Tu carrito está vacío</h1>
-        <p className="text-ink-muted mb-6">Explorá el catálogo y agregá los cursos que te interesen.</p>
-        <Link href="/cursos" className="inline-block bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition">
-          Ver cursos
-        </Link>
+      <div className="max-w-3xl mx-auto px-4 py-12">
+        <EstadoVacio
+          icono={ShoppingCart}
+          titulo="Tu carrito está vacío"
+          texto="Explorá el catálogo y agregá los cursos que te interesen."
+          cta={{ href: '/cursos', label: 'Ver cursos' }}
+          variante="plano"
+        />
       </div>
     );
   }
@@ -46,7 +49,7 @@ export default function CarritoPage() {
               <Link href={`/cursos/${item.slug}`} className="font-semibold text-ink hover:text-primary transition truncate block">
                 {item.titulo}
               </Link>
-              <p className="text-accent font-bold mt-1">${item.precio} USD</p>
+              <p className="font-extrabold text-ink mt-1">{formatearPrecio(item.precio)}</p>
             </div>
             <button
               type="button"
@@ -65,7 +68,7 @@ export default function CarritoPage() {
           <span className="text-ink-muted">
             {items.length} {items.length === 1 ? 'curso' : 'cursos'}
           </span>
-          <span className="text-2xl font-bold text-secondary">${total.toFixed(2)} USD</span>
+          <span className="text-2xl font-extrabold text-ink">{formatearPrecio(total)}</span>
         </div>
         <Button className="w-full" onClick={irAPagar}>
           Proceder al pago
