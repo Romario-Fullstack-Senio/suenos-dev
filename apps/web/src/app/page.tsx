@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { PlayCircle, CircleDashed, BadgeCheck, Users } from 'lucide-react';
+import { PlayCircle, CircleDashed, BadgeCheck } from 'lucide-react';
 import { HeroCta } from '@/components/HeroCta';
-import { CourseCoverImage } from '@/components/CourseCoverImage';
+import { CourseCard } from '@/components/CourseCard';
 import { API_URL } from '@/lib/api';
-import { formatearPrecio } from '@/lib/format';
 
 const FEATURES = [
   {
@@ -39,6 +38,8 @@ interface CursoDestacado {
   categoria?: string;
   instructorNombre?: string;
   alumnosInscriptos?: number;
+  esOficial?: boolean;
+  esNuevo?: boolean;
 }
 
 /**
@@ -77,7 +78,7 @@ export default async function HomePage() {
       </h1>
 
       <p className="mt-8 max-w-2xl text-lg leading-relaxed text-ink-muted">
-        Cursos de desarrollo con proyectos reales, videos en streaming y certificados verificables.
+        Cursos de desarrollo con proyectos reales y certificados verificables.
       </p>
 
       <HeroCta />
@@ -93,40 +94,7 @@ export default async function HomePage() {
 
           <div className="grid gap-6 md:grid-cols-3">
             {cursos.map((curso) => (
-              <article key={curso.id} className="card card-hover relative flex h-full flex-col overflow-hidden p-0">
-                <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="aspect-video w-full" />
-                <div className="flex flex-1 flex-col p-6">
-                  {curso.categoria && (
-                    <span className="mb-2 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                      {curso.categoria}
-                    </span>
-                  )}
-                  <h3 className="mb-1 text-lg font-bold text-ink">
-                    {/* Ancla solo sobre el título; el ::before cubre la tarjeta
-                        para que todo el bloque siga siendo clickeable sin que
-                        el nombre accesible del link sea la tarjeta entera. */}
-                    <Link
-                      href={`/cursos/${curso.slug}`}
-                      className="text-ink before:absolute before:inset-0 before:content-[''] hover:text-primary"
-                    >
-                      {curso.titulo}
-                    </Link>
-                  </h3>
-                  {curso.instructorNombre && (
-                    <p className="mb-2 text-xs text-ink-soft">Por {curso.instructorNombre}</p>
-                  )}
-                  <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-ink-muted">{curso.descripcion}</p>
-                  <div className="mt-auto flex items-center justify-between">
-                    <span className="font-extrabold text-ink">{formatearPrecio(curso.precio)}</span>
-                    {!!curso.alumnosInscriptos && (
-                      <span className="flex items-center gap-1 text-xs text-ink-soft">
-                        <Users className="h-3.5 w-3.5" aria-hidden />
-                        {curso.alumnosInscriptos}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </article>
+              <CourseCard key={curso.id} curso={curso} />
             ))}
           </div>
         </section>

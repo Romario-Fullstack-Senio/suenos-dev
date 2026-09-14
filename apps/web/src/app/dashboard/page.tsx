@@ -212,7 +212,7 @@ function DashboardContent() {
 
               <Link
                 href={`/aprender/${item.cursoId}`}
-                className="block text-center bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition"
+                className="block text-center bg-primary text-on-brand py-2 rounded-lg hover:bg-primary/90 transition"
               >
                 {item.porcentaje > 0 ? 'Continuar' : 'Empezar'}
               </Link>

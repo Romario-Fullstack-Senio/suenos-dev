@@ -57,15 +57,21 @@ export class CursoController {
     if (slug) await this.cacheManager.del(`/api/cursos/slug/${slug}`);
   }
 
-  /** Nombre del instructor para uno o varios cursos a la vez — batched con
-   * Promise.all en vez de un JOIN cross-context (identity y catalog no se
-   * conocen a nivel de DB, solo por id, siguiendo la convención DDD del
-   * proyecto). */
-  private async resolverNombresInstructores(instructorIds: string[]): Promise<Map<string, string>> {
+  /** Nombre + rol del instructor para uno o varios cursos a la vez — batched
+   * con Promise.all en vez de un JOIN cross-context (identity y catalog no
+   * se conocen a nivel de DB, solo por id, siguiendo la convención DDD del
+   * proyecto). El rol se usa para el badge "Oficial": un curso cargado por
+   * un admin de la plataforma (no un instructor externo). */
+  private async resolverInstructores(
+    instructorIds: string[],
+  ): Promise<Map<string, { nombre: string; esAdmin: boolean }>> {
     const ids = Array.from(new Set(instructorIds));
     const usuarios = await Promise.all(ids.map(id => this.usuarioRepository.findById(id)));
-    const mapa = new Map<string, string>();
-    ids.forEach((id, i) => mapa.set(id, usuarios[i]?.nombre ?? 'Instructor'));
+    const mapa = new Map<string, { nombre: string; esAdmin: boolean }>();
+    ids.forEach((id, i) => mapa.set(id, {
+      nombre: usuarios[i]?.nombre ?? 'Instructor',
+      esAdmin: usuarios[i]?.rol.value === 'admin',
+    }));
     return mapa;
   }
 
@@ -81,7 +87,19 @@ export class CursoController {
     return mapa;
   }
 
-  private mapearResumen(curso: Curso, instructorNombre: string, alumnosInscriptos: number) {
+  // "Nuevo" = publicado hace 14 días o menos. Umbral fijo acá (no hay
+  // configuración por ahora) — un solo lugar si más adelante hace falta
+  // ajustarlo.
+  private static readonly DIAS_PARA_SER_NUEVO = 14;
+
+  private mapearResumen(
+    curso: Curso,
+    instructor: { nombre: string; esAdmin: boolean },
+    alumnosInscriptos: number,
+    creadoEn?: Date,
+  ) {
+    const esNuevo = !!creadoEn
+      && Date.now() - creadoEn.getTime() < CursoController.DIAS_PARA_SER_NUEVO * 24 * 60 * 60 * 1000;
     return {
       id: curso.id,
       titulo: curso.titulo,
@@ -90,11 +108,13 @@ export class CursoController {
       precio: curso.precio.value,
       estado: curso.estado.value,
       instructorId: curso.instructorId,
-      instructorNombre,
+      instructorNombre: instructor.nombre,
       imagenUrl: curso.imagenUrl,
       categoria: curso.categoria,
       nivel: curso.nivel,
       alumnosInscriptos,
+      esOficial: instructor.esAdmin,
+      esNuevo,
     };
   }
 
@@ -112,9 +132,10 @@ export class CursoController {
   ) {
     if (instructorId) {
       const cursos = (await this.cursoRepository.findAll()).filter(c => c.instructorId === instructorId);
-      const nombres = await this.resolverNombresInstructores(cursos.map(c => c.instructorId));
+      const instructores = await this.resolverInstructores(cursos.map(c => c.instructorId));
       const alumnos = await this.contarAlumnosPorCurso(cursos.map(c => c.id));
-      return cursos.map(c => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+      const fechas = await this.cursoRepository.obtenerFechasCreacion(cursos.map(c => c.id));
+      return cursos.map(c => this.mapearResumen(c, instructores.get(c.instructorId)!, alumnos.get(c.id) ?? 0, fechas.get(c.id)));
     }
 
     const ordenarPor: BuscarCursosFiltros['ordenarPor'] =
@@ -135,11 +156,12 @@ export class CursoController {
       porPagina,
     });
 
-    const nombres = await this.resolverNombresInstructores(cursos.map(c => c.instructorId));
+    const instructores = await this.resolverInstructores(cursos.map(c => c.instructorId));
     const alumnos = await this.contarAlumnosPorCurso(cursos.map(c => c.id));
+    const fechas = await this.cursoRepository.obtenerFechasCreacion(cursos.map(c => c.id));
 
     return {
-      cursos: cursos.map(c => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0)),
+      cursos: cursos.map(c => this.mapearResumen(c, instructores.get(c.instructorId)!, alumnos.get(c.id) ?? 0, fechas.get(c.id))),
       total,
       page: pagina,
       totalPages: Math.max(1, Math.ceil(total / porPagina)),
@@ -154,9 +176,10 @@ export class CursoController {
   @Roles('admin')
   async listarTodosAdmin() {
     const cursos = await this.cursoRepository.findAll();
-    const nombres = await this.resolverNombresInstructores(cursos.map(c => c.instructorId));
+    const instructores = await this.resolverInstructores(cursos.map(c => c.instructorId));
     const alumnos = await this.contarAlumnosPorCurso(cursos.map(c => c.id));
-    return cursos.map(c => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+    const fechas = await this.cursoRepository.obtenerFechasCreacion(cursos.map(c => c.id));
+    return cursos.map(c => this.mapearResumen(c, instructores.get(c.instructorId)!, alumnos.get(c.id) ?? 0, fechas.get(c.id)));
   }
 
   @Get(':id')
@@ -208,9 +231,10 @@ export class CursoController {
       }
     }
 
-    const nombres = await this.resolverNombresInstructores(recomendados.map((c) => c.instructorId));
+    const instructores = await this.resolverInstructores(recomendados.map((c) => c.instructorId));
     const alumnos = await this.contarAlumnosPorCurso(recomendados.map((c) => c.id));
-    return recomendados.map((c) => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+    const fechas = await this.cursoRepository.obtenerFechasCreacion(recomendados.map((c) => c.id));
+    return recomendados.map((c) => this.mapearResumen(c, instructores.get(c.instructorId)!, alumnos.get(c.id) ?? 0, fechas.get(c.id)));
   }
 
   // "Cursos relacionados" simple: misma categoría, publicados, excluyendo
@@ -234,9 +258,10 @@ export class CursoController {
     });
     const relacionados = cursos.filter((c) => c.id !== id).slice(0, 4);
 
-    const nombres = await this.resolverNombresInstructores(relacionados.map((c) => c.instructorId));
+    const instructores = await this.resolverInstructores(relacionados.map((c) => c.instructorId));
     const alumnos = await this.contarAlumnosPorCurso(relacionados.map((c) => c.id));
-    return relacionados.map((c) => this.mapearResumen(c, nombres.get(c.instructorId)!, alumnos.get(c.id) ?? 0));
+    const fechas = await this.cursoRepository.obtenerFechasCreacion(relacionados.map((c) => c.id));
+    return relacionados.map((c) => this.mapearResumen(c, instructores.get(c.instructorId)!, alumnos.get(c.id) ?? 0, fechas.get(c.id)));
   }
 
   @Get('slug/:slug')

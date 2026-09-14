@@ -38,4 +38,9 @@ export interface CursoRepository {
    * de acceso a video: dado un leccionId, a qué curso pertenece y si es
    * de vista previa gratuita. */
   findInfoByLeccionId(leccionId: string): Promise<LeccionInfo | null>;
+  /** Fecha de creación real (columna `created_at`) por curso, para el badge
+   * "Nuevo" del catálogo — el agregado de dominio no la expone de forma
+   * confiable (Entity._createdAt se re-sella en cada reconstitución, no
+   * refleja la fecha real persistida). */
+  obtenerFechasCreacion(ids: string[]): Promise<Map<string, Date>>;
 }

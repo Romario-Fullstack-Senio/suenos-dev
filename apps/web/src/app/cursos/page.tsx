@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { apiGet } from '@/lib/api';
-import Link from 'next/link';
-import { Search, Users, ChevronLeft, ChevronRight } from 'lucide-react';
-import { CourseCoverImage } from '@/components/CourseCoverImage';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CourseCard } from '@/components/CourseCard';
 import { WishlistButton } from '@/components/WishlistButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatearPrecio } from '@/lib/format';
 
 interface Curso {
   id: string;
@@ -21,6 +19,8 @@ interface Curso {
   nivel?: string;
   instructorNombre?: string;
   alumnosInscriptos?: number;
+  esOficial?: boolean;
+  esNuevo?: boolean;
 }
 
 interface ListadoCursos {
@@ -29,12 +29,6 @@ interface ListadoCursos {
   page: number;
   totalPages: number;
 }
-
-const NIVEL_LABEL: Record<string, string> = {
-  principiante: 'Principiante',
-  intermedio: 'Intermedio',
-  avanzado: 'Avanzado',
-};
 
 const INPUT_CLASS =
   'px-3 py-2 bg-cloud-50 text-ink border border-ink/[0.12] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/40';
@@ -230,60 +224,18 @@ function CatalogoContent() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cursos.map((curso) => (
-              // El botón de favoritos era un <button> dentro del <Link> que
-              // envolvía la tarjeta: HTML inválido, foco de teclado confuso y
-              // el nombre accesible del enlace era el bloque entero. Ahora el
-              // ancla va solo en el título con un ::before que cubre la
-              // tarjeta, y el botón es hermano por encima.
-              <article
+              <CourseCard
                 key={curso.id}
-                className="card card-hover overflow-hidden p-0 h-full flex flex-col relative"
-              >
-                {isAuthenticated && (
-                  <WishlistButton
-                    cursoId={curso.id}
-                    className="absolute top-3 right-3 z-[2] w-8 h-8 bg-cloud-50/90 backdrop-blur-sm shadow-sm"
-                  />
-                )}
-                <CourseCoverImage imagenUrl={curso.imagenUrl} titulo={curso.titulo} className="w-full aspect-video" />
-                <div className="p-6 flex flex-col flex-1">
-                  {(curso.categoria || curso.nivel) && (
-                    <div className="flex gap-2 mb-2">
-                      {curso.categoria && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                          {curso.categoria}
-                        </span>
-                      )}
-                      {curso.nivel && (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                          {NIVEL_LABEL[curso.nivel] ?? curso.nivel}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-lg mb-1">
-                    <Link
-                      href={`/cursos/${curso.slug}`}
-                      className="text-ink hover:text-primary before:absolute before:inset-0 before:content-['']"
-                    >
-                      {curso.titulo}
-                    </Link>
-                  </h3>
-                  {curso.instructorNombre && (
-                    <p className="text-ink-soft text-xs mb-2">Por {curso.instructorNombre}</p>
-                  )}
-                  <p className="text-ink-muted text-sm mb-4 line-clamp-2">{curso.descripcion}</p>
-                  <div className="mt-auto flex items-center justify-between">
-                    <p className="font-extrabold text-ink">{formatearPrecio(curso.precio)}</p>
-                    {!!curso.alumnosInscriptos && (
-                      <span className="flex items-center gap-1 text-xs text-ink-soft">
-                        <Users className="w-3.5 h-3.5" />
-                        {curso.alumnosInscriptos}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </article>
+                curso={curso}
+                topRightSlot={
+                  isAuthenticated ? (
+                    <WishlistButton
+                      cursoId={curso.id}
+                      className="h-8 w-8 bg-cloud-50/90 shadow-sm backdrop-blur-sm"
+                    />
+                  ) : undefined
+                }
+              />
             ))}
           </div>
 
