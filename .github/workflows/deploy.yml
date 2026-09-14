@@ -47,6 +47,14 @@ jobs:
           echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
           echo "Deploying commit: $SHORT_SHA"
 
+      # SERVER_HOST es una IP de Tailscale (100.64.0.0/10) — solo alcanzable
+      # desde dentro de la tailnet, nunca desde el internet público (por eso
+      # el runner necesita unirse acá, no es un firewall que se pueda abrir).
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          authkey: ${{ secrets.TS_AUTHKEY }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
