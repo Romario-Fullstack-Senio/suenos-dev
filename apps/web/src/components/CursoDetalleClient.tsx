@@ -175,15 +175,28 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
           ) : yaInscripto ? (
             <Link
               href={`/aprender/${curso.id}`}
-              className="block text-center bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+              className="block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
             >
               Ir al curso
             </Link>
+          ) : curso.precio === 0 ? (
+            // Gratis: ni "comprar" ni "al carrito" tienen sentido acá — un
+            // solo botón que inscribe directo (el checkout detecta el total
+            // en $0 y completa la orden sin pasar por Stripe).
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/checkout?cursoId=${curso.id}`}
+                className="flex-1 block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+              >
+                Inscribirme gratis
+              </Link>
+              <WishlistButton cursoId={curso.id} className="w-11 h-11 flex-shrink-0 border border-ink/[0.12] hover:bg-cloud-100" />
+            </div>
           ) : (
             <div className="flex flex-col gap-3">
               <Link
                 href={`/checkout?cursoId=${curso.id}`}
-                className="block text-center bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
+                className="block text-center bg-primary text-on-brand px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition"
               >
                 Comprar ahora
               </Link>

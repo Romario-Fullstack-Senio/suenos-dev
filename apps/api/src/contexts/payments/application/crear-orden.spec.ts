@@ -7,6 +7,7 @@ import { Cupon } from '../domain/cupon.entity';
 const CURSOS_REALES: Record<string, { id: string; titulo: string; precio: number }> = {
   'curso-1': { id: 'curso-1', titulo: 'Curso de React', precio: 100 },
   'curso-2': { id: 'curso-2', titulo: 'Curso de NestJS', precio: 50 },
+  'curso-gratis': { id: 'curso-gratis', titulo: 'Curso Gratis', precio: 0 },
 };
 
 function cursoFake(id: string) {
@@ -22,6 +23,8 @@ describe('CrearOrdenUseCase', () => {
   let mockCuponRepo: { findByCodigo: jest.Mock; save: jest.Mock };
   let mockCursoRepo: { findById: jest.Mock };
   let mockPaqueteRepo: { findById: jest.Mock };
+  let mockUsuarioRepo: { findById: jest.Mock };
+  let mockEventBus: { publish: jest.Mock };
 
   const command = {
     estudianteId: 'estudiante-1',
@@ -38,12 +41,18 @@ describe('CrearOrdenUseCase', () => {
     mockCuponRepo = { findByCodigo: jest.fn(), save: jest.fn().mockResolvedValue(undefined) };
     mockCursoRepo = { findById: jest.fn((id: string) => Promise.resolve(cursoFake(id))) };
     mockPaqueteRepo = { findById: jest.fn().mockResolvedValue(null) };
+    mockUsuarioRepo = {
+      findById: jest.fn().mockResolvedValue({ email: { value: 'test@test.com' }, nombre: 'Test' }),
+    };
+    mockEventBus = { publish: jest.fn().mockResolvedValue(undefined) };
     useCase = new CrearOrdenUseCase(
       mockOrdenRepo as any,
       mockPaymentIntent as any,
       mockCuponRepo as any,
       mockCursoRepo as any,
       mockPaqueteRepo as any,
+      mockUsuarioRepo as any,
+      mockEventBus as any,
     );
   });
 
@@ -169,6 +178,21 @@ describe('CrearOrdenUseCase', () => {
       useCase.execute({ ...command, items: [{ cursoId: 'curso-inexistente', cursoNombre: 'x', precio: 1 }] }),
     ).rejects.toThrow('no encontrado');
     expect(mockOrdenRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('un curso gratis se completa directo, sin llamar a Stripe', async () => {
+    const result = await useCase.execute({
+      ...command,
+      items: [{ cursoId: 'curso-gratis', cursoNombre: 'Curso Gratis', precio: 0 }],
+    });
+
+    expect(result.precioFinal).toBe(0);
+    expect(result.gratis).toBe(true);
+    expect(result.clientSecret).toBeNull();
+    expect(mockPaymentIntent.createPaymentIntent).not.toHaveBeenCalled();
+    expect(mockOrdenRepo.save).toHaveBeenCalledTimes(1);
+    expect(mockOrdenRepo.save.mock.calls[0][0].estado).toBe('completada');
+    expect(mockEventBus.publish).toHaveBeenCalledTimes(1);
   });
 
   it('rechaza un cupón que no aplica al curso y no consume su uso', async () => {

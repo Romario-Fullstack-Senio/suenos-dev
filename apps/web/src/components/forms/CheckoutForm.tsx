@@ -171,7 +171,7 @@ export function CheckoutForm() {
     try {
       // Sin estudianteId: la API lo toma del JWT (mandarlo desde el cliente
       // dejaba crear órdenes a nombre de otro usuario).
-      const result = await apiPost<{ clientSecret: string; ordenId: string }>('/ordenes', {
+      const result = await apiPost<{ clientSecret: string | null; ordenId: string; gratis: boolean }>('/ordenes', {
         items,
         successUrl: `${window.location.origin}/dashboard`,
         cancelUrl: paqueteId
@@ -182,7 +182,16 @@ export function CheckoutForm() {
         cuponCodigo: cuponAplicado?.codigo,
         paqueteId: paqueteId ?? undefined,
       });
-      setClientSecret(result.clientSecret);
+      if (result.gratis) {
+        // Total en $0 (curso gratis, o un cupón/paquete que lo deja así): la
+        // API ya completó la orden y creó la inscripción, no hay nada que
+        // pagarle a Stripe. Mismo destino que usa el pago real al volver
+        // (return_url), así el dashboard confirma (idempotente) y limpia el
+        // carrito con el mismo código de siempre.
+        window.location.href = `${window.location.origin}/dashboard?ordenId=${result.ordenId}`;
+        return;
+      }
+      setClientSecret(result.clientSecret as string);
       setOrdenId(result.ordenId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al inicializar el pago');
@@ -301,7 +310,7 @@ export function CheckoutForm() {
           </Elements>
         ) : (
           <Button className="w-full" onClick={irAPagar} isLoading={creandoOrden} disabled={creandoOrden || items.length === 0}>
-            Continuar al pago
+            {precioMostrado === 0 ? 'Inscribirme gratis' : 'Continuar al pago'}
           </Button>
         )}
 
