@@ -10,8 +10,8 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Sky } from '@/components/layout/Sky';
 import { CookieConsent } from '@/components/CookieConsent';
-import { TitleLock } from '@/components/TitleLock';
 import { ReferralCapture } from '@/components/ReferralCapture';
+import { SITE_URL } from '@/lib/seo';
 
 // Aplica la clase .dark a <html> ANTES del primer paint (localStorage no es
 // accesible durante el render en servidor), para que no haya un flash de
@@ -34,26 +34,13 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-// Ver el comment grande en lib/api.ts: process.env.API_RUNTIME_URL (sin
-// prefijo NEXT_PUBLIC_) se lee EN VIVO acá porque este layout es un Server
-// Component — corre en Node dentro del contenedor en cada request, no se
-// hornea en el build como pasaría con una var NEXT_PUBLIC_*. Esto es lo que
-// permite que la MISMA imagen Docker sirva a producción y a preprod, cada
-// una con su propio API_RUNTIME_URL.
-const runtimeEnvScript = `window.__ENV__=${JSON.stringify({ API_URL: process.env.API_RUNTIME_URL || null })};`;
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  // El pedido es que la pestaña SIEMPRE diga "Sueños Dev", sin importar la
-  // página — TitleLock (client-side, ver layout más abajo) es lo que
-  // realmente lo garantiza después de la hidratación. Este `title` es solo
-  // lo que se ve en el HTML servido antes de que React hidrate (y lo que
-  // usan buscadores/redes sociales al leer el <head> crudo) — sin
-  // `template`, para no heredar el "%s" de las páginas que definen su
-  // propio título vía generateMetadata.
-  title: 'Sueños Dev',
+  metadataBase: new URL(SITE_URL),
+  // Título único por página ("Curso de Claude | Sueños Dev"). Antes un
+  // componente TitleLock forzaba "Sueños Dev" en TODAS las pestañas después
+  // de hidratar — y Google indexa el título ya renderizado, así que todas
+  // las páginas competían con el mismo título idéntico en los resultados.
+  title: { default: 'Sueños Dev', template: '%s | Sueños Dev' },
   description: 'Aprende desarrollo web con cursos prácticos, videos en streaming y certificados verificables.',
   openGraph: {
     siteName: 'Sueños Dev',
@@ -87,11 +74,9 @@ export default function RootLayout({
     <html lang="es" className={`${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: runtimeEnvScript }} />
       </head>
       <body className="relative min-h-screen overflow-x-hidden bg-cloud-50 text-ink">
         <ThemeProvider>
-          <TitleLock />
           <Suspense fallback={null}>
             <ReferralCapture />
           </Suspense>

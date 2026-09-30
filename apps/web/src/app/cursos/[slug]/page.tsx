@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { CursoDetalleClient, Curso } from '@/components/CursoDetalleClient';
+import { SERVER_API_URL as API_URL } from '@/lib/api';
+import { SITE_URL, serializarJsonLd } from '@/lib/seo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function fetchCursoPorSlug(slug: string): Promise<Curso | null> {
@@ -67,6 +68,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     title: curso.titulo,
     description: descripcion,
     alternates: { canonical: `/cursos/${curso.slug}` },
+    // Un borrador/archivado accesible por URL no debe terminar en Google.
+    ...(curso.estado !== 'publicado' && { robots: { index: false, follow: true } }),
     openGraph: {
       title: curso.titulo,
       description: descripcion,
@@ -97,15 +100,19 @@ export default async function CursoDetallePage({ params }: { params: { slug: str
 
   // Structured data (schema.org Course) — ayuda a que Google entienda que
   // esto es un curso vendible, no solo una página de texto genérica.
+  const urlCurso = `${SITE_URL}/cursos/${curso.slug}`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Course',
     name: curso.titulo,
     description: curso.descripcion,
+    url: urlCurso,
+    inLanguage: 'es',
+    ...(curso.imagenUrl && { image: curso.imagenUrl }),
     provider: {
       '@type': 'Organization',
       name: 'Sueños Dev',
-      sameAs: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      sameAs: SITE_URL,
     },
     ...(curso.instructorNombre && {
       hasCourseInstance: {
@@ -123,6 +130,8 @@ export default async function CursoDetallePage({ params }: { params: { slug: str
     }),
     offers: {
       '@type': 'Offer',
+      url: urlCurso,
+      category: curso.precio === 0 ? 'Free' : 'Paid',
       price: curso.precio,
       priceCurrency: 'USD',
       availability: curso.estado === 'publicado' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
@@ -131,8 +140,9 @@ export default async function CursoDetallePage({ params }: { params: { slug: str
 
   return (
     <>
-      {/* eslint-disable-next-line react/no-danger -- JSON-LD estático generado por nosotros, no HTML de usuario */}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* Título y descripción los escribe el instructor: serializarJsonLd
+          escapa `<` para que no puedan cerrar el <script> (XSS almacenado). */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLd) }} />
       <CursoDetalleClient curso={curso} />
     </>
   );

@@ -101,6 +101,11 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+      # Next hornea las NEXT_PUBLIC_* al compilar (ver apps/web/Dockerfile):
+      # el `environment:` de abajo no alcanza para el bundle del navegador.
+      args:
+        NEXT_PUBLIC_API_URL: https://api.suenos-dev.dev/api
+        NEXT_PUBLIC_SITE_URL: https://suenos-dev.dev
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: https://api.suenos-dev.dev/api

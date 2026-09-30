@@ -2,7 +2,41 @@ import Link from 'next/link';
 import { PlayCircle, CircleDashed, BadgeCheck } from 'lucide-react';
 import { HeroCta } from '@/components/HeroCta';
 import { CourseCard } from '@/components/CourseCard';
-import { API_URL } from '@/lib/api';
+import type { Metadata } from 'next';
+import { SERVER_API_URL as API_URL } from '@/lib/api';
+import { SITE_URL, serializarJsonLd } from '@/lib/seo';
+
+export const metadata: Metadata = {
+  // title.absolute: la home no lleva el sufijo "| Sueños Dev" del template.
+  title: { absolute: 'Sueños Dev — Cursos de programación con certificado' },
+  description:
+    'Aprendé desarrollo web y programación con cursos prácticos en video, a tu ritmo, con certificados verificables al terminar.',
+  alternates: { canonical: '/' },
+};
+
+// Identidad del sitio para buscadores (panel de marca, nombre del sitio en
+// los resultados). Solo en la home — no se repite en cada página.
+const JSON_LD_SITIO = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Sueños Dev',
+    url: SITE_URL,
+    logo: `${SITE_URL}/icon-512.png`,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Sueños Dev',
+    url: SITE_URL,
+    inLanguage: 'es',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SITE_URL}/cursos?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  },
+];
 
 const FEATURES = [
   {
@@ -65,6 +99,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col items-center px-4 pb-28 pt-24 text-center">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(JSON_LD_SITIO) }} />
       <span className="mb-9 inline-flex items-center gap-2.5 rounded-full border border-ink/[0.08] bg-cloud-50 px-4 py-2.5 text-sm font-semibold text-ink-muted"
         style={{ boxShadow: '0 12px 30px -14px rgba(20,22,43,0.22)' }}
       >

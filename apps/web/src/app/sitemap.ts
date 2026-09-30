@@ -1,7 +1,6 @@
 import type { MetadataRoute } from 'next';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { SERVER_API_URL } from '@/lib/api';
+import { SITE_URL } from '@/lib/seo';
 
 interface ListadoCursos {
   cursos: { slug: string }[];
@@ -11,7 +10,7 @@ async function fetchSlugsDeCursos(): Promise<string[]> {
   try {
     // limit=100: el tope que acepta el endpoint — de sobra para meter todos
     // los cursos publicados de una sola pasada en el sitemap.
-    const res = await fetch(`${API_URL}/cursos?limit=100`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${SERVER_API_URL}/cursos?limit=100`, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
     const data: ListadoCursos = await res.json();
     return data.cursos.map(c => c.slug);
@@ -23,17 +22,19 @@ async function fetchSlugsDeCursos(): Promise<string[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await fetchSlugsDeCursos();
 
+  // Solo páginas indexables: login/registro no aportan nada en buscadores
+  // (y están bajo noindex, ver app/auth/layout.tsx).
   const rutasEstaticas: MetadataRoute.Sitemap = [
-    { url: siteUrl, changeFrequency: 'daily', priority: 1 },
-    { url: `${siteUrl}/cursos`, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${siteUrl}/auth/login`, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${siteUrl}/auth/registro`, changeFrequency: 'yearly', priority: 0.3 },
-    { url: `${siteUrl}/terminos`, changeFrequency: 'yearly', priority: 0.2 },
-    { url: `${siteUrl}/privacidad`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: SITE_URL, changeFrequency: 'daily', priority: 1 },
+    { url: `${SITE_URL}/cursos`, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${SITE_URL}/paquetes`, changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${SITE_URL}/comunidad`, changeFrequency: 'daily', priority: 0.5 },
+    { url: `${SITE_URL}/terminos`, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${SITE_URL}/privacidad`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
   const rutasDeCursos: MetadataRoute.Sitemap = slugs.map(slug => ({
-    url: `${siteUrl}/cursos/${slug}`,
+    url: `${SITE_URL}/cursos/${slug}`,
     changeFrequency: 'weekly',
     priority: 0.8,
   }));

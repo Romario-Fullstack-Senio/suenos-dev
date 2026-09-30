@@ -129,6 +129,7 @@ export function CursoDetalleClient({ curso }: { curso: Curso }) {
         imagenUrl={curso.imagenUrl}
         titulo={curso.titulo}
         className="w-full h-56 md:h-72 rounded-xl mb-6"
+        prioridad
       />
 
       <div className="bg-cloud-100 rounded-xl p-8 shadow-sm border border-ink/[0.07] mb-8">

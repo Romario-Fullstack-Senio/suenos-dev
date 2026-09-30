@@ -1,34 +1,23 @@
-declare global {
-  interface Window {
-    __ENV__?: { API_URL?: string };
-  }
-}
-
 // Exportado porque algunas descargas (PDF de certificado, recursos de
 // lección) se abren con window.open()/<a href> en vez de fetch — necesitan
 // la URL absoluta del backend, no una ruta relativa (que resolvería contra
 // el propio servidor de Next.js en :3000 y daría 404).
 //
-// NEXT_PUBLIC_API_URL NO sirve para esto en este repo: Next.js hornea toda
-// variable NEXT_PUBLIC_* dentro del bundle del navegador al momento del
-// BUILD de la imagen Docker (webpack DefinePlugin), pero build-and-push.yml
-// compila esa imagen UNA sola vez y se despliega tanto a producción como a
-// preprod ("build once, deploy anywhere") — cada uno con su propio dominio
-// de API. Sin esto, el bundle siempre traía horneado el valor por defecto
-// de acá abajo, sin importar el entorno real (bug real, encontrado
-// probando preprod: el navegador pegaba a localhost:3001 en vez del API
-// real).
-//
-// Arreglo: layout.tsx (Server Component, corre en Node dentro del
-// contenedor en cada request) inyecta `window.__ENV__.API_URL` leyendo
-// API_RUNTIME_URL — una var SIN prefijo NEXT_PUBLIC_, que Next.js sí lee en
-// vivo en vez de hornear. En el navegador se prioriza ese valor; en
-// SSR/RSC (sin `window`) se lee la misma var directo de process.env.
-export const API_URL =
-  (typeof window !== 'undefined' && window.__ENV__?.API_URL) ||
-  process.env.API_RUNTIME_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:3001/api';
+// NEXT_PUBLIC_API_URL se hornea en el bundle al momento del BUILD de la
+// imagen Docker, así que tiene que llegar como build-arg: build-and-push.yml
+// la pasa según la rama (main → producción, develop → preprod). Antes no se
+// pasaba y toda imagen desplegada traía horneado el fallback de acá abajo —
+// el navegador de cualquier visitante le pegaba a SU propio localhost:3001.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+// Para fetch hechos EN EL SERVIDOR de Next (Server Components, sitemap,
+// generateMetadata). Dentro del contenedor, la URL pública de arriba no
+// siempre es alcanzable (en preprod es un localhost:3101 que solo existe del
+// otro lado del túnel SSH), así que la imagen Docker trae
+// API_INTERNAL_URL=http://api:3001/api — el nombre del servicio en la red de
+// Compose. Es una var sin prefijo NEXT_PUBLIC_: se lee en runtime, no se
+// hornea. Fuera de Docker (dev local) no existe y cae a la pública.
+export const SERVER_API_URL = process.env.API_INTERNAL_URL || API_URL;
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;

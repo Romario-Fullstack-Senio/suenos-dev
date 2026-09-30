@@ -37,6 +37,21 @@ RUN mkdir -p apps/web/public
 
 # withSentryConfig in next.config.mjs is a no-op when SENTRY_AUTH_TOKEN is unset
 ENV SENTRY_AUTH_TOKEN=""
+
+# Next inlines every NEXT_PUBLIC_* variable into the bundle AT BUILD TIME, so
+# they must exist here — setting them later in docker-compose does nothing
+# for the browser bundle. build-and-push.yml passes them per branch (main →
+# production, develop → preprod). Before this, none were passed: every
+# deployed image had the localhost fallbacks baked in (the browser called its
+# own localhost:3001, canonical/sitemap pointed to localhost:3000, and Stripe
+# Elements had no publishable key).
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+
 RUN npm run build --workspace=apps/web
 
 # ============================================================
@@ -67,6 +82,13 @@ RUN cd apps/web && npm prune --omit=dev 2>/dev/null || true
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Server-side fetches (Server Components, sitemap, generateMetadata) go
+# straight to the API over the Compose network — `api` is the service name in
+# infra/docker-compose.prod.yml, same for prod and preprod. The public
+# NEXT_PUBLIC_API_URL isn't always reachable from inside the container (in
+# preprod it's a localhost:3101 that only exists on the other side of the SSH
+# tunnel). Read at runtime (no NEXT_PUBLIC_ prefix), so compose can override it.
+ENV API_INTERNAL_URL=http://api:3001/api
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- http://localhost:3000 || exit 1

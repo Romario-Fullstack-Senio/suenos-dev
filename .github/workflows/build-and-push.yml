@@ -143,6 +143,36 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=,format=short
 
+      # Las NEXT_PUBLIC_* se hornean en el bundle al compilar (ver
+      # apps/web/Dockerfile), así que la imagen web SÍ depende del entorno:
+      # main → producción, cualquier otra rama (develop) → preprod. Los
+      # valores salen de variables del repo (Settings → Secrets and variables
+      # → Actions → Variables) con estos defaults si no están definidas:
+      #   - prod:    dominios reales de README-DEPLOY.md.
+      #   - preprod: todavía no tiene dominio ni Caddy — se usa por túnel SSH
+      #     (tunnel-preprod.bat), así que la URL pública es el localhost del
+      #     lado de quien navega: 3100 web / 3101 api (infra/.env.preprod.example).
+      # La STRIPE_PUBLISHABLE_KEY (pk_..., pública por diseño de Stripe) no
+      # tiene default: sin la variable, Stripe Elements queda deshabilitado.
+      #
+      # OJO al pasar a producción: ambas ramas publican el tag `latest` de la
+      # imagen web, y preprod hoy despliega `latest`. Cuando main empiece a
+      # compilar, hay que separar los tags por entorno (p. ej. `preprod-latest`)
+      # y ajustar deploy-preprod.yml, o preprod terminaría corriendo la imagen
+      # compilada con las URLs de producción.
+      - name: Resolve web build args
+        id: webargs
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "api_url=${{ vars.PROD_PUBLIC_API_URL || 'https://api.suenos-dev.dev/api' }}" >> "$GITHUB_OUTPUT"
+            echo "site_url=${{ vars.PROD_SITE_URL || 'https://suenos-dev.dev' }}" >> "$GITHUB_OUTPUT"
+            echo "stripe_pk=${{ vars.PROD_STRIPE_PUBLISHABLE_KEY }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "api_url=${{ vars.PREPROD_PUBLIC_API_URL || 'http://localhost:3101/api' }}" >> "$GITHUB_OUTPUT"
+            echo "site_url=${{ vars.PREPROD_SITE_URL || 'http://localhost:3100' }}" >> "$GITHUB_OUTPUT"
+            echo "stripe_pk=${{ vars.PREPROD_STRIPE_PUBLISHABLE_KEY }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build and push Web
         uses: docker/build-push-action@v5
         with:
@@ -151,6 +181,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ steps.webargs.outputs.api_url }}
+            NEXT_PUBLIC_SITE_URL=${{ steps.webargs.outputs.site_url }}
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ steps.webargs.outputs.stripe_pk }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

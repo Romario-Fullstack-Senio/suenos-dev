@@ -1,14 +1,16 @@
 import type { MetadataRoute } from 'next';
-
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { SITE_URL } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/admin', '/instructor', '/perfil', '/checkout', '/aprender', '/auth/callback', '/auth/reset-password', '/auth/verificar-email'],
+      // /auth/* NO va acá a propósito: esas páginas llevan noindex (ver
+      // app/auth/layout.tsx), y si robots bloquea el rastreo Google nunca
+      // llega a leer ese noindex — puede indexar la URL igual por los links.
+      disallow: ['/dashboard', '/admin', '/instructor', '/perfil', '/checkout', '/carrito', '/aprender', '/favoritos', '/soporte', '/logros'],
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
