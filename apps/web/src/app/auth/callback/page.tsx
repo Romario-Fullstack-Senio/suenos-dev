@@ -17,10 +17,18 @@ function CallbackContent() {
   useEffect(() => {
     if (yaProcesado.current) return;
 
-    const token = searchParams.get('token');
-    const refreshToken = searchParams.get('refreshToken');
-    const sessionToken = searchParams.get('sessionToken');
-    const avatarUrl = searchParams.get('avatarUrl');
+    // Los tokens llegan en el fragmento (#token=...), no en la query — el
+    // fragmento nunca viaja al servidor ni en el Referer (ver
+    // OAuthController.urlDeCallback). Se borra de la barra de direcciones
+    // enseguida para que no quede en el historial del navegador.
+    const fragmento = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    const token = fragmento.get('token');
+    const refreshToken = fragmento.get('refreshToken');
+    const sessionToken = fragmento.get('sessionToken');
+    const avatarUrl = fragmento.get('avatarUrl');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {

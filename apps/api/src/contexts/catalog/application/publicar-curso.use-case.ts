@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
+import { NotFoundDomainError, UnauthorizedDomainError } from '@suenos-dev/shared-kernel';
 import { CursoRepository, CURSO_REPOSITORY } from '../domain/curso.repository.port';
 import { EventBus } from '../../../common/event-bus';
 
@@ -11,10 +11,13 @@ export class PublicarCursoUseCase {
     private readonly eventBus: EventBus,
   ) {}
 
-  async execute(cursoId: string): Promise<void> {
+  async execute(cursoId: string, callerId: string, callerRol: string): Promise<void> {
     const curso = await this.cursoRepo.findById(cursoId);
     if (!curso) {
       throw new NotFoundDomainError('Curso no encontrado');
+    }
+    if (callerRol !== 'admin' && curso.instructorId !== callerId) {
+      throw new UnauthorizedDomainError('No tienes permiso para publicar este curso');
     }
 
     curso.publicar();

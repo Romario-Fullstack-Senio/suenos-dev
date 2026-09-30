@@ -36,6 +36,7 @@ import { REFRESH_TOKEN_REPOSITORY } from './domain/refresh-token.repository.port
 import { JwtStrategy } from './interfaces/strategies/jwt.strategy';
 import { GoogleStrategy } from './infrastructure/passport/google.strategy';
 import { GithubStrategy } from './infrastructure/passport/github.strategy';
+import { obtenerJwtSecret } from '../../common/jwt-secret';
 
 const googleStrategyProvider = {
   provide: GoogleStrategy,
@@ -71,7 +72,7 @@ const githubStrategyProvider = {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET', 'dev-secret'),
+        secret: obtenerJwtSecret(config),
         // Default para JwtStrategy (valida tokens ya emitidos, expiresIn:
         // '15m' explícito en LoginUseCase/RefrescarTokenUseCase es el que
         // realmente manda al firmar). '7d' acá es solo un fallback razonable.

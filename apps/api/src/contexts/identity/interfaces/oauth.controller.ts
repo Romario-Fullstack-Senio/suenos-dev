@@ -4,6 +4,26 @@ import { ConfigService } from '@nestjs/config';
 import { LoginConOAuthUseCase } from '../application/login-con-oauth.use-case';
 import { AuthProviderTipo } from '../domain/auth-provider.value-object';
 
+/**
+ * Los tokens viajan en el fragmento (#), no en la query string: el navegador
+ * nunca manda el fragmento al servidor (no queda en logs de Caddy/Next ni de
+ * ningún proxy) ni lo incluye en el header Referer. Antes iban como ?token=
+ * — incluido el refreshToken de 30 días. /auth/callback además borra el
+ * fragmento de la barra de direcciones apenas lo lee.
+ */
+function urlDeCallback(
+  frontendUrl: string,
+  result: { token: string; refreshToken: string; sessionToken: string; usuario: { avatarUrl?: string | null } },
+): string {
+  const params = new URLSearchParams({
+    token: result.token,
+    refreshToken: result.refreshToken,
+    sessionToken: result.sessionToken,
+  });
+  if (result.usuario.avatarUrl) params.set('avatarUrl', result.usuario.avatarUrl);
+  return `${frontendUrl}/auth/callback#${params.toString()}`;
+}
+
 @Controller('auth')
 export class OAuthController {
   constructor(
@@ -30,8 +50,7 @@ export class OAuthController {
         userAgent: req.headers['user-agent'] ?? null,
         avatarUrl: req.user.avatarUrl ?? null,
       });
-      const avatarParam = result.usuario.avatarUrl ? `&avatarUrl=${encodeURIComponent(result.usuario.avatarUrl)}` : '';
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}${avatarParam}`);
+      res.redirect(urlDeCallback(frontendUrl, result));
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }
@@ -56,8 +75,7 @@ export class OAuthController {
         userAgent: req.headers['user-agent'] ?? null,
         avatarUrl: req.user.avatarUrl ?? null,
       });
-      const avatarParam = result.usuario.avatarUrl ? `&avatarUrl=${encodeURIComponent(result.usuario.avatarUrl)}` : '';
-      res.redirect(`${frontendUrl}/auth/callback?token=${result.token}&refreshToken=${result.refreshToken}&sessionToken=${result.sessionToken}${avatarParam}`);
+      res.redirect(urlDeCallback(frontendUrl, result));
     } catch (error) {
       res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }

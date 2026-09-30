@@ -3,7 +3,19 @@ dist/
 .next/
 .env
 .env.local
+# Cualquier otro .env con valores reales (.env.preprod, .env.production...)
+# — antes solo se ignoraban .env y .env.local, y un .env.preprod con claves
+# de verdad se podía commitear por accidente. Las plantillas sí se versionan.
+.env.*
+!.env.example
+!.env.*.example
 *.log
+
+# Skills de agentes instalados localmente con `npx skills` (terceros, no
+# son parte del proyecto) y el script personal de túnel a preprod.
+.agents/
+skills-lock.json
+tunnel-preprod.bat
 .DS_Store
 coverage/
 infra/traefik/acme.json

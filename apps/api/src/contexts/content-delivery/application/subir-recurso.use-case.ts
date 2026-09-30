@@ -5,6 +5,7 @@ import {
   VIDEO_STORAGE,
 } from '../domain/progreso-leccion.repository.port';
 import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
+import { asegurarDuenoDeLaLeccion, Caller } from './asegurar-dueno-de-la-leccion';
 
 @Injectable()
 export class SubirRecursoUseCase {
@@ -15,9 +16,10 @@ export class SubirRecursoUseCase {
     private readonly cursoRepository: CursoRepository,
   ) {}
 
-  async execute(file: Buffer, leccionId: string, nombre: string, nombreArchivoOriginal: string): Promise<string> {
+  async execute(file: Buffer, leccionId: string, nombre: string, nombreArchivoOriginal: string, caller: Caller): Promise<string> {
     const info = await this.cursoRepository.findInfoByLeccionId(leccionId);
     if (!info) throw new NotFoundException('Lección no encontrada');
+    asegurarDuenoDeLaLeccion(info, caller);
     const curso = await this.cursoRepository.findById(info.cursoId);
     if (!curso) throw new NotFoundException('Curso no encontrado');
     const leccion = curso.modulos

@@ -36,7 +36,22 @@ export class StripeWebhookController {
       return;
     }
 
-    if (!webhookSecret || webhookSecret === 'whsec_test_secret') {
+    const sinSecretoReal = !webhookSecret || webhookSecret === 'whsec_test_secret';
+
+    // En producción (prod y preprod corren con NODE_ENV=production) NUNCA se
+    // procesa un evento sin verificar la firma. Antes, si faltaba el secreto,
+    // cualquiera podía mandar un payment_intent.succeeded falso con el id de
+    // su propio PaymentIntent (sale del clientSecret que recibe al pagar) y
+    // quedarse con el curso sin pagar.
+    if (sinSecretoReal && process.env.NODE_ENV === 'production') {
+      this.logger.error('STRIPE_WEBHOOK_SECRET no configurado — webhook rechazado');
+      res.status(500).json({ error: 'Webhook not configured' });
+      return;
+    }
+
+    // Solo dev/E2E: el placeholder whsec_test_secret (ver e2e.yml) procesa el
+    // evento simulado sin verificar firma.
+    if (sinSecretoReal) {
       this.logger.warn('STRIPE_WEBHOOK_SECRET not configured - processing without verification');
       const event = JSON.parse(req.rawBody!.toString());
       await this.processEvent(event);

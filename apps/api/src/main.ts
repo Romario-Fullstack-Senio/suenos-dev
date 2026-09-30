@@ -3,9 +3,42 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as express from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { AppModule } from './app.module';
 import { initSentry } from './sentry.config';
 import { SentryInterceptor } from './sentry.interceptor';
+
+/**
+ * Rechaza la request ANTES de leer el body si no trae un access token válido
+ * (y el rol pedido). Es un corte temprano para no bufferear cientos de MB de
+ * alguien sin permiso — la autorización real la siguen haciendo los guards
+ * del controller (JwtAuthGuard/RolesGuard), esto no los reemplaza.
+ */
+function exigirTokenAntesDelBody(jwtService: JwtService, roles?: string[]): express.RequestHandler {
+  return (req, res, next) => {
+    // El preflight CORS nunca trae Authorization.
+    if (req.method === 'OPTIONS') return next();
+    const header = req.headers.authorization;
+    const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : null;
+    let payload: { rol?: string; purpose?: string } | null = null;
+    try {
+      payload = token ? jwtService.verify(token) : null;
+    } catch {
+      payload = null;
+    }
+    // Cualquier token con `purpose` (session-hint, 2FA pendiente, media) no
+    // es un access token — mismo criterio que JwtStrategy.validate.
+    if (!payload || payload.purpose) {
+      res.status(401).json({ statusCode: 401, message: 'No autorizado' });
+      return;
+    }
+    if (roles && !roles.includes(payload.rol ?? '')) {
+      res.status(403).json({ statusCode: 403, message: 'No tenés permiso para subir archivos acá' });
+      return;
+    }
+    next();
+  };
+}
 
 async function bootstrap() {
   initSentry();
@@ -18,15 +51,46 @@ async function bootstrap() {
     rawBody: true,
     bodyParser: false,
   });
-  const VIDEO_BODY_LIMIT = '600mb';
+
+  // CORS antes que los parsers de body: el rechazo temprano de las rutas de
+  // subida (más abajo) tiene que salir con headers CORS, si no el navegador
+  // lo muestra como un error de CORS en vez del 401/403 real.
+  app.enableCors({
+    origin: [process.env.WEB_URL || 'http://localhost:3000', 'http://127.0.0.1:3000'],
+    credentials: true,
+  });
+
   // `verify` replica lo que hacía la opción `rawBody: true` de Nest con su
   // parser por defecto — StripeWebhookController necesita el buffer crudo
   // (sin parsear) para verificar la firma del webhook.
   const captureRawBody = (req: express.Request, _res: express.Response, buf: Buffer) => {
     (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
   };
-  app.use(express.json({ limit: VIDEO_BODY_LIMIT, verify: captureRawBody }));
-  app.use(express.urlencoded({ limit: VIDEO_BODY_LIMIT, extended: true, verify: captureRawBody }));
+
+  // Antes había UN solo límite de 600mb para TODAS las rutas, y el parseo del
+  // body corre antes que cualquier guard o throttle: cualquiera, sin login,
+  // podía mandar un JSON gigante a cualquier endpoint y el contenedor de la
+  // API (mem_limit 512m) moría por falta de memoria. Ahora solo las rutas que
+  // de verdad reciben archivos (en base64 dentro del JSON) aceptan cuerpos
+  // grandes, cada una con su propio techo, y verifican el JWT y el rol ANTES
+  // de leer el body. El resto queda en 1mb.
+  const jwtService = app.get(JwtService, { strict: false });
+  const INSTRUCTOR = ['instructor', 'admin'];
+  const RUTAS_DE_SUBIDA: { path: string; limit: string; roles?: string[] }[] = [
+    { path: '/api/videos/upload', limit: '600mb', roles: INSTRUCTOR },
+    { path: '/api/videos/upload-recurso', limit: '100mb', roles: INSTRUCTOR },
+    { path: '/api/videos/upload-subtitulos', limit: '5mb', roles: INSTRUCTOR },
+    { path: '/api/cursos/imagenes/upload', limit: '15mb', roles: INSTRUCTOR },
+    { path: '/api/usuarios/me/avatar', limit: '15mb' },
+  ];
+  for (const ruta of RUTAS_DE_SUBIDA) {
+    app.use(ruta.path, exigirTokenAntesDelBody(jwtService, ruta.roles));
+    app.use(ruta.path, express.json({ limit: ruta.limit, verify: captureRawBody }));
+  }
+  // body-parser no vuelve a parsear un body que ya parseó una ruta de arriba
+  // (req._body), así que esto solo aplica al resto.
+  app.use(express.json({ limit: '1mb', verify: captureRawBody }));
+  app.use(express.urlencoded({ limit: '1mb', extended: true, verify: captureRawBody }));
 
   // El filtro global de Sentry se registra vía DI en AppModule (APP_FILTER),
   // NO con `useGlobalFilters(new SentryGlobalFilter())`: SentryGlobalFilter
@@ -43,10 +107,6 @@ async function bootstrap() {
   // de la API JAMÁS se reportó "healthy" y cualquier servicio con
   // depends_on: api condition: service_healthy (el web) nunca arrancaba.
   app.setGlobalPrefix('api', { exclude: ['health'] });
-  app.enableCors({
-    origin: [process.env.WEB_URL || 'http://localhost:3000', 'http://127.0.0.1:3000'],
-    credentials: true,
-  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

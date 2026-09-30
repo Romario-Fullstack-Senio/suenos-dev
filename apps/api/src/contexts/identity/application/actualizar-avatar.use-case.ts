@@ -3,14 +3,7 @@ import { randomUUID } from 'crypto';
 import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
 import { USUARIO_REPOSITORY, UsuarioRepository } from '../domain/usuario.repository.port';
 import { IMAGE_STORAGE, ImageStorage } from '../../catalog/domain/image-storage.port';
-
-const EXTENSION_BY_CONTENT_TYPE: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/gif': 'gif',
-};
+import { detectarTipoImagen } from '../../catalog/domain/tipo-imagen';
 
 @Injectable()
 export class ActualizarAvatarUseCase {
@@ -21,16 +14,18 @@ export class ActualizarAvatarUseCase {
     private readonly imageStorage: ImageStorage,
   ) {}
 
-  async execute(usuarioId: string, file: Buffer, contentType: string): Promise<string> {
+  /** `_contentTypeDeclarado` se ignora a propósito: el tipo se detecta de
+   * los bytes reales (ver detectarTipoImagen). */
+  async execute(usuarioId: string, file: Buffer, _contentTypeDeclarado?: string): Promise<string> {
     const usuario = await this.usuarioRepo.findById(usuarioId);
     if (!usuario) {
       throw new NotFoundDomainError('Usuario no encontrado');
     }
-    const ext = EXTENSION_BY_CONTENT_TYPE[contentType] || 'jpg';
+    const { contentType, extension } = detectarTipoImagen(file);
     // Nombre único por subida (no por usuario) — mismo criterio que las
     // portadas de curso: evita que el navegador siga sirviendo la versión
     // vieja desde caché con la misma URL.
-    const key = `avatars/${usuarioId}-${randomUUID()}.${ext}`;
+    const key = `avatars/${usuarioId}-${randomUUID()}.${extension}`;
     const url = await this.imageStorage.upload(file, key, contentType);
     usuario.actualizarAvatar(url);
     await this.usuarioRepo.save(usuario);

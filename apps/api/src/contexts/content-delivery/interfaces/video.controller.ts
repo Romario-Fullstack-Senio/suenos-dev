@@ -11,6 +11,17 @@ import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 
+interface AuthenticatedRequest extends Request {
+  user: { id: string; email: string; rol: string };
+}
+
+// Token de un solo propósito que se incrusta en las URLs de los segmentos del
+// manifest HLS (ver serveHls). Antes se incrustaba el access token real del
+// usuario, que así terminaba en logs de proxy/servidor y en el historial de
+// red en cada segmento — este solo sirve para ESA lección y para nada más.
+const PROPOSITO_MEDIA = 'media';
+const DURACION_TOKEN_MEDIA = '4h';
+
 @Controller('videos')
 export class VideoController {
   constructor(
@@ -27,7 +38,7 @@ export class VideoController {
   @Post('upload')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async upload(@Body() body: { file: string; leccionId: string }) {
+  async upload(@Body() body: { file: string; leccionId: string }, @Req() req: AuthenticatedRequest) {
     // El frontend manda una data URL completa (readAsDataURL: "data:video/mp4;
     // base64,AAAA..."), no base64 puro. Sin sacar el prefijo, Buffer.from
     // decodifica la data URL entera como si todo fuera base64, corrompiendo
@@ -35,7 +46,7 @@ export class VideoController {
     // found" en CUALQUIER video real subido por esta ruta hasta ahora.
     const base64 = body.file.includes(',') ? body.file.split(',')[1] : body.file;
     const buffer = Buffer.from(base64, 'base64');
-    const url = await this.subirVideoUseCase.execute(buffer, body.leccionId);
+    const url = await this.subirVideoUseCase.execute(buffer, body.leccionId, req.user);
     return { url };
   }
 
@@ -44,9 +55,9 @@ export class VideoController {
   @Post('upload-subtitulos')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async uploadSubtitulos(@Body() body: { file: string; leccionId: string }) {
+  async uploadSubtitulos(@Body() body: { file: string; leccionId: string }, @Req() req: AuthenticatedRequest) {
     const buffer = Buffer.from(body.file, 'utf-8');
-    const url = await this.subirSubtitulosUseCase.execute(buffer, body.leccionId);
+    const url = await this.subirSubtitulosUseCase.execute(buffer, body.leccionId, req.user);
     return { url };
   }
 
@@ -91,18 +102,25 @@ export class VideoController {
   @Post('upload-recurso')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async uploadRecurso(@Body() body: { file: string; leccionId: string; nombre: string; nombreArchivo: string }) {
+  async uploadRecurso(
+    @Body() body: { file: string; leccionId: string; nombre: string; nombreArchivo: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
     const base64 = body.file.includes(',') ? body.file.split(',')[1] : body.file;
     const buffer = Buffer.from(base64, 'base64');
-    const url = await this.subirRecursoUseCase.execute(buffer, body.leccionId, body.nombre, body.nombreArchivo);
+    const url = await this.subirRecursoUseCase.execute(buffer, body.leccionId, body.nombre, body.nombreArchivo, req.user);
     return { url };
   }
 
   @Delete('recursos/:leccionId/:archivo')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async eliminarRecurso(@Param('leccionId') leccionId: string, @Param('archivo') archivo: string) {
-    await this.eliminarRecursoUseCase.execute(leccionId, decodeURIComponent(archivo));
+  async eliminarRecurso(
+    @Param('leccionId') leccionId: string,
+    @Param('archivo') archivo: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.eliminarRecursoUseCase.execute(leccionId, decodeURIComponent(archivo), req.user);
     return { message: 'Recurso eliminado' };
   }
 
@@ -160,7 +178,9 @@ export class VideoController {
     @Res() res: Response,
   ) {
     const rawToken = this.extraerToken(req, tokenQuery);
-    const usuario = this.verificarToken(rawToken);
+    // Acá (y solo acá) también vale el token de media de ESTA lección: es el
+    // que llevan los segmentos .ts después de reescribir el manifest.
+    const usuario = this.verificarToken(rawToken, leccionId);
 
     const { permitido, existe } = await this.verificarAccesoUseCase.execute({
       leccionId,
@@ -186,17 +206,24 @@ export class VideoController {
     });
 
     if (filename.endsWith('.m3u8')) {
-      // Reescribe el manifest para que cada segmento lleve el token en la
+      // Reescribe el manifest para que cada segmento lleve un token en la
       // URL — así el reproductor nativo de Safari (que resuelve las rutas
       // relativas del manifest sin heredar query params ni poder mandar
-      // headers custom) también puede pedir los .ts autenticado.
+      // headers custom) también puede pedir los .ts autenticado. Es un token
+      // de media acotado a esta lección, no el access token del usuario.
       const chunks: Buffer[] = [];
       for await (const chunk of objeto.stream as any) chunks.push(chunk as Buffer);
       const contenido = Buffer.concat(chunks).toString('utf-8');
-      const reescrito = rawToken
+      const tokenMedia = usuario
+        ? this.jwtService.sign(
+            { sub: usuario.id, rol: usuario.rol, purpose: PROPOSITO_MEDIA, leccionId },
+            { expiresIn: DURACION_TOKEN_MEDIA },
+          )
+        : null;
+      const reescrito = tokenMedia
         ? contenido
             .split('\n')
-            .map(linea => (linea && !linea.startsWith('#') ? `${linea}?token=${rawToken}` : linea))
+            .map(linea => (linea && !linea.startsWith('#') ? `${linea}?token=${tokenMedia}` : linea))
             .join('\n')
         : contenido;
       res.set('Content-Type', objeto.contentType);
@@ -214,11 +241,18 @@ export class VideoController {
     return tokenQuery ?? null;
   }
 
-  private verificarToken(rawToken: string | null): { id: string; rol: string } | null {
+  /** `leccionIdMedia`: si viene, también se acepta el token de media emitido
+   * para esa lección exacta (ver serveHls). Sin él, solo access tokens. */
+  private verificarToken(rawToken: string | null, leccionIdMedia?: string): { id: string; rol: string } | null {
     if (!rawToken) return null;
     try {
       const payload = this.jwtService.verify(rawToken);
-      // Cualquier token con `purpose` (session-hint del middleware, o
+      if (payload.purpose === PROPOSITO_MEDIA) {
+        return leccionIdMedia && payload.leccionId === leccionIdMedia
+          ? { id: payload.sub, rol: payload.rol }
+          : null;
+      }
+      // Cualquier otro token con `purpose` (session-hint del middleware, o
       // two-factor-pending de un login a mitad de camino — ver
       // JwtStrategy.validate) NO es un access token real: no pasó (o no
       // pasó del todo) la autenticación completa, y este método hace su

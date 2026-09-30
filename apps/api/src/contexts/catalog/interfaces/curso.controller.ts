@@ -319,8 +319,12 @@ export class CursoController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async crear(@Body() dto: CrearCursoDto) {
-    const curso = await this.crearCursoUC.execute(dto);
+  async crear(@Body() dto: CrearCursoDto, @Req() req: AuthenticatedRequest) {
+    // El instructor sale del token, no del body: antes un instructor podía
+    // crear cursos a nombre de otro mandando su instructorId. Solo un admin
+    // puede crear un curso en nombre de otro instructor.
+    const instructorId = req.user.rol === 'admin' && dto.instructorId ? dto.instructorId : req.user.id;
+    const curso = await this.crearCursoUC.execute({ ...dto, instructorId });
     await this.invalidarCache();
     return curso;
   }
@@ -338,8 +342,8 @@ export class CursoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
   @HttpCode(HttpStatus.OK)
-  async publicar(@Param('id') id: string) {
-    await this.publicarCursoUC.execute(id);
+  async publicar(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    await this.publicarCursoUC.execute(id, req.user.id, req.user.rol);
     await this.invalidarCache(id);
     return { message: 'Curso publicado correctamente' };
   }
@@ -347,8 +351,17 @@ export class CursoController {
   @Post(':id/modulos')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('instructor', 'admin')
-  async agregarModulo(@Param('id') cursoId: string, @Body() dto: AgregarModuloDto) {
-    const result = await this.agregarModuloUC.execute({ ...dto, cursoId });
+  async agregarModulo(
+    @Param('id') cursoId: string,
+    @Body() dto: AgregarModuloDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.agregarModuloUC.execute({
+      ...dto,
+      cursoId,
+      callerId: req.user.id,
+      callerRol: req.user.rol,
+    });
     await this.invalidarCache(cursoId);
     return result;
   }
@@ -360,8 +373,15 @@ export class CursoController {
     @Param('id') cursoId: string,
     @Param('moduloId') moduloId: string,
     @Body() dto: AgregarLeccionDto,
+    @Req() req: AuthenticatedRequest,
   ) {
-    const result = await this.agregarLeccionUC.execute({ ...dto, cursoId, moduloId });
+    const result = await this.agregarLeccionUC.execute({
+      ...dto,
+      cursoId,
+      moduloId,
+      callerId: req.user.id,
+      callerRol: req.user.rol,
+    });
     await this.invalidarCache(cursoId);
     return result;
   }

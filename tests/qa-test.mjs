@@ -126,13 +126,16 @@ async function apiCall(method, path, data, headers = {}, noApiPrefix = false) {
     }
     log('Solve quiz', (solve.status === 200 || solve.status === 201) && solve.json?.aprobado, `score: ${solve.json?.puntaje || 0}%`);
 
-    // TEST 15: Certificate
+    // TEST 15: Certificate — lo emite el backend solo al aprobar el quiz
+    // (evento QuizAprobado); ya no existe un endpoint para emitirlo a mano.
     let cert = { status: 0, json: {} };
     if (userId) {
-      cert = await apiCall('POST', '/certificados/emitir', { estudianteId: userId, cursoId, estudianteNombre: 'Romario QA', cursoNombre: 'Curso de NestJS' }, { Authorization: `Bearer ${token}` });
+      const lista = await apiCall('GET', `/certificados/estudiante/${userId}`, null, { Authorization: `Bearer ${token}` });
+      const delCurso = Array.isArray(lista.json) ? lista.json.find((c) => c.cursoId === cursoId) : null;
+      cert = { status: lista.status, json: delCurso || {} };
     }
     const certId = cert.json?.id || '';
-    log('Certificate emission', (cert.status === 200 || cert.status === 201) && certId !== '', `certId: ${certId}`);
+    log('Certificate emission', cert.status === 200 && certId !== '', `certId: ${certId}`);
 
     // TEST 16: LinkedIn link
     log('LinkedIn Add to Profile', !!cert.json?.linkedinAddToProfile, cert.json?.linkedinAddToProfile ? 'link generated' : 'no link');

@@ -15,8 +15,11 @@ export class CrearCursoDto {
   @Min(0)
   precio!: number;
 
+  // Opcional y solo tenido en cuenta para admins (ver CursoController.crear):
+  // a un instructor siempre se le asigna su propio id del token.
+  @IsOptional()
   @IsString()
-  instructorId!: string;
+  instructorId?: string;
 
   @IsOptional()
   @IsUrl({ require_tld: false }) // require_tld: false para permitir http://localhost:...

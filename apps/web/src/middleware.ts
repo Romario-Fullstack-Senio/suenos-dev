@@ -20,7 +20,13 @@ import { jwtVerify } from 'jose';
  * token (JwtStrategy lo rechaza explícitamente por su `purpose`).
  */
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-secret');
+// En producción no hay valor por defecto: si falta JWT_SECRET, ninguna sesión
+// se da por válida (fail closed). Antes caía a 'dev-secret', el mismo valor
+// público del repo — con él cualquiera podía firmar una cookie con rol admin
+// y pasar el gate de /admin.
+const secretoCrudo =
+  process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'dev-secret');
+const JWT_SECRET = secretoCrudo ? new TextEncoder().encode(secretoCrudo) : null;
 
 // Prefijos que requieren sesión. `/instructor` y `/admin` además requieren
 // el rol correspondiente (ver ROLE_PREFIXES).
@@ -48,7 +54,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const sessionCookie = request.cookies.get('session_token')?.value;
-  if (!sessionCookie) {
+  if (!sessionCookie || !JWT_SECRET) {
     return redirectToLogin(request);
   }
 

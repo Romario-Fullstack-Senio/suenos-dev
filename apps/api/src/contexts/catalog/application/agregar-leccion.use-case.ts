@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { NotFoundDomainError } from '@suenos-dev/shared-kernel';
+import { NotFoundDomainError, UnauthorizedDomainError } from '@suenos-dev/shared-kernel';
 import { CursoRepository, CURSO_REPOSITORY } from '../domain/curso.repository.port';
 import { Leccion } from '../domain/leccion.entity';
 import { v4 as uuid } from 'uuid';
 
 interface AgregarLeccionCommand {
   cursoId: string;
+  callerId: string;
+  callerRol: string;
   moduloId: string;
   id?: string;
   titulo: string;
@@ -27,6 +29,9 @@ export class AgregarLeccionUseCase {
     const curso = await this.cursoRepo.findById(command.cursoId);
     if (!curso) {
       throw new NotFoundDomainError('Curso no encontrado');
+    }
+    if (command.callerRol !== 'admin' && curso.instructorId !== command.callerId) {
+      throw new UnauthorizedDomainError('No tienes permiso para editar este curso');
     }
 
     const leccion = Leccion.create(

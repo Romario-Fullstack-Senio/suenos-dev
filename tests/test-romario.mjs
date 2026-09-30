@@ -204,14 +204,21 @@ async function screenshot(page, name) {
 
     // ========== PASO 10: CERTIFICADO ==========
     console.log('\n=== PASO 10: CERTIFICADO ===');
-    const certRes = await apiCall('POST', '/certificados/emitir', {
-      estudianteId: userId,
-      cursoId: CURSO_ID,
-      estudianteNombre: NOMBRE,
-      cursoNombre: CURSO_NOMBRE,
-    }, { Authorization: `Bearer ${token}` });
-    const certId = certRes.json?.id || '';
-    log('Certificado emitido', (certRes.status === 200 || certRes.status === 201) && certId !== '', `certId: ${certId}`);
+    // El backend lo emite solo al aprobar el quiz (evento QuizAprobado) —
+    // ya no existe un endpoint para emitirlo a mano con nombres arbitrarios.
+    const lista = await apiCall('GET', `/certificados/estudiante/${userId}`, null, { Authorization: `Bearer ${token}` });
+    const delCurso = Array.isArray(lista.json) ? lista.json.find((c) => c.cursoId === CURSO_ID) : null;
+    const certId = delCurso?.id || '';
+    log('Certificado emitido', lista.status === 200 && certId !== '', `certId: ${certId}`);
+
+    const verif = certId ? await apiCall('GET', `/certificados/${certId}/verificar`) : { json: {} };
+    const certRes = {
+      json: {
+        estudianteNombre: verif.json?.certificado?.estudiante,
+        cursoNombre: verif.json?.certificado?.curso,
+        linkedinAddToProfile: delCurso?.linkedinAddToProfile,
+      },
+    };
 
     // Verificar nombre del estudiante
     log('Nombre en certificado', certRes.json?.estudianteNombre === NOMBRE, certRes.json?.estudianteNombre || 'sin nombre');

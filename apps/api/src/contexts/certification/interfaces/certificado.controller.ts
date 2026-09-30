@@ -1,14 +1,12 @@
-import { Controller, Get, Post, Param, Body, UseGuards, Res, Inject } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Res, Inject } from '@nestjs/common';
 import { Response } from 'express';
 import { VerificarCertificadoUseCase } from '../application/verificar-certificado.use-case';
-import { Certificado } from '../domain/certificado.entity';
 import { CERTIFICADO_REPOSITORY, CertificadoRepository } from '../domain/certificado.repository.port';
 import { LINKEDIN_LINK, LinkedInLink } from '../domain/linkedin-link.port';
 import { PDF_GENERATOR, PdfGenerator } from '../domain/pdf-generator.port';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { OwnershipGuard } from '../../../common/guards/ownership.guard';
 import { RequireOwnership } from '../../../common/decorators/ownership.decorator';
-import { randomUUID } from 'crypto';
 
 @Controller('certificados')
 export class CertificadoController {
@@ -70,40 +68,9 @@ export class CertificadoController {
     }));
   }
 
-  @Post('emitir')
-  @UseGuards(JwtAuthGuard)
-  async emitir(@Body() body: { estudianteId: string; cursoId: string; estudianteNombre: string; cursoNombre: string }) {
-    const existing = await this.certificadoRepository.findByCursoYEstudiante(
-      body.cursoId,
-      body.estudianteId,
-    );
-
-    if (existing) {
-      return {
-        id: existing.id,
-        estudianteNombre: existing.estudianteNombre,
-        cursoNombre: existing.cursoNombre,
-        message: 'Certificado ya emitido',
-        linkedinAddToProfile: this.linkedinLink.generate(existing),
-      };
-    }
-
-    const certificado = Certificado.emitir(
-      randomUUID(),
-      body.estudianteId,
-      body.cursoId,
-      body.estudianteNombre,
-      body.cursoNombre,
-    );
-
-    await this.certificadoRepository.save(certificado);
-
-    return {
-      id: certificado.id,
-      estudianteNombre: certificado.estudianteNombre,
-      cursoNombre: certificado.cursoNombre,
-      fechaEmision: certificado.fechaEmision,
-      linkedinAddToProfile: this.linkedinLink.generate(certificado),
-    };
-  }
+  // No hay endpoint para emitir certificados a mano: los emite solo
+  // GenerarCertificadoHandler al aprobar el quiz (evento QuizAprobado).
+  // Había un POST /certificados/emitir que cualquier usuario logueado podía
+  // llamar con estudianteId, cursoId y los nombres en texto libre, sin haber
+  // terminado el curso — y /verificar después lo daba por válido.
 }

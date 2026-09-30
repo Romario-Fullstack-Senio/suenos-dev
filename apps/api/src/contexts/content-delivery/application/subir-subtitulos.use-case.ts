@@ -4,6 +4,7 @@ import {
   VIDEO_STORAGE,
 } from '../domain/progreso-leccion.repository.port';
 import { CURSO_REPOSITORY, CursoRepository } from '../../catalog/domain/curso.repository.port';
+import { asegurarDuenoDeLaLeccion, Caller } from './asegurar-dueno-de-la-leccion';
 
 @Injectable()
 export class SubirSubtitulosUseCase {
@@ -14,11 +15,13 @@ export class SubirSubtitulosUseCase {
     private readonly cursoRepository: CursoRepository,
   ) {}
 
-  async execute(file: Buffer, leccionId: string): Promise<string> {
-    const url = await this.videoStorage.uploadSubtitulos(file, leccionId);
-
+  async execute(file: Buffer, leccionId: string, caller: Caller): Promise<string> {
     const info = await this.cursoRepository.findInfoByLeccionId(leccionId);
     if (!info) throw new NotFoundException('Lección no encontrada');
+    asegurarDuenoDeLaLeccion(info, caller);
+
+    const url = await this.videoStorage.uploadSubtitulos(file, leccionId);
+
     const curso = await this.cursoRepository.findById(info.cursoId);
     if (!curso) throw new NotFoundException('Curso no encontrado');
     const leccion = curso.modulos
