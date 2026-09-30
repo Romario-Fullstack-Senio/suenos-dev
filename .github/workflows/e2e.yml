@@ -57,8 +57,10 @@ jobs:
       # `bitnami/minio:latest` dejó de existir ("manifest unknown"), lo que
       # tumbaba el job entero en el arranque de los containers. Después se
       # cambió a minio/minio, y ESE repo también desapareció de Docker Hub
-      # ("pull access denied", 404 en hub.docker.com) — MinIO discontinuó su
-      # publicación ahí y ahora solo publica en quay.io.
+      # ("pull access denied", 404 en hub.docker.com). Después se usó
+      # quay.io/minio/minio, que en septiembre 2026 pasó a privado ("unauthorized",
+      # 401 en su API). Ahora: chainguard/minio (Chainguard, editor verificado
+      # en Docker Hub, imagen firmada y reconstruida a diario).
 
     env:
       DATABASE_HOST: localhost
@@ -106,12 +108,15 @@ jobs:
       # Con `docker run` sí se puede pasar el command que la imagen oficial
       # necesita. Se espera a que responda el health check antes de arrancar
       # la API, que lo usa para las imágenes de portada.
+      # chainguard/minio ya trae ENTRYPOINT /usr/bin/minio (se le pasa solo
+      # `server <dir>`) y corre como usuario sin privilegios (65532), que no
+      # puede crear /data en la raíz — por eso /tmp/data.
       - name: Start MinIO
         run: |
           docker run -d --name minio -p 9000:9000 \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio:latest server /data
+            chainguard/minio:latest server /tmp/data
           for i in $(seq 1 30); do
             if curl -sf http://localhost:9000/minio/health/live; then
               echo "MinIO listo"; exit 0
