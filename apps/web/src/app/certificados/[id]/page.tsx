@@ -1,5 +1,5 @@
 // Next 16: `params` es una Promise (se eliminó el acceso síncrono).
-export default async function CertificadoPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CertificadoPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">

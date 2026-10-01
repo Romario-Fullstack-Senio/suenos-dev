@@ -57,7 +57,7 @@ async function fetchResumenResenas(cursoId: string): Promise<{ promedio: number;
 }
 
 // Next 16: `params` es una Promise (se eliminó el acceso síncrono).
-type Props = { params: Promise<{ slug: string }> };
+type Props = Readonly<{ params: Promise<{ slug: string }> }>;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

@@ -78,7 +78,8 @@ export async function proxy(request: NextRequest) {
     // Un admin puede entrar a /instructor; nadie más entra a una sección
     // de otro rol — lo mandamos a su propio panel en vez de a login (ya
     // está logueado, solo no tiene permiso acá).
-    const fallback = rol === 'instructor' ? '/instructor' : rol === 'admin' ? '/admin' : '/dashboard';
+    const PANEL_POR_ROL: Record<string, string> = { instructor: '/instructor', admin: '/admin' };
+    const fallback = (rol && PANEL_POR_ROL[rol]) || '/dashboard';
     return NextResponse.redirect(new URL(fallback, request.url));
   }
 
