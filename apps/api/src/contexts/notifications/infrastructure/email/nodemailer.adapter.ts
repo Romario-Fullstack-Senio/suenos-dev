@@ -1,11 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailSender } from '../../application/email-sender.port';
 import nodemailer from 'nodemailer';
+// Tipo importado por nombre: nodemailer 10 publica un mapa de `exports` sin
+// condición de tipos, y con `module: node20` el default import ya no sirve
+// como namespace en posición de tipo (`nodemailer.Transporter`).
+import type { Transporter } from 'nodemailer';
 
 @Injectable()
 export class NodemailerAdapter implements EmailSender {
   private readonly logger = new Logger(NodemailerAdapter.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: Transporter;
   private readonly configured: boolean;
 
   constructor() {

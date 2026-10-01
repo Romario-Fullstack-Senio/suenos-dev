@@ -6,8 +6,10 @@ import { ImageResponse } from 'next/og';
  * gris sin nada. Las páginas de curso usan la portada del curso cuando
  * existe (ver generateMetadata en cursos/[slug]); esta es el fallback para
  * la home y el resto de las rutas.
+ *
+ * Sin `runtime = 'edge'`: Next 16 deprecó el runtime Edge, y en Node la
+ * imagen además puede generarse estática en el build (Edge lo impedía).
  */
-export const runtime = 'edge';
 export const alt = 'Sueños Dev — Donde los sueños se convierten en código';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';

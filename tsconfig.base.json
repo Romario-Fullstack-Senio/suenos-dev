@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
-    "lib": ["ES2022"],
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "lib": [
+      "ES2022"
+    ],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -19,10 +20,12 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": ".",
     "paths": {
-      "@suenos-dev/shared-kernel": ["shared-kernel/src"]
+      "@suenos-dev/shared-kernel": [
+        "./shared-kernel/src"
+      ]
     },
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "nodenext"
   }
 }

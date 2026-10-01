@@ -23,7 +23,7 @@ Infra must be up before running the API/web locally: `docker compose -f infra/do
 
 ### Tests
 
-Unit tests exist only in `apps/api` (Jest + ts-jest, files matching `*.spec.ts`):
+Unit tests exist only in `apps/api` (Jest + ts-jest, files matching `*.spec.ts`). The `npm test*` scripts run Jest with `NODE_OPTIONS=--experimental-vm-modules` (via `cross-env`): NestJS 12 packages are ESM-only, and Jest can only `require()` them on Node ≥ 24.9 with that flag — calling `npx jest` directly fails with "Must use import to load ES Module".
 
 ```bash
 cd apps/api
@@ -34,7 +34,7 @@ npm run test:watch
 npm run test:cov
 ```
 
-There is no test or typecheck script at the root or in `apps/web`. `apps/web`'s `npm run lint` is `next lint`.
+There is no test or typecheck script at the root or in `apps/web`. Linting is ESLint 9 with a single flat config at the root (`eslint.config.mjs`) covering every workspace; `apps/web`'s `npm run lint` is plain `eslint .` (Next 16 removed `next lint`, and `next build` no longer lints). Requires Node ≥ 24 (Docker images and CI use `node:24`).
 
 ### Database migrations
 
@@ -57,7 +57,7 @@ node tests/test-romario.mjs   # specific-user QA pass
 
 ## Architecture
 
-DDD + Hexagonal architecture on a NestJS backend, Next.js 14 (App Router) frontend, sharing DDD primitives from `shared-kernel/` (`AggregateRoot`, `Entity`, `ValueObject`, `DomainEvent`; built with `tsc`, resolved by the API's tsconfig path mapping to `shared-kernel/dist`). Building shared-kernel before the API is not optional — it will fail to resolve `@suenos-dev/shared-kernel` otherwise, and `dev:web` never triggers that build itself.
+DDD + Hexagonal architecture on a NestJS 12 backend, Next.js 16 (App Router, React 19) frontend, sharing DDD primitives from `shared-kernel/` (`AggregateRoot`, `Entity`, `ValueObject`, `DomainEvent`; built with `tsc`, resolved by the API's tsconfig path mapping to `shared-kernel/dist`). Building shared-kernel before the API is not optional — it will fail to resolve `@suenos-dev/shared-kernel` otherwise, and `dev:web` never triggers that build itself.
 
 ### Bounded contexts (`apps/api/src/contexts/<name>/`)
 
@@ -86,16 +86,16 @@ Rules that matter when adding or changing code here:
 
 Email adapter fallback order (first configured wins): **Resend → SendGrid → Nodemailer** (Nodemailer/SMTP is the dev fallback via Mailtrap). OAuth strategies (Google/GitHub) are similarly conditional — missing env vars means the strategy returns null instead of crashing at boot.
 
-### Frontend (`apps/web/src/app/`, Next.js 14 App Router)
+### Frontend (`apps/web/src/app/`, Next.js 16 App Router)
 
-Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries are enforced server-side by `apps/web/src/middleware.ts` (redirects unauthenticated visits to protected prefixes, and role-gates `/admin`/`/instructor`) — new protected routes must be added to its `PROTECTED_PREFIXES`/`config.matcher`. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`, `/carrito` (cart is client-side/localStorage via `CartContext`, no login needed until checkout). Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/favoritos` (wishlist, server-persisted per user), `/instructor` (instructor role), `/admin` (admin role).
+Path alias `@/*` → `apps/web/src/*`. `output: 'standalone'` in `next.config.mjs` for Docker builds. Route auth boundaries are enforced server-side by `apps/web/src/proxy.ts` (Next 16 renamed `middleware` to `proxy`; redirects unauthenticated visits to protected prefixes, and role-gates `/admin`/`/instructor`) — new protected routes must be added to its `PROTECTED_PREFIXES`/`config.matcher`. Public routes: `/`, `/cursos`, `/cursos/[slug]`, `/certificados/[id]` (verification), `/auth/*`, `/carrito` (cart is client-side/localStorage via `CartContext`, no login needed until checkout). Authenticated: `/dashboard` (estudiante), `/checkout`, `/aprender/[cursoId]` (+ `/quiz`, requires enrollment), `/perfil`, `/favoritos` (wishlist, server-persisted per user), `/instructor` (instructor role), `/admin` (admin role).
 
 ### Auth: tokens, refresh, verification
 
-Login/OAuth/refresh return three JWTs, all signed with `JWT_SECRET` (must be identical in `apps/api/.env` and `apps/web/.env.local` — the latter isn't `NEXT_PUBLIC_`, only readable server-side/in middleware):
+Login/OAuth/refresh return three JWTs, all signed with `JWT_SECRET` (must be identical in `apps/api/.env` and `apps/web/.env.local` — the latter isn't `NEXT_PUBLIC_`, only readable server-side/in proxy.ts):
 - `token` — 15min access token, sent as `Authorization: Bearer` on every API call (stored in `localStorage`).
 - `refreshToken` — opaque random value, 30d, hashed (sha256) and tracked in the `refresh_tokens` table (`RefreshToken` aggregate in `identity/domain`) so it's revocable; rotated on every use (`POST /auth/refresh`) and revoked on `POST /auth/logout` or a password reset. `apps/web/src/lib/api.ts`'s `request()` auto-refreshes once on a 401 and retries the original call.
-- `sessionToken` — 30d JWT with `purpose: 'session-hint'`, stored in a non-httpOnly `session_token` cookie purely so `middleware.ts` can verify it (via `jose`) and gate routes server-side. `JwtStrategy` explicitly rejects any token carrying `purpose: 'session-hint'` as a bearer token — it must never authorize a real API call.
+- `sessionToken` — 30d JWT with `purpose: 'session-hint'`, stored in a non-httpOnly `session_token` cookie purely so `proxy.ts` can verify it (via `jose`) and gate routes server-side. `JwtStrategy` explicitly rejects any token carrying `purpose: 'session-hint'` as a bearer token — it must never authorize a real API call.
 
 Email verification (`Usuario.emailVerificado`, `POST /auth/verify-email`, `POST /auth/resend-verification`) and password reset (`POST /auth/forgot-password`, `POST /auth/reset-password`) don't block login — unverified users can use the app; `PerfilForm` shows a banner with a resend button. OAuth accounts start pre-verified (the provider already confirmed the email). Both flows fire through `EventBus`/`@OnEvent` handlers in `notifications/application/` (`enviar-email-verificacion.handler.ts`, `enviar-email-reset-password.handler.ts`), same pattern as `CursoPublicado`/`CursoComprado`. `EMAIL_SENDER` now lives in `common/email/email.module.ts` (not `notifications/`) specifically so `identity` can use it without a circular module import (`notifications.module.ts` already imports `IdentityModule`).
 

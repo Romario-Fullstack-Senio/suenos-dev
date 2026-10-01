@@ -5,7 +5,7 @@
 npm workspaces with 3 packages:
 - `shared-kernel/` — DDD base classes (AggregateRoot, Entity, ValueObject, DomainEvent). Published as `@suenos-dev/shared-kernel`.
 - `apps/api/` — NestJS backend (`@suenos-dev/api`)
-- `apps/web/` — Next.js 14 frontend (`@suenos-dev/web`)
+- `apps/web/` — Next.js 16 frontend (`@suenos-dev/web`)
 
 ## Build order (critical)
 
@@ -26,7 +26,7 @@ Full production build: `npm run build` (shared -> api -> web, in order).
 | `npm run dev:api` | Build shared-kernel, then `nest start --watch` on port 3001 |
 | `npm run dev:web` | `next dev` on port 3000 |
 | `npm run build` | Full build: shared-kernel -> api -> web |
-| `npm run lint` | ESLint from root (covers all workspaces) |
+| `npm run lint` | ESLint 9 from root, flat config in `eslint.config.mjs` (covers all workspaces) |
 | `npm run docker:up` | Start Postgres, Redis, MinIO via docker-compose |
 | `npm run docker:down` | Stop all Docker services |
 | `npm run docker:dev` | Full stack in Docker (api, web, traefik, postgres, redis, minio) |
@@ -50,7 +50,7 @@ Generate against an empty scratch DB (diffing a DB that already matches the enti
 
 - Start infra first: `docker compose -f infra/docker-compose.yml up -d postgres redis minio`
 - Copy `.env.example` to root `.env`. API also has its own `.env` in `apps/api/`. Web has `.env.local`.
-- Node >= 20
+- Node >= 24 (NestJS 12 ships ESM-only packages; the API's Jest scripts need Node ≥ 24.9 with `--experimental-vm-modules`, already set in `npm test`)
 
 ## Infrastructure (Docker Compose)
 
@@ -78,7 +78,7 @@ DDD + Hexagonal architecture. Each bounded context lives in `apps/api/src/contex
 
 8 contexts: identity, catalog, content-delivery, assessment, certification, payments, enrollment, notifications.
 
-## Frontend architecture (Next.js 14)
+## Frontend architecture (Next.js 16)
 
 App Router (`src/app/`). Key routes:
 - `/` — landing
@@ -91,11 +91,11 @@ App Router (`src/app/`). Key routes:
 
 `output: 'standalone'` in next.config (Docker-ready). Path alias `@/*` maps to `./src/*`.
 
-Route protection is server-side via `apps/web/src/middleware.ts` — add new protected prefixes there (`PROTECTED_PREFIXES`/`config.matcher`), not just as a client-side guard in the page.
+Route protection is server-side via `apps/web/src/proxy.ts` (Next 16's rename of `middleware`) — add new protected prefixes there (`PROTECTED_PREFIXES`/`config.matcher`), not just as a client-side guard in the page.
 
 ### Auth tokens
 
-Login/OAuth/refresh return `token` (15min access, Bearer header, localStorage), `refreshToken` (30d opaque, hashed+revocable server-side in `refresh_tokens` table, rotated each use via `POST /auth/refresh` — `apps/web/src/lib/api.ts` auto-refreshes once on a 401), and `sessionToken` (30d JWT, `purpose: 'session-hint'`, in a non-httpOnly `session_token` cookie read only by `middleware.ts`; `JwtStrategy` rejects it as a bearer token). `JWT_SECRET` must match between `apps/api/.env` and `apps/web/.env.local`. Email verification and password reset don't block login; both flows email via `EMAIL_SENDER` in `common/email/email.module.ts` (shared between `identity` and `notifications` to avoid a circular module import).
+Login/OAuth/refresh return `token` (15min access, Bearer header, localStorage), `refreshToken` (30d opaque, hashed+revocable server-side in `refresh_tokens` table, rotated each use via `POST /auth/refresh` — `apps/web/src/lib/api.ts` auto-refreshes once on a 401), and `sessionToken` (30d JWT, `purpose: 'session-hint'`, in a non-httpOnly `session_token` cookie read only by `proxy.ts`; `JwtStrategy` rejects it as a bearer token). `JWT_SECRET` must match between `apps/api/.env` and `apps/web/.env.local`. Email verification and password reset don't block login; both flows email via `EMAIL_SENDER` in `common/email/email.module.ts` (shared between `identity` and `notifications` to avoid a circular module import).
 
 ## Shared kernel
 

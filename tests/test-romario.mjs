@@ -36,7 +36,7 @@ async function apiCall(method, path, data, headers = {}) {
 
 async function screenshot(page, name) {
   const dir = 'tests/screenshots';
-  try { mkdirSync(dir, { recursive: true }); } catch {}
+  try { mkdirSync(dir, { recursive: true }); } catch { /* ya existe */ }
   const path = `${dir}/${name}.png`;
   await page.screenshot({ path, fullPage: true });
   screenshots.push(path);
@@ -238,7 +238,7 @@ async function screenshot(page, name) {
       // Guardar PDF
       if (pdfBuf.byteLength > 0) {
         const dir = 'tests/screenshots';
-        try { mkdirSync(dir, { recursive: true }); } catch {}
+        try { mkdirSync(dir, { recursive: true }); } catch { /* ya existe */ }
         writeFileSync(`${dir}/certificado-${userId.substring(0, 8)}.pdf`, Buffer.from(pdfBuf));
         log('PDF guardado', true, `tests/screenshots/certificado-${userId.substring(0, 8)}.pdf`);
       }
@@ -304,4 +304,9 @@ async function screenshot(page, name) {
   console.log('='.repeat(60));
   console.log('\nScreenshots guardados en tests/screenshots/:');
   screenshots.forEach(s => console.log(`  ${s}`));
-})();
+})().catch((error) => {
+  // Sin esto, un error fuera de los try (p. ej. que Chromium no arranque)
+  // terminaba como rechazo no manejado y el script podía salir con código 0.
+  console.error(error);
+  process.exitCode = 1;
+});

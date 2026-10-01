@@ -1,9 +1,11 @@
-export default function CertificadoPage({ params }: { params: { id: string } }) {
+// Next 16: `params` es una Promise (se eliminó el acceso síncrono).
+export default async function CertificadoPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
+  const { id } = await params;
   return (
     <div className="max-w-2xl mx-auto px-4 py-16">
       <div className="bg-cloud-100 rounded-xl p-8 shadow-sm border border-ink/[0.07] text-center">
         <h1 className="text-3xl font-bold mb-2">Certificado Verificado</h1>
-        <p className="text-ink-muted mb-6">ID: {params.id}</p>
+        <p className="text-ink-muted mb-6">ID: {id}</p>
         <div className="border-2 border-primary rounded-lg p-8 mb-6">
           <h2 className="text-2xl font-bold text-secondary mb-2">Suenos Dev</h2>
           <p className="text-lg mb-1">Certifica que</p>

@@ -6,8 +6,8 @@ import { jwtVerify } from 'jose';
  * `/instructor`, etc. solo estaban guardadas por `AuthContext` en el
  * cliente — cualquiera podía pedir el HTML/JS de esas páginas directo
  * (curl, ver-código-fuente, deshabilitar JS) antes de que el redirect
- * client-side siquiera corriera. Este middleware corre en el Edge antes de
- * renderizar nada.
+ * client-side siquiera corriera. Este proxy (ex-middleware, ver Next 16)
+ * corre en el servidor antes de renderizar nada.
  *
  * IMPORTANTE: esto es un gate de UX/routing, no la autorización real. La
  * autorización real sigue siendo 100% el JwtAuthGuard/RolesGuard de la API
@@ -43,7 +43,10 @@ const ROLE_PREFIXES: Record<string, string> = {
   '/instructor': 'instructor',
 };
 
-export async function middleware(request: NextRequest) {
+// Next 16 renombró la convención `middleware` a `proxy` (y la función
+// exportada también). Corre siempre en runtime Node — antes era Edge — así
+// que process.env.JWT_SECRET se lee en ejecución, no al compilar.
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const protectedPrefix =
@@ -75,7 +78,8 @@ export async function middleware(request: NextRequest) {
     // Un admin puede entrar a /instructor; nadie más entra a una sección
     // de otro rol — lo mandamos a su propio panel en vez de a login (ya
     // está logueado, solo no tiene permiso acá).
-    const fallback = rol === 'instructor' ? '/instructor' : rol === 'admin' ? '/admin' : '/dashboard';
+    const PANEL_POR_ROL: Record<string, string> = { instructor: '/instructor', admin: '/admin' };
+    const fallback = (rol && PANEL_POR_ROL[rol]) || '/dashboard';
     return NextResponse.redirect(new URL(fallback, request.url));
   }
 

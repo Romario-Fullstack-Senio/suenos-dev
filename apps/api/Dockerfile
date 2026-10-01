@@ -1,7 +1,7 @@
 # ============================================================
 # Stage 1: Install ALL workspace dependencies (cached layer)
 # ============================================================
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN npm ci
 # ============================================================
 # Stage 2: Build shared-kernel then API
 # ============================================================
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ RUN npm run build --workspace=apps/api
 # ============================================================
 # Stage 3: Production image (minimal, non-root)
 # ============================================================
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 RUN addgroup --system --gid 1001 suenos \
  && adduser --system  --uid 1001 suenos
@@ -62,6 +62,12 @@ COPY --from=builder --chown=suenos:suenos /app/apps/api/package.json ./
 
 # --- Production node_modules (full workspace, then prune devDeps) ---
 COPY --from=builder --chown=suenos:suenos /app/node_modules ./node_modules
+# npm workspaces deja algunas dependencias del API anidadas en
+# apps/api/node_modules en vez de la raíz (hoy: stripe, @nestjs/cache-manager y
+# keyv@5 — la raíz tiene keyv@4 de ESLint). Copiarlas ENCIMA reproduce el
+# orden en que Node las resuelve desde apps/api; sin esto el contenedor
+# arrancaba con "Cannot find module 'stripe'".
+COPY --from=builder --chown=suenos:suenos /app/apps/api/node_modules ./node_modules
 
 # --- Shared-kernel build output (required at runtime) ---
 # node_modules/@suenos-dev/shared-kernel is a workspace symlink (created by
