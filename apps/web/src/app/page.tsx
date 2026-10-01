@@ -83,6 +83,11 @@ interface CursoDestacado {
  * si el API no responde la sección simplemente no se renderiza (la home
  * nunca cae por esto).
  */
+// Mismo motivo que /cursos: sin esto, la home quedaba prerenderizada en el
+// build de la imagen (sin API) con "Cursos destacados" vacío. El fetch se
+// cachea igual 5 min (`revalidate: 300`).
+export const dynamic = 'force-dynamic';
+
 async function getDestacados(): Promise<{ cursos: CursoDestacado[]; total: number }> {
   try {
     const res = await fetch(`${API_URL}/cursos?limit=3`, { next: { revalidate: 300 } });

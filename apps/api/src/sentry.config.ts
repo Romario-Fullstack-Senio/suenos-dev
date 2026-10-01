@@ -9,7 +9,11 @@ export function initSentry() {
       nodeProfilingIntegration(),
     ],
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    // Sentry 11 quitó el muestreo de profiling por transacción
+    // (profilesSampleRate): ahora se muestrea por sesión — en Node, la vida
+    // del proceso — y 'trace' perfila mientras haya un trace activo.
+    profileSessionSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    profileLifecycle: 'trace',
     beforeSend(event) {
       if (event.request?.headers) {
         delete event.request.headers['authorization'];

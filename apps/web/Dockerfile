@@ -1,7 +1,7 @@
 # ============================================================
 # Stage 1: Install workspace dependencies
 # ============================================================
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm ci
 # ============================================================
 # Stage 2: Build Next.js
 # ============================================================
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -57,7 +57,7 @@ RUN npm run build --workspace=apps/web
 # ============================================================
 # Stage 3: Production image (minimal, non-root)
 # ============================================================
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 
 RUN addgroup --system --gid 1001 suenos \
  && adduser --system  --uid 1001 suenos

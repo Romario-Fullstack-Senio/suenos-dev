@@ -36,7 +36,7 @@ async function apiCall(method, path, data, headers = {}) {
 
 async function screenshot(page, name) {
   const dir = 'tests/screenshots';
-  try { mkdirSync(dir, { recursive: true }); } catch {}
+  try { mkdirSync(dir, { recursive: true }); } catch { /* ya existe */ }
   const path = `${dir}/${name}.png`;
   await page.screenshot({ path, fullPage: true });
   screenshots.push(path);
@@ -238,7 +238,7 @@ async function screenshot(page, name) {
       // Guardar PDF
       if (pdfBuf.byteLength > 0) {
         const dir = 'tests/screenshots';
-        try { mkdirSync(dir, { recursive: true }); } catch {}
+        try { mkdirSync(dir, { recursive: true }); } catch { /* ya existe */ }
         writeFileSync(`${dir}/certificado-${userId.substring(0, 8)}.pdf`, Buffer.from(pdfBuf));
         log('PDF guardado', true, `tests/screenshots/certificado-${userId.substring(0, 8)}.pdf`);
       }

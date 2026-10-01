@@ -6,6 +6,10 @@ interface ListadoCursos {
   cursos: { slug: string }[];
 }
 
+// Generado por request (con el fetch cacheado 1h): prerenderizado en el build
+// de la imagen Docker, el API no responde y el sitemap salía sin ningún curso.
+export const dynamic = 'force-dynamic';
+
 async function fetchSlugsDeCursos(): Promise<string[]> {
   try {
     // limit=100: el tope que acepta el endpoint — de sobra para meter todos

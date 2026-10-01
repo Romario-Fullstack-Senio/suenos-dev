@@ -29,7 +29,7 @@ function getRefreshToken(): string | null {
   return localStorage.getItem('refreshToken');
 }
 
-/** Cookie no-httpOnly leída por middleware.ts para el gate de rutas
+/** Cookie no-httpOnly leída por proxy.ts para el gate de rutas
  * server-side — ver el comment grande en ese archivo para el porqué. */
 function setSessionCookie(sessionToken: string) {
   if (typeof document === 'undefined') return;
@@ -43,7 +43,7 @@ function clearSessionCookie() {
 }
 
 /** Persiste los 3 tokens de una respuesta de login/refresh y sincroniza la
- * cookie que usa el middleware. Usado por AuthContext y por el auto-refresh
+ * cookie que usa el proxy (proxy.ts). Usado por AuthContext y por el auto-refresh
  * de acá abajo. */
 export function setTokens(tokens: { token: string; refreshToken: string; sessionToken: string }) {
   if (typeof window === 'undefined') return;

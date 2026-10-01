@@ -56,8 +56,12 @@ async function fetchResumenResenas(cursoId: string): Promise<{ promedio: number;
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const curso = await fetchCurso(params.slug);
+// Next 16: `params` es una Promise (se eliminó el acceso síncrono).
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  const curso = await fetchCurso(slug);
   if (!curso) {
     return { title: 'Curso no encontrado' };
   }
@@ -84,15 +88,16 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function CursoDetallePage({ params }: { params: { slug: string } }) {
-  const curso = await fetchCurso(params.slug);
+export default async function CursoDetallePage({ params }: Props) {
+  const { slug } = await params;
+  const curso = await fetchCurso(slug);
   if (!curso) {
     notFound();
   }
   // Se llegó acá por el cursoId (uuid) de una notificación, no por el slug
   // real — redirige a la URL canónica para que el link quede bien la
   // próxima vez (favoritos, historial del navegador, compartir, etc.).
-  if (params.slug !== curso.slug) {
+  if (slug !== curso.slug) {
     redirect(`/cursos/${curso.slug}`);
   }
 

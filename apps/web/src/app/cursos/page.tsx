@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   alternates: { canonical: '/cursos' },
 };
 
+// Render por request, no prerender en el build: la imagen Docker se compila
+// sin acceso al API, así que el prerender quedaba con la grilla VACÍA hasta
+// que el ISR la regeneraba (5 min después del primer request post-deploy).
+// El fetch sigue cacheado 5 min en el Data Cache (`revalidate: 300`), así que
+// renderizar por request no le pega al API en cada visita.
+export const dynamic = 'force-dynamic';
+
 async function getPrimeraPagina(): Promise<ListadoCursos | null> {
   try {
     const res = await fetch(`${SERVER_API_URL}/cursos?page=1`, { next: { revalidate: 300 } });
